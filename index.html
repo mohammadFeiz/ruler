@@ -1,0 +1,142 @@
+﻿<!DOCTYPE html>
+<!--
+    Copyright (c) 2012-2016 Adobe Systems Incorporated. All rights reserved.
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+     KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width" />
+    <!-- This is a wide open CSP declaration. To lock this down for production, see below. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *" />
+    <!-- Good default declaration:
+    * gap: is required only on iOS (when using UIWebView) and is needed for JS->native communication
+    * https://ssl.gstatic.com is required only on Android and is needed for TalkBack to function properly
+    * Disables use of eval() and inline scripts in order to mitigate risk of XSS vulnerabilities. To change this:
+        * Enable inline JS: add 'unsafe-inline' to default-src
+        * Enable eval(): add 'unsafe-eval' to default-src
+    * Create your own at http://cspisawesome.com
+    -->
+    <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: 'unsafe-inline' https://ssl.gstatic.com; style-src 'self' 'unsafe-inline'; media-src *" /> -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+    
+    <script src="js/jquery.min.js"></script>
+    <script src="js/canvas.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/create.js"></script>
+    <script src="js/lines.js"></script>
+    <style>
+        #container {
+            position:absolute;
+            left:0;
+            top:0;
+            width:100%;
+            height:100%;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="container"></canvas>
+    
+    <script>
+        app.init();
+        //var toolsSetting = {
+        //    open: function () {
+        //        if (app.appmode === "create") { create.setting(); }
+        //        else if (app.appmode === "edit") {
+        //            if (typeof edit[app.editmode].setting === "function") {
+        //                edit[app.editmode].setting();
+        //            }
+        //        }
+
+        //    }
+        //}
+        //function getCopy(model) {
+        //    return JSON.parse(JSON.stringify(model));
+        //}
+        //var log = {
+        //    text: "",
+        //    show: function () {
+        //        $("#log-popup").show();
+        //    },
+        //    hide: function () {
+        //        $("#log-popup").hide();
+        //    },
+        //    add: function (text) {
+        //        if (typeof text === "object") { text = JSON.stringify(text); }
+        //        log.text += text + " *** ";
+        //        $("#log-text").html(log.text);
+
+        //    },
+        //    clear: function () {
+        //        log.text += "";
+        //        $("#log-text").html("");
+        //    }
+        //};
+
+
+        //createStyle();
+        //canvas.init({
+        //    mouseDown: app.mouseDown,
+        //    mouseMove: app.mouseMove,
+        //    mouseUp: app.mouseUp,
+        //    snap: 10,
+        //    panCallback: app.panCallback,
+        //    container: "my-canvas"
+        //});
+        //app.init();
+        //var B = new slider({
+        //    start: 0,
+        //    step: 1,
+        //    end: 1,
+        //    isMobile: canvas.isMobile,
+        //    value: [0],
+        //    container: "#app-mode",
+        //    showFill: false,
+        //    text: ["Edit", "Create"],
+        //    ondrag: app.setappmode,
+        //    style: {
+        //        line_width: 0,
+        //        button_width: top_menu_size * (3 / 4),
+        //        button_height: top_menu_size * (3 / 4),
+        //    }
+        //});
+        //var C = new slider({
+        //    start: 40, step: 20, end: 200, value: [100], container: "#zoom-slider", showValue: true, fixValue: true,
+        //    style: { line_width: zoom_slider_thickness, button_width: 38, button_height: 22 },
+        //    isMobile: canvas.isMobile,
+        //    ondrag: function (obj) {
+        //        var value = obj.values[0] / 100;
+        //        app.zoom(value);
+        //    }
+        //});
+
+        //undo.save();
+        
+
+
+
+    </script>
+</body>
+
+</html>
