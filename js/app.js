@@ -6,7 +6,7 @@
         showLines: true,
         showPoints:true,
         appmode: "create",
-        createmode: "polyline",
+        createmode: "ngon",
         editmode: "modify",
         container: "#container",
         background: "#2c2f37",

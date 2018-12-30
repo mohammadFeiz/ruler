@@ -76,7 +76,7 @@ var create = {
     mousedown: function (e) {
         app.eventHandler("window", "mousemove", $.proxy(this.mousemove,this));
         app.eventHandler("window", "mouseup", $.proxy(this.mouseup,this));
-        var coords = app.canvas.getMousePosition(),close = ["rectangle", "ngon"].indexOf(app.createmode) !== -1;
+        var coords = app.canvas.getMousePosition(),close = ["rectangle", "ngon"].indexOf(app.state.createmode) !== -1;
         if (this.firstPoint) {
             this.object = new spline({ start: coords, color: "#fff", mode: app.state.createmode, sides: this.ngonSides, ortho: this.ortho, close: close });
             this.firstPoint = false;
