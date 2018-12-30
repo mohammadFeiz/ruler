@@ -1,52 +1,13 @@
-﻿function spline(config) {
+﻿function spline(config,getPoints) {
     var a = {
         state: { points: [], close: false, extraData: {}, },
         init: function (obj) {
             for (var prop in obj) { this.state[prop] = obj[prop]; }
-            this.state.close = ["rectangle", "ngon"].indexOf(this.state.mode) !== -1;
             this.addPoint(this.state.start);
         },
         addPoint: function (point) {this.state.points.push(point);},
         removePoint: function (index) { this.state.points.splice(index, 1); },
         updatePoint: function (index, obj) {for (var prop in obj) { this.state.points[index][prop] = obj[prop]; }},
-        getPoints: function () {
-            var s = this.state, points = [];
-            if (s.mode === "polyline") { points = s.points; }
-            else if (s.mode === "rectangle") {
-                var start = s.points[0], end = s.points[1]
-                points.push({ x: start.x, y: start.y });
-                if (!end) { return points; }
-                points.push({ x: start.x, y: end.y });
-                points.push({ x: end.x, y: end.y });
-                points.push({ x: end.x, y: start.y });
-            }
-            else if (s.mode === "ngon") {
-                var start = s.points[0], end = s.points[1];
-                points.push({ x: start.x, y: start.y });
-                if (!end) { return points; }
-                if (!s.ortho) {
-                    var line = { start: { x: start.x, y: start.y }, end: { x: end.x, y: end.y } };
-                    var sign = 1;
-                }
-                else {
-                    if (Math.abs(start.x - end.x) >= Math.abs(start.y - end.y)) {
-                        var sign = Math.sign(end.x - start.x) * Math.sign(end.y - start.y) || 1;
-                        var line = { start: { x: start.x, y: start.y }, end: { x: end.x, y: start.y } };
-                    }
-                    else {
-                        var sign = Math.sign(end.x - start.x) * Math.sign(start.y - end.y) || 1;
-                        var line = { start: { x: start.x, y: start.y }, end: { x: start.x, y: end.y } };
-                    }
-                }
-                var radian = Lines.getRadian(line),length = Lines.getLength(line),xs = start.x; var ys = start.y,aa = 360 / s.sides * Math.PI / 180, b = radian * Math.PI / 180;
-                for (var i = 0; i < s.sides - 1; i++) {
-                    xs += (Math.cos(aa * i * sign - b) * length);
-                    ys += (Math.sin(aa * i * sign - b) * length);
-                    points.push({ x: xs, y: ys });
-                }
-            }
-            return points;
-        },
         getMode: function () { return this.state.mode;},
         getLines: function () {
             var s = this.state, lines = [], points = this.getPoints();
@@ -67,18 +28,19 @@
         to: function (obj) { this.addPoint(obj); }
     };
     a.init(config);
+    a.getPoints = getPoints;
     return a;
 }
 var create = {
     firstPoint: true,
     ngonSides: 6,
-    ortho: false,
+    ortho: true,
     mousedown: function (e) {
         app.eventHandler("window", "mousemove", $.proxy(this.mousemove,this));
         app.eventHandler("window", "mouseup", $.proxy(this.mouseup,this));
-        var coords = app.canvas.getMousePosition(),close = ["rectangle", "ngon"].indexOf(app.state.createmode) !== -1;
+        var mode = app.state.createmode,coords = app.canvas.getMousePosition(),close = ["rectangle", "ngon"].indexOf(mode) !== -1;
         if (this.firstPoint) {
-            this.object = new spline({ start: coords, color: "#fff", mode: app.state.createmode, sides: this.ngonSides, ortho: this.ortho, close: close });
+            this.object = new spline({ start: coords, color: "#fff", mode: mode, sides: this.ngonSides, ortho: this.ortho, close: close },this.getPoints[mode]);
             this.firstPoint = false;
         } else {
             this.object.addPoint(coords);
@@ -178,4 +140,39 @@ var create = {
         for (var i = 0; i < points.length; i++) {app.state.points.push(points[i]);}
         for (var i = 0; i < lines.length; i++) {app.state.lines.push(lines[i]);}
     },
+    getPoints:{
+        polyline:function(){
+            return this.state.points;
+        },
+        rectangle:function(){
+            var s = this.state, points = [];
+            var start = s.points[0], end = s.points[1]
+            points.push({ x: start.x, y: start.y });
+            if (!end) { return points; }
+            points.push({ x: start.x, y: end.y });
+            points.push({ x: end.x, y: end.y });
+            points.push({ x: end.x, y: start.y });
+            return points;
+        },
+        ngon: function () {
+            var s = this.state, points = [];
+            var start = s.points[0], end = s.points[1];
+            points.push({ x: start.x, y: start.y });
+            if (!end) { return points; }
+            var horizontal = Math.abs(start.x - end.x) >= Math.abs(start.y - end.y);
+            var startLine = { x: start.x, y: start.y };
+            var endLine = { x: s.ortho ? (horizontal ? end.x : start.x) : end.x, y: s.ortho ? (horizontal ? start.y : end.y) : end.y };
+            var line = { start: startLine, end: endLine };
+            var horizontalSign = Math.sign(end.x - start.x),verticalSign = Math.sign(end.y - start.y);
+            var sign = s.ortho ? (horizontal ? horizontalSign * verticalSign || 1 : horizontalSign * verticalSign * -1 || 1) : 1;
+            var radian = Lines.getRadian(line), length = Lines.getLength(line), xs = start.x; var ys = start.y, aa = 360 / s.sides * Math.PI / 180, b = radian * Math.PI / 180;
+            for (var i = 0; i < s.sides - 1; i++) {
+                xs += (Math.cos(aa * i * sign - b) * length);
+                ys += (Math.sin(aa * i * sign - b) * length);
+                points.push({ x: xs, y: ys });
+            }
+            return points;
+        }
+    }
+    
 }
