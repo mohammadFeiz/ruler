@@ -6,7 +6,7 @@
         showLines: true,
         showPoints:true,
         appmode: "create",
-        createmode: "rectangle",
+        createmode: "polyline",
         editmode: "modify",
         container: "#container",
         background: "#2c2f37",
@@ -17,9 +17,6 @@
         box_shadow:'4px 4px 10px 0px rgba(0,0,0,0.6)',
         font_color:'#fff',
         background: "#3e4146",
-
-
-
     },
     init:function(){
         var s = this.state;
@@ -28,17 +25,14 @@
             container: s.container,
             background: s.background,
             gridLineColor: s.gridLineColor,
-            onmousedown:this.canvasmousedown.bind(this)
+            onmousedown: window[s.appmode].mousedown.bind(window[s.appmode]),
         });
     },
-    canvasmousedown:function(){
-        var subMode = this.state.appmode === "create" ? this.state.createmode:this.state.editmode;
-        window[this.state.appmode].mousedown({mode:subMode,coords:this.canvas.getMousePosition()});
+    canvasmousedown: function (e) {
+        var s = this.state,mode = window[s.appmode],subMode = s[s.appmode+"mode"];
+        mode.mousedown(e);
     },
-    getClient: function (e, axis) {
-        axis = axis.toUpperCase();
-        return e.clientX ? e["client" + axis] : e.changedTouches[0]["client" + axis];
-    },
+    getClient: function (e) {return { x: e.clientX || e.changedTouches[0].clientX, y: e.clientY || e.changedTouches[0].clientY };},
     test: function () {
         var ids = [];
         for (var i = 0; i < canvas.points.length; i++) {
@@ -350,17 +344,15 @@
         }
     },
 
-    mousedown:function(e){
-        this.x = app.getClient(e, "X");
-        this.y = app.getClient(e, "Y");
+    mousedown: function (e) {
+        var client = this.getClient(e);
+        this.x = client.x; this.y = client.y;
         this.eventHandler("window", "mousemove", this.mousemove);
         this.eventHandler("window", "mouseup", this.mouseup);
-        
-
     },
     mousemove:function(e){
-        this.x = app.getClient(e, "X");
-        this.y = app.getClient(e, "Y");
+        var client = this.getClient(e);
+        this.x = client.x; this.y = client.y;
     },
     mouseup: function (e) {
         clearInterval(create.autoPanInterval);

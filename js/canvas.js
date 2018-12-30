@@ -23,10 +23,7 @@ function Canvas(config) {
             this.eventHandler(container, "mousedown", this.mousedown.bind(this));
             this.setScreen(s.screenPosition);
         },
-        getClient: function (e, axis) {
-            axis = axis.toUpperCase();
-            return e.clientX ? e["client" + axis] : e.changedTouches[0]["client" + axis];
-        },
+        getClient: function (e) { return { x: e.clientX || e.changedTouches[0].clientX, y: e.clientY || e.changedTouches[0].clientY }; },
         getZoom:function(){
             return this.state.zoom;
         },
@@ -48,7 +45,13 @@ function Canvas(config) {
             return { x: Math.round(coords.x / this.state.snap) * this.state.snap, y: Math.round(coords.y / this.state.snap) * this.state.snap };
         },
         canvasToClient: function (coords) { var s = this.state; return { x: (coords.x * s.zoom) + s.translate.x, y: (coords.y * s.zoom) + s.translate.y }; },
-        clientToCanvas: function (coords) { var s = this.state; return { x: (coords.x - s.translate.x) / s.zoom, y: (coords.y - s.translate.y) / s.zoom }; },
+        clientToCanvas: function (coords) {
+            var s = this.state;
+            return {
+                x: (coords.x - s.translate.x) / s.zoom,
+                y: (coords.y - s.translate.y) / s.zoom
+            };
+        },
         setScreenBy: function (obj) {
             var currentX = this.setScreenPosition.x, currentY = this.setScreenPosition.y;
             var x = obj.x === undefined ? 0 : currentX + obj.x;
@@ -188,23 +191,26 @@ function Canvas(config) {
             this.redraw();
         },
         mousedown: function (e) {
-            this.eventHandler("window", "move", this.mousemove);
-            this.eventHandler("window", "up", this.mouseup);
-            this.x = this.getClient(e, "x");
-            this.y = this.getClient(e, "y");
-            if (this.state.onmousedown) { this.state.onmousedown(); }
+            this.eventHandler("window", "mousemove", this.mousemove);
+            this.eventHandler("window", "mouseup", this.mouseup);
+            var client = this.getClient(e);
+            this.x = client.x;
+            this.y = client.y;
+            if (this.state.onmousedown) { this.state.onmousedown(e); }
         },
         mousemove: function (e) {
-            this.x = this.getClient(e, "x");
-            this.y = this.getClient(e, "y");
-            if (this.state.onmousemove) { this.state.onmousemove(); }
+            var client = this.getClient(e);
+            this.x = client.x;
+            this.y = client.y;
+            if (this.state.onmousemove) { this.state.onmousemove(e); }
         },
         mouseup: function (e) {
-            this.eventRemover("window", "move", this.mousemove);
-            this.eventRemover("window", "up", this.mouseup);
-            this.x = this.getClient(e, "x");
-            this.y = this.getClient(e, "y");
-            if (this.state.onmouseup) { this.state.onmouseup(); }
+            this.eventRemover("window", "mousemove", this.mousemove);
+            this.eventRemover("window", "mouseup", this.mouseup);
+            var client = this.getClient(e);
+            this.x = client.x;
+            this.y = client.y;
+            if (this.state.onmouseup) { this.state.onmouseup(e); }
         },
         getScreenPosition:function(){
             return this.state.screenPosition;
@@ -220,6 +226,7 @@ function Canvas(config) {
         getScreenPosition: a.getScreenPosition.bind(a),
         drawArc: a.drawArc.bind(a),
         canvasToClient: a.canvasToClient.bind(a),
+        clientToCanvas:a.clientToCanvas.bind(a),
         getSnapedCoords: a.getSnapedCoords.bind(a),
         getZoom:a.getZoom.bind(a)
     };
