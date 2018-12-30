@@ -6,19 +6,25 @@
         showLines: true,
         showPoints:true,
         appmode: "create",
-        createmode: "polyline",
+        createmode: "rectangle",
         editmode: "modify",
         container: "#container",
         background: "#2c2f37",
         gridLineColor: "70,70,70"
     },
     style:{
-        lightFontColor:"#fff"
+        lightFontColor:'#fff',
+        box_shadow:'4px 4px 10px 0px rgba(0,0,0,0.6)',
+        font_color:'#fff',
+        background: "#3e4146",
+
+
 
     },
     init:function(){
         var s = this.state;
         this.canvas = new Canvas({
+            isMobile:this.state.isMobile,
             container: s.container,
             background: s.background,
             gridLineColor: s.gridLineColor,
@@ -145,7 +151,7 @@
         for (var i = 0; i < s.lines.length; i++) {
             var line = s.lines[i];
             if (line.show === false) {continue;}
-            this.canvas.drawLine(line);
+            this.drawLine(line);
         }
     },
     drawPoints: function () {
@@ -154,11 +160,30 @@
         for (var i = 0; i < s.points.length; i++) {
             var point = s.points[i];
             if (point.show === false) {continue;}
+            point.connectedLines = point.connectedLines || [];
             var linesCount = point.connectedLines.length;
-            if (linesCount === 0) {this.drawArc({x: point.x,y: point.y,radius: 6,color: "yellow",mode: "fill"});}//debug
-            else if (linesCount === 1) {this.canvas.drawRectangle({position:"center",x: point.x,y: point.y,width: 5,height: 5,color: point.color,mode: "fill"});}
-            else if (linesCount === 2) {this.canvas.drawArc(point);}
+            if (linesCount === 1) {this.drawOpenPoint(point)}
+            else {this.drawPoint(point);}
         }
+    },
+    drawPoint:function(point){
+        this.canvas.drawArc({
+            x: point.x,
+            y: point.y,
+            radius: 2,
+            color: point.color,
+            mode: "fill"
+        });
+    },
+    drawOpenPoint:function(point){
+        this.canvas.drawRectangle({position:"center",x: point.x,y: point.y,width: 5,height: 5,color: point.color,mode: "fill"});
+    },
+    drawLine:function(line){
+        this.canvas.drawLine({
+            start: {x: line.start.x,y: line.start.y},
+            end: {x: line.end.x,y: line.end.y},
+            color: line.color
+        });
     },
     drawAxes: function () {
         this.ctx.save();

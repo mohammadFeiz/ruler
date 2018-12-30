@@ -1,7 +1,6 @@
 function Canvas(config) {
     var a = {
         state: {
-            isMobile: false,
             zoom: 1,
             snap: 1,
             screenPosition: { x: 0, y: 0 },
@@ -207,6 +206,9 @@ function Canvas(config) {
             this.y = this.getClient(e, "y");
             if (this.state.onmouseup) { this.state.onmouseup(); }
         },
+        getScreenPosition:function(){
+            return this.state.screenPosition;
+        }
     }
     a.update(config);
     return {
@@ -215,6 +217,7 @@ function Canvas(config) {
         setScreenTo: a.setScreenTo.bind(a),
         drawText: a.drawText.bind(a),
         getMousePosition: a.getMousePosition.bind(a),
+        getScreenPosition: a.getScreenPosition.bind(a),
         drawArc: a.drawArc.bind(a),
         canvasToClient: a.canvasToClient.bind(a),
         getSnapedCoords: a.getSnapedCoords.bind(a),

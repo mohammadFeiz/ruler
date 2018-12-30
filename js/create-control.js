@@ -1,38 +1,30 @@
 var createControl = {
     state: {},
-    textFontSize: 10,
-    iconFontSize: 15,
     id: "draw-control",
     items: [
-        { name: "move", text: "", className: "mdi mdi-arrow-all", fontSize: 15 },
+        { name: "move", text: "Move", className: "", fontSize: 10 },
         { name: "end", text: "End", className: "", fontSize: 10 },
         { name: "close", text: "Close", className: "", fontSize: 10 },
         { name: "join", text: "Join", className: "", fontSize: 10 },
-        { name: "keyboard", text: "", className: "mdi mdi-keyboard", fontSize: 15 },
-        { name: "remove", text: "", className: "mdi mdi-delete", fontSize: 15 },
-        { name: "pan", text: "", className: "mdi mdi-cursor-pointer", fontSize: 15 },
+        { name: "keyboard", text: "Keyboard", className: "", fontSize: 10 },
+        { name: "remove", text: "Remove", className: "", fontSize: 10 },
+        { name: "pan", text: "Pan", className: "", fontSize: 10 },
     ],
     style: {
         item_size: 36,
         distance: 80,
         angle: 40,
         start_angle: 90,
-        font_color: lightFontColor,//read from style-genarator.js
+        font_color: app.style.lightFontColor,//read from style-genarator.js
         item_background: "rgba(255, 255, 255, 0.1)",
-    },
-    updateState: function (obj) {
-        for (var prop in obj) {
-            this.state[prop] = obj[prop];
-        }
     },
     open: function (items) {
         this.close();
         this.state = {};
-        this.updateState(items);
+        for (var prop in items) { this.state[prop] = items[prop]; }
         this.render();
-        this.container = $("#" + this.id);
-        var coords = canvas.convertCanvasXYToBodyXY(this.state.coords);
-        this.container.css({ left: coords.x, top: coords.y });
+        var coords = app.canvas.canvasToClient(this.state.coords);
+        $("#" + this.id).css({ left: coords.x, top: coords.y });
     },
     close: function () {
         $("#" + this.id).remove();
@@ -64,12 +56,11 @@ var createControl = {
         }
         str += '</div>';
         $("body").append(str);
-        app.eventHandler(".draw-control-item", "mousedown",this.mousedown);
+        app.eventHandler(".draw-control-item", "mousedown", this.mousedown.bind(this));
     },
     mousedown: function (e) {
         var element = $(e.currentTarget);
-        var mode = $(e.currentTarget).attr("id").slice(13);
-        create.currentSpline[mode](e);
+        create[$(e.currentTarget).attr("id")](e);
     },
     move: function (coords) {
         var coords = canvas.convertCanvasXYToBodyXY({ x: coords.x, y: coords.y });
@@ -81,7 +72,7 @@ function CreateControlItem(props) {
     function getIconContainerStyle() {
         var str = '';
         str += 'position: absolute;';
-        str += 'background:'+props.style.item_background+';';
+        str += 'background:' + props.style.item_background + ';';
         str += 'border-radius:100%;';
         str += 'text-align:center;';
         str += 'width:' + props.style.item_size + 'px;';
@@ -103,13 +94,10 @@ function CreateControlItem(props) {
         return str;
     }
     var str = '';
-    str += '<div id="draw-control-' + props.name + '" class="draw-control-item" style="' + getItemStyle() + '">';
+    str += '<div id="drawcontrol' + props.name + '" class="draw-control-item" style="' + getItemStyle() + '">';
     str += '<div class="icon-container" style="' + getIconContainerStyle() + '">';
     str += '<span class="icon ' + props.className + '" style="' + getIconStyle() + '">' + props.text + '</span>';
     str += '</div>';
     str += '</div>';
     return str;
 }
-
-
-

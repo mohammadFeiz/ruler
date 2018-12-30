@@ -3,15 +3,10 @@ var keyboard = {
     close: false,
     firstInter: true,
     state: {},
-    updateState: function (obj) {
-        for (var prop in obj) {
-            this.state[prop] = obj[prop];
-        }
-        this.state.activeIndex = this.state.activeIndex || 0;
-    },
+    
     open: function (obj) {
         if (obj.fields === undefined) { alert("keybord fields is required"); }
-        this.updateState(obj);
+        for (var prop in obj) {this.state[prop] = obj[prop];}
         this.render();
     },
     render: function () {
@@ -20,7 +15,7 @@ var keyboard = {
         str += '<div class="back-drop"></div>';
         str += KeyboardHeader({ title: this.state.title });
         str += KeyboardBody();
-        str += KeyboardFooter({ fields: this.state.fields, activeIndex: this.state.activeIndex });
+        str += KeyboardFooter({ fields: this.state.fields, activeIndex: this.state.activeIndex||0 });
         str += '</div>';
         $("body").append(str);
         this.eventHandler("#keyboard-close", "mousedown", this.hide);
@@ -30,12 +25,8 @@ var keyboard = {
         this.eventHandler("#keyboard-ok", "mousedown", this.ok);
     },
     getClient: function (e, axis) {
-        if (canvas.isMobile) {
-            return e.changedTouches[0]["client" + axis];
-        }
-        else {
-            return e["client" + axis];
-        }
+        axis = axis.toUpperCase();
+        return e.clientX ? e["client" + axis] : e.changedTouches[0]["client" + axis];
     },
     hide: function () {
         $("#keyboard").remove();
@@ -115,25 +106,17 @@ var keyboard = {
         this.state.subscribe(parameters);
         if (this.state.close) { this.hide(); }
     },
-    eventHandler: function (selector, event, action) {
-        if (canvas.isMobile) {
-            if (event === "mousedown") { event = "touchstart"; }
-            else if (event === "mousemove") { event = "touchmove"; }
-            else if (event === "mouseup") { event = "touchend"; }
-        }
-        if (selector === "window") { $(window).unbind(event, $.proxy(action,this)).bind(event, $.proxy(action,this)); }
-        else if (typeof selector === "string") { $(selector).unbind(event, $.proxy(action,this)).bind(event, $.proxy(action,this)); }
-        else { selector.unbind(event, $.proxy(action,this)).bind(event, $.proxy(action,this)); }
+    eventHandler: function (selector, e, action) {        
+        var mobileEvents = {mousedown:"touchstart",mousemove:"tocuhmove",mouseup:"tocuhend"};
+        var element = typeof selector === "string" ? (selector === "window" ? $(window) : $(selector)) : selector;
+        var event = this.state.isMobile ? mobileEvents[e] : e;
+        element.unbind(event, action).bind(event, action);
     },
-    eventRemover: function (selector, event, action) {
-        if (canvas.isMobile) {
-            if (event === "mousedown") { event = "touchstart"; }
-            else if (event === "mousemove") { event = "touchmove"; }
-            else if (event === "mouseup") { event = "touchend"; }
-        }
-        if (selector === "window") { $(window).unbind(event, $.proxy(action,this)); }
-        else if (typeof selector === "string") { $(selector).unbind(event, $.proxy(action,this)); }
-        else { selector.unbind(event, $.proxy(action,this)); }
+    eventRemover: function (selector, e, action) {
+        var mobileEvents = { down: "touchstart", move: "tocuhmove", up: "tocuhend" };
+        var element = typeof selector === "string" ? (selector === "window" ? $(window) : $(selector)) : selector;
+        var event = this.state.isMobile ? mobileEvents[e] : e;
+        element.unbind(event, action);
     },
 }
 
