@@ -1,5 +1,6 @@
 function Canvas(config) {
     var a = {
+        isDown:false,
         state: {
             zoom: 1,
             snap: 1,
@@ -21,9 +22,10 @@ function Canvas(config) {
                 });
             }
             this.eventHandler(container, "mousedown", this.mousedown.bind(this));
+            this.eventHandler("window", "mousedown", this.windowmosedown.bind(this));
             this.setScreen(s.screenPosition);
         },
-        getClient: function (e) { return { x: e.clientX || e.changedTouches[0].clientX, y: e.clientY || e.changedTouches[0].clientY }; },
+        getClient: function (e) {return { x: e.clientX === undefined?e.changedTouches[0].clientX:e.clientX, y: e.clientY===undefined?e.changedTouches[0].clientY:e.clientY };},
         getZoom:function(){
             return this.state.zoom;
         },
@@ -53,7 +55,7 @@ function Canvas(config) {
             };
         },
         setScreenBy: function (obj) {
-            var currentX = this.setScreenPosition.x, currentY = this.setScreenPosition.y;
+            var currentX = this.state.screenPosition.x, currentY = this.state.screenPosition.y;
             var x = obj.x === undefined ? 0 : currentX + obj.x;
             var y = obj.y === undefined ? 0 : currentY + obj.y;
             this.setScreenTo({ x: x, y: y, animate: obj.animate, callback: obj.callback });
@@ -190,6 +192,9 @@ function Canvas(config) {
             });
             this.redraw();
         },
+        windowmosedown:function(){
+            this.isDown = true;
+        },
         mousedown: function (e) {
             this.eventHandler("window", "mousemove", this.mousemove);
             this.eventHandler("window", "mouseup", this.mouseup);
@@ -205,6 +210,7 @@ function Canvas(config) {
             if (this.state.onmousemove) { this.state.onmousemove(e); }
         },
         mouseup: function (e) {
+            this.isDown = false;
             this.eventRemover("window", "mousemove", this.mousemove);
             this.eventRemover("window", "mouseup", this.mouseup);
             var client = this.getClient(e);
@@ -214,13 +220,19 @@ function Canvas(config) {
         },
         getScreenPosition:function(){
             return this.state.screenPosition;
-        }
+        },
+        getIsDown:function(){
+            return this.isDown;
+        },
+        getWidth: function () { return this.state.width; },
+        getHeight: function () {return this.state.height;}
     }
     a.update(config);
     return {
         clear: a.clear.bind(a),
         drawLine: a.drawLine.bind(a),
         setScreenTo: a.setScreenTo.bind(a),
+        setScreenBy: a.setScreenBy.bind(a),
         drawText: a.drawText.bind(a),
         getMousePosition: a.getMousePosition.bind(a),
         getScreenPosition: a.getScreenPosition.bind(a),
@@ -228,6 +240,9 @@ function Canvas(config) {
         canvasToClient: a.canvasToClient.bind(a),
         clientToCanvas:a.clientToCanvas.bind(a),
         getSnapedCoords: a.getSnapedCoords.bind(a),
-        getZoom:a.getZoom.bind(a)
+        getZoom: a.getZoom.bind(a),
+        getWidth: a.getWidth.bind(a),
+        getHeight: a.getHeight.bind(a),
+        getIsDown:a.getIsDown.bind(a),
     };
 }

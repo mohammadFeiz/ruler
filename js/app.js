@@ -6,7 +6,7 @@
         showLines: true,
         showPoints:true,
         appmode: "create",
-        createmode: "ngon",
+        createmode: "polyline",
         editmode: "modify",
         container: "#container",
         background: "#2c2f37",
@@ -17,6 +17,21 @@
         box_shadow:'4px 4px 10px 0px rgba(0,0,0,0.6)',
         font_color:'#fff',
         background: "#3e4146",
+        top_menu:{
+            size: 36,
+            color1: "#fff",
+            color2: "#777",
+            padding: 6,
+            button_fontSize:12,
+            icon_fontSize: 18,
+            hMargin: 4,
+            vMargin: 6,
+            item_borderWidth: 1,
+            borderRadius: 5,
+            header_background:"#222"
+        },
+        
+        
     },
     init:function(){
         var s = this.state;
@@ -27,12 +42,13 @@
             gridLineColor: s.gridLineColor,
             onmousedown: window[s.appmode].mousedown.bind(window[s.appmode]),
         });
+        topMenu.render();
     },
     canvasmousedown: function (e) {
         var s = this.state,mode = window[s.appmode],subMode = s[s.appmode+"mode"];
         mode.mousedown(e);
     },
-    getClient: function (e) {return { x: e.clientX || e.changedTouches[0].clientX, y: e.clientY || e.changedTouches[0].clientY };},
+    getClient: function (e) { return { x: e.clientX === undefined ? e.changedTouches[0].clientX : e.clientX, y: e.clientY === undefined ? e.changedTouches[0].clientY : e.clientY }; },
     test: function () {
         var ids = [];
         for (var i = 0; i < canvas.points.length; i++) {
@@ -233,88 +249,6 @@
 
         return false;
     },
-    createitems: {
-        polyline: { title: "Polyline", iconClass: "mdi mdi-vector-polyline" },
-        rectangle: { title: "Rectangle", iconClass: "mdi mdi-vector-rectangle" },
-        ngon: { title: "NGon", iconClass: "mdi mdi-hexagon-outline" },
-        frame: { title: "Frame", iconClass: "mdi mdi-grid" }
-    },
-    edititems: {
-        modify: { title: "Modify", iconClass: "mdi mdi-select" },
-        connectpoints: { title: "Connect", iconClass: "mdi mdi-ray-start-end" },
-        alignPoint: { title: "align Point", iconClass: "mdi mdi-source-pull" },
-        chamfer: { title: "Chamfer", iconClass: "icon icon-chamfer" },
-        addPoint: { title: "Add Point", iconClass: "mdi mdi-ray-vertex" },
-        divide: { title: "Divide Line", iconClass: "mdi mdi-ray-vertex" },
-        joinlines: { title: "Join Lines", iconClass: "mdi mdi-ray-vertex" },
-        extendLine: { title: "Extend Line", iconClass: "mdi mdi-ray-start-arrow" },
-        offsetLine: { title: "Offset Line", iconClass: "icon icon-offsetline" },
-        plumbLine: { title: "Plumb Line", iconClass: "icon icon-offsetline" },
-    },
-    setappmode: function (obj) {
-        create.end();
-        edit.end();
-        var value = obj.value[0];
-        if (value === 0) { app.appmode = "create"; }
-        else if (value === 1) { app.appmode = "edit"; }
-        else { alert("error"); }
-        app.setappmodeitems();
-    },
-    setappmodeitems: function () {
-        edit.modify.setToolbar();
-        var appmode = app.appmode; //create
-        var appmodeitem = app[appmode + "mode"]; //polyline
-        var appmodelist = app[appmode + "items"];
-        var modeObject = appmodelist[appmodeitem]; //{ title: "Polyline", iconClass: "mdi mdi-vector-polyline" }
-        $("#app-mode-item-title").html(modeObject.title);
-        $("#app-mode-item-icon").attr("class", modeObject.iconClass);
-        var str = '';
-        for (var prop in appmodelist) {
-            modeObject = appmodelist[prop]; //{ title: "Polyline", iconClass: "mdi mdi-vector-polyline" }
-            str += '<div id="' + prop + '" class="app-mode-item">';
-            str += '<div id="app-mode-item-icon" class="' + modeObject.iconClass + '"></div>';
-            str += '<div id="app-mode-item-title">' + modeObject.title + '</div>';
-            str += '</div>';
-        }
-        $("#app-mode-items-popup").html(str);
-        app.eventHandler(".app-mode-item", "mousedown", function (e) {
-            create.end();
-            edit.end();
-            var appmode = app.appmode; //create
-            var mode = $(e.currentTarget).attr("id"); //polyline
-            app[appmode + "mode"] = mode; // app.createmode = polyline
-            var modeObject = app[appmode + "items"][mode]; // modeObject = { title: "Polyline", iconClass: "mdi mdi-vector-polyline" }
-            $("#app-mode-item-title").html(modeObject.title);
-            $("#app-mode-item-icon").attr("class", modeObject.iconClass);
-            $("#app-mode-items").removeClass("active");
-            edit.modify.setToolbar();
-        });
-        app.eventHandler("#app-mode-items-title", "mousedown", function () {
-            $("#app-mode-items").addClass("active");
-        });
-        app.eventHandler("#app-mode-items .back-drop", "mousedown", function () {
-            $("#app-mode-items").removeClass("active");
-        });
-    },
-    //init: function () {
-    //    app.drawControlWidth = Math.ceil(app.sizeA * 3.5);
-    //    app.setappmodeitems();
-    //    app.eventHandler("#snap", "mousedown", Snap.open);
-    //    app.eventHandler("#tools-setting", "mousedown", toolsSetting.open);
-    //    app.eventHandler("#layer", "mousedown", function () {
-    //        create.end();
-    //        edit.end(); layers.open();
-    //    });
-    //    app.eventHandler(".zoom", "mousedown", app.zoom);
-    //    app.eventHandler(".switch", "mousedown", app.switchButton);
-    //    app.eventHandler(".axis-icon,#axisBackground", "mousedown", edit.modify.buttonmousedown);
-    //    app.eventHandler("#undo-button", "mousedown", undo.load);
-    //    app.eventHandler("#side-menu-button", "mousedown", sideMenu.open);
-    //    //app.eventHandler("#log", "mousedown", log.show);
-    //    //app.eventHandler("#log-clear", "mousedown", log.clear);
-    //    //app.eventHandler("#log-hide", "mousedown", log.hide);
-
-    //},
     mouseDown: function () {
         if (app.measuremode) {
             var line = canvas.findLineByCoords();
@@ -343,7 +277,6 @@
             window[app.appmode].mouseup();
         }
     },
-
     mousedown: function (e) {
         var client = this.getClient(e);
         this.x = client.x; this.y = client.y;
@@ -359,46 +292,6 @@
         this.eventRemover("window", "mousemove", this.mousemove);
         this.eventRemover("window", "mouseup", this.mouseup);
        
-    },
-
-
-    switchButton: function (e) {
-        var element = $(e.currentTarget);
-        var id = element.attr("id");
-        var state;
-        if (element.hasClass("active")) {
-            element.removeClass("active");
-            state = false;
-        } else {
-            element.addClass("active");
-            state = true;
-        }
-        if (id === "pan") {
-            canvas.pan = state;
-        }
-        else if (id === "measure") {
-            app.measuremode = state;
-        }
-    },
-    panCallback: function () {
-        if (app.appmode === "create") {
-            if (create.currentSpline) {
-                create.currentSpline.draw();
-                create.currentSpline.drawHelp();
-                create.currentSpline.setController();
-            }
-        }
-    },
-    set_tools_setting_popup_content: function () {
-        var id;
-        if (app.appmode === "Create") {
-            id = app.createmode;
-        } else if (app.appmode === "Edit") {
-            id = app.editmode;
-        }
-        $(".tools-setting-group").removeClass("active");
-        $("#tools-setting-group-" + id).addClass("active");
-
     },
     zoom: function (zoom) {
 
@@ -427,6 +320,199 @@
                 c.setController();
             });
         }
-    },
-    
+    }, 
 }
+var topMenu = {
+    findItemById:function(id){for (var i = 0; i < this.items.length; i++) {if (this.items[i].id === id) { return this.items[i]; }}},
+    findSubItemById: function (id) {for (var i = 0; i < this.subItems.length; i++) {if (this.subItems[i].id === id) {return this.subItems[i];}}},
+    items: [
+        {
+            id: "mainMenu",type: "icon", className: "mdi mdi-menu", float: "left",
+        },
+
+        {
+            id: "setAppMode", type: "button", float: "left", text: "Create",
+            callback: function (item) {
+                if (app.state.appmode === "create") {app.state.appmode = "edit";item.text = "Edit";}
+                else {app.state.appmode = "create";item.text = "Create";}
+            }, 
+        },
+
+        {
+            type: "dropdown", float: "left", text: "Select Mode", activeIndex: 0,
+            show: function () {return app.state.appmode === "edit"},
+            options: [{text:"Point",},{text: "Line",},{text: "Spline",},{text: "Object",},]
+        },
+
+        {
+            type: "dropdown", float: "left", text: "Create Mode", activeIndex: 0,
+            show: function () { return app.state.appmode === "create" },
+            options: [{ text: "Polyline", },{ text: "Rectangle", },{ text: "NGon", },]
+        },
+
+        { type: "icon", className: "mdi mdi-buffer", float: "right", },
+
+        { type: "icon", className: "mdi mdi-magnet", float: "right", },
+
+        { type: "icon", className: "mdi mdi-undo-variant", float: "right", },
+
+        { type: "icon", className: "mdi mdi-settings", float: "left", },
+    ],
+    subItems: [
+        {
+            type: "button", className: "mdi mdi-delete", float: "left",
+            show: function () { return app.state.appmode === "edit" },
+        },
+        {
+            type: "button", className: "mdi mdi-select-all", float: "left",
+            show: function () { return app.state.appmode === "edit" },
+        },
+        {
+            type: "button", className: "mdi mdi-unfold-more-horizontal", float: "left",
+            show: function () { return app.state.appmode === "edit" },
+        },
+        {
+            type: "button", className: "mdi mdi-unfold-more-vertical", float: "left",
+            show: function () { return app.state.appmode === "edit" },
+        },
+        {
+            type: "button", className: "", float: "left", text: "Break",
+            show: function () { return app.state.appmode === "edit" },
+        },
+        {
+            type: "button", className: "", float: "left", text: "Weld",
+            show: function () { return app.state.appmode === "edit" },
+        },
+        {
+            type: "button", className: "", float: "left", text: "Connect",
+            show: function () { return app.state.appmode === "edit" },
+        },
+        {
+            type: "button", className: "", float: "left", text: "Join",
+            show: function () { return app.state.appmode === "edit" },
+        },
+        {
+            type: "button", className: "", float: "left", text: "Divide",
+            show: function () { return app.state.appmode === "edit" },
+        },
+    ],
+    
+    getStyle:function(){
+        var str = '',s = app.style.top_menu;
+        str += 'position:fixed;left:0;top:0;width:100%;';
+        str += 'height:' + s.top_menu_size + 'px;';
+        str += 'background:' + s.header_background + ';';
+        return str;
+    },
+    render: function () {
+        $(".top-menu,.sub-menu").remove();
+        var s = app.style;
+        var str = '<div class="top-menu" style="' + this.getStyle() + '">';
+        for (var i = 0; i < this.items.length; i++) {
+            var item = this.items[i];
+            if (item.show && item.show() === false) { continue; }
+            str += this.getItems[item.type](item,"top-menu-item");
+        }
+        str += '</div>';
+        str += this.getSubMenu();
+        $("body").append(str);
+        app.eventHandler(".top-menu-item","mousedown", function () {
+            var item = topMenu.findItemById($(this).attr("data-id"));
+            item.callback(item);
+            topMenu.render();
+        });
+    },
+    getSubMenu:function(){
+        var s = app.style.top_menu;
+        function getStyle() {
+            var str = 'position:fixed;left:0;width:100%;top:' + s.size + 'px;';
+            str += 'background:' + s.header_background + ';';
+            return str;
+        }
+        var str = '';
+        str += '<div class="sub-menu" style="'+getStyle()+'">';
+        for (var i = 0; i < this.subItems.length; i++) {
+            var item = this.subItems[i];
+            if (item.show && item.show() === false) { continue; }
+            str += this.getItems[item.type](item,"sub-menu-item");
+        }
+        str += '</div>';
+        return str;
+
+    },
+    getItems: {
+        icon: function (props,className) {
+            var s = props.style || app.style.top_menu;
+            function getStyle() {
+                var str = '';
+                str += 'float:' + props.float + ';';
+                str += 'width:'+(s.size)+'px;';
+                str += 'height:' + (s.size) + 'px;';
+                str += 'line-height:' + (s.size) + 'px;';
+                str += 'color:'+s.color1+';';
+                str += 'text-align:center;';
+                str += 'border-radius:'+s.borderRadius+'px;';
+                str += 'font-size:' + s.icon_fontSize + 'px;';
+                return str;
+            }
+            var str = '';
+            str += '<div class="'+className+'" style="' + getStyle() + '" data-id="'+props.id+'">';
+            str += '<div class="'+props.className+'"></div>';
+            str += '</div>';
+            return str;
+        },
+        button: function (props,className) {
+            var s = props.style|| app.style.top_menu;
+            function getStyle() {
+                var str = '';
+                str += 'float:' + props.float + ';';
+                str += 'padding:0 '+s.padding+'px;';
+                str += 'height:' + (s.size - (2 * s.vMargin)) + 'px;';
+                str += 'line-height:' + (s.size - (2 * s.vMargin)) + 'px;';
+                str += 'color:' + s.color2 + ';';
+                str += 'margin:' + s.vMargin + 'px ' + s.hMargin + 'px;';
+                str += 'background:' + s.color1 + ';';
+                str += 'border-radius:' + s.borderRadius + 'px;';
+                str += 'font-size:'+s.button_fontSize+'px;';
+                return str;
+            }
+            var str = '';
+            str += '<div class="'+className+'" style="' + getStyle() + '" data-id="' + props.id + '">';
+            str += props.className ?
+                topMenu.getItems.icon({
+                    className: props.className,float:"left",
+                    style: $.extend({}, s, {size: (s.size - (2 * s.vMargin)),color1: s.color2,
+                    })
+                }):'';
+            str += props.text?props.text:'';
+            str += '</div>';
+            return str;
+        },
+        dropdown: function (props,className) {
+            var s = props.style||app.style.top_menu,size = (s.size - (2 * s.vMargin) - (2 * s.item_borderWidth));
+            function getStyle() {
+                var str = '';
+                str += 'float:' + props.float + ';';
+                str += 'padding-left:' + s.padding + 'px;';
+                str += 'padding-right:' + (s.padding/3 - (s.item_borderWidth)) + 'px;';
+                str += 'height:' + size + 'px;';
+                str += 'line-height:' + size + 'px;';
+                str += 'color:' + s.color1 + ';';
+                str += 'margin:' + s.vMargin + 'px ' + s.hMargin + 'px;';
+                str += 'border-radius:' + s.borderRadius + 'px;';
+                str += 'border:'+s.item_borderWidth+'px solid;';
+                str += 'font-size:' + s.button_fontSize + 'px;';
+                return str;
+            }
+            var text = props.options[props.activeIndex].text;
+            var str = '';
+            str += '<div class="'+className+'" style="' + getStyle() + '" data-id="' + props.id + '">';
+            str += props.text;
+            str += topMenu.getItems.button({text: text,float: "right",
+                style: $.extend({},s, {size: size,vMargin: s.vMargin / 3,hMargin: s.hMargin / 3,borderRadius:s.borderRadius/2})
+            });
+            str += '</div>';
+            return str;
+        }
+    }
+};

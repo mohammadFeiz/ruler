@@ -9,7 +9,7 @@
         if (edit[app.editmode].reset !== undefined) { edit[app.editmode].reset(); }
         canvas.redraw();
     },
-    mousedown: function () { this[app.editmode].mousedown(); },
+    mousedown: function () { this[app.state.editmode].mousedown(); },
     mousemove: function () {
         if (this[app.editmode].mousemove === undefined) { return; }
         this[app.editmode].mousemove();
