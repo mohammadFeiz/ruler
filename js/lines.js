@@ -3,7 +3,7 @@
     idGenerator: function () {this.id = (parseInt(this.id) + 1) + "l";},
     setSplineIDS: function (obj) {
         if (this.splineIDS.indexOf(obj.id) === -1) {this.splineIDS.push(obj.id);}
-        var sideLines = lines.getLines(obj);
+        var sideLines = Lines.getLines(obj);
         if (sideLines.start && this.splineIDS.indexOf(sideLines.start.id) === -1) {
             this.splineIDS.push(sideLines.start.id);
             this.setSplineIDS(sideLines.start);
@@ -21,7 +21,7 @@
     },
     selectSpline: function (obj) {
         var list = this.getSplineIDS(obj);
-        for (var i = 0; i < list.length; i++) {this.select(lines.getObjectByID(list[i]));}
+        for (var i = 0; i < list.length; i++) {this.select(Lines.getObjectByID(list[i]));}
     },
     add: function (obj) {
         obj.id = this.id;
@@ -33,50 +33,50 @@
         return Lines.getLast(1);
     },
     remove: function (line,modifySidePoints) {
-        var index = lines.getIndexByID(line.id);
+        var index = Lines.getIndexByID(line.id);
         if(index === false){return false; }
-        var sidePoints = lines.getPoints(line);
+        var sidePoints = Lines.getPoints(line);
         var startPoint = sidePoints.start;
         var endPoint = sidePoints.end;
-        points.removeConnectedLine(startPoint,line.id);
-        points.removeConnectedLine(endPoint,line.id);
+        Points.removeConnectedLine(startPoint, line.id);
+        Points.removeConnectedLine(endPoint, line.id);
         if(modifySidePoints === true){
-            if(startPoint.connectedLines.length === 0){points.remove(startPoint);}
-            if(endPoint.connectedLines.length === 0){points.remove(endPoint);}
+            if (startPoint.connectedLines.length === 0) { Points.remove(startPoint); }
+            if (endPoint.connectedLines.length === 0) { Points.remove(endPoint); }
         }
-        canvas.lines.splice(index, 1);
+        app.state.lines.splice(index, 1);
     },
     select: function (obj) {
-        var length = lines.selected.length;
+        var length = Lines.selected.length;
         for (var i = 0; i < length; i++) {
-            var line = lines.selected[i];
+            var line = Lines.selected[i];
             if (line.id === obj.id) {return;}
         }
-        lines.selected.push(obj);
+        Lines.selected.push(obj);
         obj.color = "red";
         obj.selected = true;
         obj.showDimention = true;
     },
     deselectAll: function () {
-        var length = lines.selected.length;
+        var length = Lines.selected.length;
         for (var i = 0; i < length; i++) {
-            var line = lines.selected[i],layer = layers.getObjectByID(line.layer);
+            var line = Lines.selected[i],layer = layers.getObjectByID(line.layer);
             line.color = layer.color;
             line.selected = false;
             line.showDimention = false;
         }
-        lines.selected = [];
+        Lines.selected = [];
     },
     getIndexByID: function (id) {
-        for (var i = 0; i < canvas.lines.length; i++) {
-            if (canvas.lines[i].id === id) {return i;}
+        for (var i = 0; i < app.state.lines.length; i++) {
+            if (app.state.lines[i].id === id) {return i;}
         }
         return false;
     },
     getObjectByID: function (id) {
-        var index = lines.getIndexByID(id);
+        var index = Lines.getIndexByID(id);
         if (index === false) {return false;}
-        return canvas.lines[index];
+        return canvas.Lines[index];
     },
     getLast: function (n) {
         if (app.state.lines.length < n) {
@@ -85,36 +85,36 @@
         return app.state.lines[app.state.lines.length - n];
     },
     getNextID: function (n) {return (parseInt(this.id) + n - 1) + "l";},
-    findByCoords: function (x, y) {
-        if (x === undefined) {
-            var pos = canvas.getCanvasXY();
-            x = pos.x;
-            y = pos.y;
-        }
-        var layer = layers.getActiveLayer();
-        var lines = canvas.lines;
-        var length = lines.length;
-        for (var t = 1; t < 18; t += 2) {
-            for (var i = 0; i < length; i++) { // به ازای تمامی خطوط
-                var line = lines[i];
-                if (line.layer != layer.id) {continue;}
-                if (line.start.x - line.end.x === 0) { // اگر آن خط عمودی بود
-                    if (x > line.start.x + t || line.start.x - t > x) {continue;} 
-                    if (y < Math.max(line.start.y, line.end.y) && Math.min(line.start.y, line.end.y) < y) {return line;}
-                } else {
-                    var dip = this.getDip(line);
-                    if (1 <= Math.abs(dip)) { 
-                        if (x > (((y - line.start.y) / dip) + line.start.x) + t || (((y - line.start.y) /dip) + line.start.x) - t > x) {continue;} 
-                        if (y < Math.max(line.start.y, line.end.y) && Math.min(line.start.y, line.end.y) <y) {return line;}
-                    } else { 
-                        if (y < ((dip * (x - line.start.x)) + line.start.y) - t || ((dip * (x - line.start.x)) + line.start.y) + t < y) {continue;} 
-                        if (x < Math.max(line.start.x, line.end.x) && Math.min(line.start.x, line.end.x) <x) { return line;}
-                    }
-                }
-            }
-        }
-        return false;
-    },
+    //findByCoords: function (x, y) {
+    //    if (x === undefined) {
+    //        var pos = canvas.getCanvasXY();
+    //        x = pos.x;
+    //        y = pos.y;
+    //    }
+    //    var layer = layers.getActiveLayer();
+    //    var lines = canvas.lines;
+    //    var length = lines.length;
+    //    for (var t = 1; t < 18; t += 2) {
+    //        for (var i = 0; i < length; i++) { // به ازای تمامی خطوط
+    //            var line = lines[i];
+    //            if (line.layer != layer.id) {continue;}
+    //            if (line.start.x - line.end.x === 0) { // اگر آن خط عمودی بود
+    //                if (x > line.start.x + t || line.start.x - t > x) {continue;} 
+    //                if (y < Math.max(line.start.y, line.end.y) && Math.min(line.start.y, line.end.y) < y) {return line;}
+    //            } else {
+    //                var dip = this.getDip(line);
+    //                if (1 <= Math.abs(dip)) { 
+    //                    if (x > (((y - line.start.y) / dip) + line.start.x) + t || (((y - line.start.y) /dip) + line.start.x) - t > x) {continue;} 
+    //                    if (y < Math.max(line.start.y, line.end.y) && Math.min(line.start.y, line.end.y) <y) {return line;}
+    //                } else { 
+    //                    if (y < ((dip * (x - line.start.x)) + line.start.y) - t || ((dip * (x - line.start.x)) + line.start.y) + t < y) {continue;} 
+    //                    if (x < Math.max(line.start.x, line.end.x) && Math.min(line.start.x, line.end.x) <x) { return line;}
+    //                }
+    //            }
+    //        }
+    //    }
+    //    return false;
+    //},
     getDip: function (obj) {
         if (obj.start.x === obj.end.x) { return "infinity" }
         else { return (obj.start.y - obj.end.y) / (obj.start.x - obj.end.x);}
@@ -137,7 +137,7 @@
         return radian;
     },
     getAngle:function(obj){
-        var length = lines.getLength(obj);
+        var length = Lines.getLength(obj);
         var cos = (obj.end.x - obj.start.x) / length;
         var sin = (obj.end.y - obj.start.y) / length;
         var angle = Math.acos(cos) / Math.PI * 180;
@@ -162,10 +162,10 @@
     },
     extend: function (obj, side, value) {
         if (side === "end") {value *= -1;}
-        var l = lines.getLength(obj);
+        var l = Lines.getLength(obj);
         var dx = value * (obj.start.x - obj.end.x) / l;
         var dy = value * (obj.start.y - obj.end.y) / l;
-        points.moveBy(points.getObjectByID(obj[side].id), dx, dy);
+        Points.moveBy(Points.getObjectByID(obj[side].id), dx, dy);
     },
     join: function (f, s) {
         ///////validation
@@ -173,42 +173,42 @@
             var A = new Alert({ buttons: [{ title: "OK" }, ], template: "Can not Join Lines With Themselves!!!", title: "Join Lines Warning." });
             return false;
         }
-        if (lines.isConnect(f, s)) {
+        if (Lines.isConnect(f, s)) {
             var A = new Alert({buttons: [{title: "OK"}, ],template: "Can not Join Connected Lines!!!",title: "Join Lines Warning."});
             return false;
         }
-        var meet = lines.getMeet(f, s);
+        var meet = Lines.getMeet(f, s);
         if (meet === false) {
             var A = new Alert({buttons: [{title: "OK"}, ],template: "Can not Join Parallel Lines!!!",title: "Join Lines Warning."});
             return false;
         }
         
         
-        var fPoints = lines.getPoints(f);
-        if (lines.getLength({start: fPoints.start,end: meet}) < lines.getLength({start: fPoints.end,end: meet})) {var fMajor = fPoints.start;var fMinor = fPoints.end;} 
+        var fPoints = Lines.getPoints(f);
+        if (Lines.getLength({start: fPoints.start,end: meet}) < Lines.getLength({start: fPoints.end,end: meet})) {var fMajor = fPoints.start;var fMinor = fPoints.end;} 
         else {var fMajor = fPoints.end; var fMinor = fPoints.start;}
         if (fPoints.start.connectedLines.length > 1 && fPoints.end.connectedLines.length === 1) {fMajor = fPoints.end; fMinor = fPoints.start;} 
         else if (fPoints.end.connectedLines.length > 1 && fPoints.start.connectedLines.length === 1) {fMajor = fPoints.start; fMinor = fPoints.end;}
         
-        var sPoints = lines.getPoints(s);
-        if (lines.getLength({start: sPoints.start,end: meet}) < lines.getLength({start: sPoints.end,end: meet})) {var sMajor = sPoints.start;var sMinor = sPoints.end;} 
+        var sPoints = Lines.getPoints(s);
+        if (Lines.getLength({start: sPoints.start,end: meet}) < Lines.getLength({start: sPoints.end,end: meet})) {var sMajor = sPoints.start;var sMinor = sPoints.end;} 
         else {var sMajor = sPoints.end;var sMinor = sPoints.start;}
         if (sPoints.start.connectedLines.length > 1 && sPoints.end.connectedLines.length === 1) {sMajor = sPoints.end;sMinor = sPoints.start;} 
         else if (sPoints.end.connectedLines.length > 1 && sPoints.start.connectedLines.length === 1) {sMajor = sPoints.start;sMinor = sPoints.end;}
         
         if(fMajor.connectedLines.length === 1){
-            points.moveTo(fMajor,meet.x,meet.y);
+            Points.moveTo(fMajor, meet.x, meet.y);
             var meetPoint = fMajor;
         }
         else{
-            var meetPoint = points.add({x: meet.x,y: meet.y,});
-            points.connect(fMajor,meetPoint);    
+            var meetPoint = Points.add({ x: meet.x, y: meet.y, });
+            Points.connect(fMajor, meetPoint);
         }
         if (sMajor.connectedLines.length === 1) {
-            points.moveTo(sMajor, meet.x, meet.y);
-            points.merge(meetPoint, sMajor, meet);
+            Points.moveTo(sMajor, meet.x, meet.y);
+            Points.merge(meetPoint, sMajor, meet);
         }
-        else { points.connect(meetPoint, sMajor); }
+        else { Points.connect(meetPoint, sMajor); }
 
         return true;
     },
@@ -226,10 +226,10 @@
         return false;
     },
     divide: function (obj, count) {
-        var index = lines.getIndexByID(obj.id);
-        canvas.lines.splice(index, 1);
-        var startPoint = points.getObjectByID(obj.start.id);
-        var endPoint = points.getObjectByID(obj.end.id);
+        var index = Lines.getIndexByID(obj.id);
+        app.state.lines.splice(index, 1);
+        var startPoint = Points.getObjectByID(obj.start.id);
+        var endPoint = Points.getObjectByID(obj.end.id);
         var deltaX = obj.end.x - obj.start.x,deltaY = obj.end.y - obj.start.y;
         var dX = deltaX / count,dY = deltaY / count;
         for (var i = 0; i < count; i++) {
@@ -240,8 +240,8 @@
                         break;
                     }
                 }
-                points.add({x: startPoint.x + dX,y: startPoint.y + dY});
-                points.connect(startPoint, points.getLast(1));
+                Points.add({ x: startPoint.x + dX, y: startPoint.y + dY });
+                Points.connect(startPoint, Points.getLast(1));
             } else if (i === count - 1) {
                 for (var j = 0; j < endPoint.connectedLines.length; j++) {
                     if (endPoint.connectedLines[j].id === obj.id) {
@@ -249,15 +249,15 @@
                         break;
                     }
                 }
-                points.connect(points.getLast(1), endPoint);
+                Points.connect(Points.getLast(1), endPoint);
             } else {
-                points.add({x: startPoint.x + ((i + 1) * dX),y: startPoint.y + ((i + 1) * dY)});
-                points.connect(points.getLast(2), points.getLast(1));
+                Points.add({ x: startPoint.x + ((i + 1) * dX), y: startPoint.y + ((i + 1) * dY) });
+                Points.connect(Points.getLast(2), Points.getLast(1));
             }
         }
     },
     getPrependicularPoint: function (line, point) {
-        var dip = lines.getDip(line);
+        var dip = Lines.getDip(line);
         if (dip === 0) {
             var y = line.start.y,x = point.x;
         } else if (dip === "infinity") {
@@ -269,7 +269,7 @@
         return {x: x,y: y};
     },
     getPrependicularLine: function (line, point) {
-        var dip = lines.getDip(line);
+        var dip = Lines.getDip(line);
         if (dip === 0) { var y = line.start.y, x = point.x; }
         else if (dip === "infinity") { var y = point.y, x = line.start.x; }
         else {
@@ -279,69 +279,69 @@
         return {start: {x: x,y: y},end: {x: point.x,y: point.y}};
     },
     getDistance: function (line, point) {
-        var line = lines.getPrependicularLine(line, point);
-        return lines.getLength(line);
+        var line = Lines.getPrependicularLine(line, point);
+        return Lines.getLength(line);
     },
     getXByY: function (line, y, dip) {
-        dip = dip || lines.getDip(line);
+        dip = dip || Lines.getDip(line);
         if (dip === "infinity") { return line.start.x;}
         if (dip === 0) {return false;}
         return (y + (dip * line.start.x) - line.start.y) / dip;
     },
     getYByX: function (line, x, dip) {
-        dip = dip || lines.getDip(line);
+        dip = dip || Lines.getDip(line);
         if (dip === "infinity") {return false};
         return (dip * x) - (dip * line.start.x) + line.start.y;
     },
-    getRadianWidth: function (f, s) {return Math.abs(lines.getRadian(s) - lines.getRadian(f));},
+    getRadianWidth: function (f, s) {return Math.abs(Lines.getRadian(s) - Lines.getRadian(f));},
     getPoints: function (line) {
-        var start = points.getObjectByID(line.start.id),end = points.getObjectByID(line.end.id);
+        var start = Points.getObjectByID(line.start.id), end = Points.getObjectByID(line.end.id);
         return {start: start,end: end};
     },
-    getPointBySide:function(line,side){return points.getObjectByID(line[side].id);},
+    getPointBySide: function (line, side) { return Points.getObjectByID(line[side].id); },
     getLines: function (obj) {
         var start = false,end = false,startSide = false,endSide = false;
-        var startPoint = points.getObjectByID(obj.start.id);
-        var endPoint = points.getObjectByID(obj.end.id);
+        var startPoint = Points.getObjectByID(obj.start.id);
+        var endPoint = Points.getObjectByID(obj.end.id);
         for (var i = 0; i < startPoint.connectedLines.length; i++) {
             var line = startPoint.connectedLines[i];
             if (line.id === obj.id) {continue;}
-            start = lines.getObjectByID(line.id);
+            start = Lines.getObjectByID(line.id);
             startSide = line.side;
         }
         for (var i = 0; i < endPoint.connectedLines.length; i++) {
             var line = endPoint.connectedLines[i];
             if (line.id === obj.id) {continue;}
-            end = lines.getObjectByID(line.id);
+            end = Lines.getObjectByID(line.id);
             endSide = line.side;
         }
         return {start: start,end: end,startSide: startSide,endSide: endSide,};
     },
     getPointsOfSelected: function () {
         var list = [],ids = [];
-        var length = lines.selected.length;
+        var length = Lines.selected.length;
         for (var i = 0; i < length; i++) {
-            var line = lines.selected[i],start = line.start.id,end = line.end.id;
+            var line = Lines.selected[i],start = line.start.id,end = line.end.id;
             if (ids.indexOf(start) === -1) {
-                list.push(points.getObjectByID(start));
+                list.push(Points.getObjectByID(start));
                 ids.push(start);
             }
             if (ids.indexOf(end) === -1) {
-                list.push(points.getObjectByID(end));
+                list.push(Points.getObjectByID(end));
                 ids.push(end);
             }
         }
         return list;
     },
     getCenterOfSelected: function () {
-        var length = lines.selected.length;
+        var length = Lines.selected.length;
         if (length === 0) {return false;}
-        var minX = lines.selected[0].start.x,
-            maxX = lines.selected[0].start.x,
-            minY = lines.selected[0].start.y,
-            maxY = lines.selected[0].start.y;
+        var minX = Lines.selected[0].start.x,
+            maxX = Lines.selected[0].start.x,
+            minY = Lines.selected[0].start.y,
+            maxY = Lines.selected[0].start.y;
         for (var i = 0; i < length; i++) {
-            var line = lines.selected[i];
+            var line = Lines.selected[i];
             minX = Math.min(minX, line.start.x, line.end.x);
             minY = Math.min(minY, line.start.y, line.end.y);
             maxX = Math.max(maxX, line.start.x, line.end.x);
@@ -352,31 +352,31 @@
     getStepedLine: function (obj) {
         var otherSide = (obj.side === "start") ? "end" : "start";
         var x2 = obj.line[obj.side].x, y2 = obj.line[obj.side].y, x1 = obj.line[otherSide].x, y1 = obj.line[otherSide].y;
-        if (obj.dip === undefined) { obj.dip = lines.getDip(obj.line); }
-        var sin = Math.sin(lines.getRadian(obj.line) * Math.PI / 180);
-        var cos = Math.cos(lines.getRadian(obj.line) * Math.PI / 180);
+        if (obj.dip === undefined) { obj.dip = Lines.getDip(obj.line); }
+        var sin = Math.sin(Lines.getRadian(obj.line) * Math.PI / 180);
+        var cos = Math.cos(Lines.getRadian(obj.line) * Math.PI / 180);
         if (obj.dip === "infinity") {
             var dy = y2 - y1;
             dy = Math.round(dy / obj.step) * obj.step;
             y2 = y1 + dy;
         }
         else if (Math.abs(obj.dip) <= 1) {
-            var l = lines.getLength({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 } });
+            var l = Lines.getLength({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 } });
             l = Math.round(l / obj.step) * obj.step;
             var dx = l * cos;
             if (x2 > x1) { var sign = 1 } else { var sign = -1; }
             if (obj.line.start.x > obj.line.end.x) { var sign2 = -1 } else { var sign2 = 1; }
             x2 = x1 + (dx * sign * sign2);
-            y2 = lines.getYByX(obj.line, x2, obj.dip);
+            y2 = Lines.getYByX(obj.line, x2, obj.dip);
         }
         else {
-            var l = lines.getLength({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 } });
+            var l = Lines.getLength({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 } });
             l = Math.round(l / obj.step) * obj.step;
             var dy = l * sin;
             if (y2 > y1) { var sign = 1 } else { var sign = -1; }
             if (obj.line.start.y > obj.line.end.y) { var sign2 = 1 } else { var sign2 = -1; }
             y2 = y1 + (dy * sign * sign2);
-            x2 = lines.getXByY(obj.line, y2, obj.dip);
+            x2 = Lines.getXByY(obj.line, y2, obj.dip);
         }
         var newLine = {};
         newLine[obj.side] = { x: x2, y: y2 };
@@ -384,7 +384,7 @@
         return newLine;
     },
     getDelta: function (line,measure) {
-        var angle = lines.getRadian(line);
+        var angle = Lines.getRadian(line);
         return { x: Math.abs(measure * Math.cos(angle * Math.PI / 180)), y: Math.abs(measure * Math.sin(angle * Math.PI / 180)) };
     }
 }

@@ -13,7 +13,7 @@ var color = "#1ad25f";
 var zoom_slider_color = "#fff";
 var zoom_slider_thickness = 1;
 var zoom_slider_fontsize = 11;
-var back_drop_background = 'rgba(0,0,0,0.5)';
+var back_drop_background = 'rgba(0,0,0,0)';
 var transition = "transition:0.3s;";
 var slider_background = 'background-image: url(images/slider.jpg);background-size: cover;';
 function createStyle() {

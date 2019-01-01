@@ -5,43 +5,43 @@ var Points = {
     },
     selected: [],
     select: function (obj) {
-        var length = points.selected.length;
+        var length = Points.selected.length;
         for (var i = 0; i < length; i++) {
-            var point = points.selected[i];
+            var point = Points.selected[i];
             if (point.id === obj.id) {
                 return;
             }
         }
-        points.selected.push(obj);
+        Points.selected.push(obj);
         obj.color = "red";
         obj.selected = true;
     },
     deselectByID:function(id){
-        for (var i = 0; i < points.selected.length; i++) {
-            var selected = points.selected[i];
+        for (var i = 0; i < Points.selected.length; i++) {
+            var selected = Points.selected[i];
             if (selected.id === id) {
                 selected.selected = false;
-                points.selected.splice(i, 1);
+                Points.selected.splice(i, 1);
             }
         }
     },
     deselectAll: function () {
-        var length = points.selected.length;
+        var length = Points.selected.length;
         for (var i = 0; i < length; i++) {
-            var point = points.selected[i];
+            var point = Points.selected[i];
             var layer = layers.getObjectByID(point.layer);
             point.color = layer.color;
             point.selected = false;
         }
-        points.selected = [];
+        Points.selected = [];
     },
     updateSelected:function(){
-        var length = points.selected.length;
+        var length = Points.selected.length;
         for (var i = 0; i < length; i++) {
-            var selected = points.selected[i];
+            var selected = Points.selected[i];
             if (!selected) { continue;}
-            if (!points.getObjectByID(selected.id)) {
-                points.selected.splice(i, 1);
+            if (!Points.getObjectByID(selected.id)) {
+                Points.selected.splice(i, 1);
                 length--;
                 i--;
 
@@ -61,63 +61,63 @@ var Points = {
         if (point.connectedLines.length < 2) { return; }
         var newPoints = [];
         for (var i = 0; i < point.connectedLines.length; i++) {
-            var newPoint = points.add({ x: selected.x, y: selected.y });
+            var newPoint = Points.add({ x: selected.x, y: selected.y });
             var cl = selected.connectedLines[i];
             var line = lines.getObjectByID(cl.id);
             line[cl.side].id = newPoint.id;
             newPoint.connectedLines.push({ id: cl.id, side: cl.side });
             newPoints.push(newPoint);
         }
-        canvas.points.splice(points.getIndexByID(point.id), 1);
+        app.state.points.splice(Points.getIndexByID(point.id), 1);
         return newPoints;
     },
     getConnectedPoints:function(point){
         var list = [];
         for(var i = 0; i < point.connectedLines.length; i++){
             var connectedLine = point.connectedLines[i];
-            var line = lines.getObjectByID(connectedLine.id);
+            var line = Lines.getObjectByID(connectedLine.id);
             var side = connectedLine.side;
             var otherSide = (side === "start")?"end":"start";
-            list.push(lines.getPointBySide(line,otherSide));
+            list.push(Lines.getPointBySide(line, otherSide));
         }
         return list;
     },
     remove: function (point,modifySidePoints) {
         if (point === false) {return;}
-        var index = points.getIndexByID(point.id);
+        var index = Points.getIndexByID(point.id);
         if (index === false) {
             return;
         }
-        if(modifySidePoints === true){var connectedPoints = points.getConnectedPoints(point);}
+        if (modifySidePoints === true) { var connectedPoints = Points.getConnectedPoints(point); }
         while(point.connectedLines.length > 0){
-            lines.remove(lines.getObjectByID(point.connectedLines[0].id));
+            Lines.remove(Lines.getObjectByID(point.connectedLines[0].id));
         }
         
-        canvas.points.splice(index, 1);
+        app.state.points.splice(index, 1);
         if(modifySidePoints === true){
             if(connectedPoints.length === 2){
-                points.connect(connectedPoints[0],connectedPoints[1]);
+                Points.connect(connectedPoints[0], connectedPoints[1]);
             }
             else if(connectedPoints.length === 1 && connectedPoints[0].connectedLines.length === 0){
-                points.remove(connectedPoints[0]);
+                Points.remove(connectedPoints[0]);
             }
             
         }
     },
     getIndexByID: function (id) {
-        for (var i = 0; i < canvas.points.length; i++) {
-            if (canvas.points[i].id === id) {
+        for (var i = 0; i < app.state.points.length; i++) {
+            if (app.state.points[i].id === id) {
                 return i;
             }
         }
         return false;
     },
     getObjectByID: function (id) {
-        var index = points.getIndexByID(id);
+        var index = Points.getIndexByID(id);
         if (index === false) {
             return false;
         }
-        return canvas.points[index];
+        return app.state.points[index];
     },
     getLast: function (n) {
         if (app.state.points.length < n) {
@@ -133,20 +133,20 @@ var Points = {
         obj.y = y;
         for (var i = 0; i < obj.connectedLines.length; i++) {
             var connectedLine = obj.connectedLines[i];
-            var line = lines.getObjectByID(connectedLine.id);
+            var line = Lines.getObjectByID(connectedLine.id);
             line[connectedLine.side].x = x;
             line[connectedLine.side].y = y;
         }
     },
     moveBy: function (obj, x, y) {
-        points.moveTo(obj, obj.x + x, obj.y + y);
+        Points.moveTo(obj, obj.x + x, obj.y + y);
     },
     getCommonLine: function (f, s) {
         for (var i = 0; i < f.connectedLines.length; i++) {
             for (var j = 0; j < s.connectedLines.length; j++) {
                 var fcl = f.connectedLines[i];
                 var scl = s.connectedLines[j];
-                if (fcl.id === scl.id) { return lines.getObjectByID(fcl.id); }
+                if (fcl.id === scl.id) { return Lines.getObjectByID(fcl.id); }
             }
         }
         return false;
@@ -170,12 +170,12 @@ var Points = {
         for(var i = 0; i < point.connectedLines.length; i++){
             var connectedLine = point.connectedLines[i];
             if(connectedLine.id === id){continue;}
-            return lines.getObjectByID(connectedLine.id);
+            return Lines.getObjectByID(connectedLine.id);
         }
         return false;
     },
     getCoordsByRotate: function (point, radian, center) {
-        var length = lines.getLength({
+        var length = Lines.getLength({
             start: point,
             end: center
         });
@@ -197,11 +197,11 @@ var Points = {
         };
     },
     merge: function (f,s, coords) {
-        if(points.isConnect(f,s)){
-            return points.mergeConnected(f,s,coords);
+        if (Points.isConnect(f, s)) {
+            return Points.mergeConnected(f, s, coords);
         }
         else if(f.connectedLines.length === 1 && s.connectedLines.length === 1){
-            return points.mergeOpen(f, s, coords);
+            return Points.mergeOpen(f, s, coords);
         }
         else {
             return false;
@@ -209,9 +209,9 @@ var Points = {
         
     },
     mergeConnected:function(f,s, coords){
-        coords = coords || points.getCenterOfList([f,s]);
-        var commonLine = points.getCommonLine(f,s);
-        lines.remove(commonLine);
+        coords = coords || Points.getCenterOfList([f, s]);
+        var commonLine = Points.getCommonLine(f, s);
+        Lines.remove(commonLine);
         var connectedLines = [];
         for (var i = 0; i < f.connectedLines.length; i++){
             connectedLines.push(f.connectedLines[i]);
@@ -219,23 +219,23 @@ var Points = {
         for (var i = 0; i < s.connectedLines.length; i++){
             connectedLines.push(s.connectedLines[i]);
         }
-        points.moveTo(f,coords.x,coords.y);
-        points.moveTo(s,coords.x,coords.y);
-        var point = points.add({
+        Points.moveTo(f, coords.x, coords.y);
+        Points.moveTo(s, coords.x, coords.y);
+        var point = Points.add({
             x:coords.x,y:coords.y,
             connectedLines:connectedLines,
         });
         for(var i = 0; i < point.connectedLines.length; i++){
             var cl = point.connectedLines[i];
-            var line = lines.getObjectByID(cl.id);
+            var line = Lines.getObjectByID(cl.id);
             line[cl.side].id  = point.id;
         }
-        canvas.points.splice(points.getIndexByID(f.id),1);
-        canvas.points.splice(points.getIndexByID(s.id), 1);
+        app.state.points.splice(Points.getIndexByID(f.id), 1);
+        app.state.points.splice(Points.getIndexByID(s.id), 1);
         return point;
     },
     mergeOpen:function(f,s,coords){
-        coords = coords || points.getCenterOfList([f, s]);
+        coords = coords || Points.getCenterOfList([f, s]);
         var connectedLines = [];
         for (var i = 0; i < f.connectedLines.length; i++) {
             connectedLines.push(f.connectedLines[i]);
@@ -243,19 +243,19 @@ var Points = {
         for (var i = 0; i < s.connectedLines.length; i++) {
             connectedLines.push(s.connectedLines[i]);
         }
-        points.moveTo(f, coords.x, coords.y);
-        points.moveTo(s, coords.x, coords.y);
-        var point = points.add({
+        Points.moveTo(f, coords.x, coords.y);
+        Points.moveTo(s, coords.x, coords.y);
+        var point = Points.add({
             x: coords.x, y: coords.y,
             connectedLines: connectedLines,
         });
         for (var i = 0; i < point.connectedLines.length; i++) {
             var cl = point.connectedLines[i];
-            var line = lines.getObjectByID(cl.id);
+            var line = Lines.getObjectByID(cl.id);
             line[cl.side].id = point.id;
         }
-        canvas.points.splice(points.getIndexByID(f.id), 1);
-        canvas.points.splice(points.getIndexByID(s.id), 1);
+        app.state.points.splice(Points.getIndexByID(f.id), 1);
+        app.state.points.splice(Points.getIndexByID(s.id), 1);
         return point;
     },
     isConnect: function (f, s) {
@@ -278,44 +278,44 @@ var Points = {
         if (f.id === s.id) {
             return false;
         }
-        if (points.isConnect(f, s)) {
+        if (Points.isConnect(f, s)) {
             return false;
         }
         if (f.connectedLines.length < 2 && f.layer === s.layer) {
             f.connectedLines.push({
-                id: lines.getNextID(1),
+                id: Lines.getNextID(1),
                 side: "start"
             });
             var lineStartID = f.id;
         } else {
-            var lineStartID = points.getNextID(1);
-            points.add({
+            var lineStartID = Points.getNextID(1);
+            Points.add({
                 x: f.x,
                 y: f.y,
                 connectedLines: [{
-                    id: lines.getNextID(1),
+                    id: Lines.getNextID(1),
                     side: "start"
                 }]
             });
         }
         if (s.connectedLines.length < 2 && f.layer === s.layer) {
             s.connectedLines.push({
-                id: lines.getNextID(1),
+                id: Lines.getNextID(1),
                 side: "end"
             });
             var lineEndID = s.id;
         } else {
-            var lineEndID = points.getNextID(1);
-            points.add({
+            var lineEndID = Points.getNextID(1);
+            Points.add({
                 x: s.x,
                 y: s.y,
                 connectedLines: [{
-                    id: lines.getNextID(1),
+                    id: Lines.getNextID(1),
                     side: "end"
                 }]
             });
         }
-        lines.add({
+        Lines.add({
             start: {
                 x: f.x,
                 y: f.y,
@@ -329,16 +329,16 @@ var Points = {
         });
     },
     getCenterOfSelected: function () {
-        var length = points.selected.length;
+        var length = Points.selected.length;
         if (length === 0) {
             return false;
         }
-        var minX = points.selected[0].x,
-            maxX = points.selected[0].x,
-            minY = points.selected[0].y,
-            maxY = points.selected[0].y;
+        var minX = Points.selected[0].x,
+            maxX = Points.selected[0].x,
+            minY = Points.selected[0].y,
+            maxY = Points.selected[0].y;
         for (var i = 0; i < length; i++) {
-            var point = points.selected[i];
+            var point = Points.selected[i];
             minX = Math.min(minX, point.x);
             minY = Math.min(minY, point.y);
             maxX = Math.max(maxX, point.x);

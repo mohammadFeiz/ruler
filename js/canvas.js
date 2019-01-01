@@ -174,14 +174,14 @@ function Canvas(config) {
             ctx.beginPath();
             ctx.rect(obj.x - obj.width / 2, obj.y - obj.height / 2, obj.width, obj.height);
             if (obj.mode === "fill") {
-                canvas.ctx.fillStyle = obj.color || "#000";
-                canvas.ctx.fill();
+                ctx.fillStyle = obj.color || "#000";
+                ctx.fill();
             } else {
                 ctx.lineWidth = (obj.lineWidth ? obj.lineWidth : 1) / this.zoom;
                 ctx.strokeStyle = obj.color;
                 ctx.stroke();
             }
-            canvas.ctx.closePath();
+            ctx.closePath();
         },
 
         setZoom: function (zoom) {
@@ -231,18 +231,20 @@ function Canvas(config) {
     return {
         clear: a.clear.bind(a),
         drawLine: a.drawLine.bind(a),
+        drawArc: a.drawArc.bind(a),
+        drawRectangle: a.drawRectangle.bind(a),
         setScreenTo: a.setScreenTo.bind(a),
         setScreenBy: a.setScreenBy.bind(a),
         drawText: a.drawText.bind(a),
         getMousePosition: a.getMousePosition.bind(a),
         getScreenPosition: a.getScreenPosition.bind(a),
-        drawArc: a.drawArc.bind(a),
         canvasToClient: a.canvasToClient.bind(a),
         clientToCanvas:a.clientToCanvas.bind(a),
         getSnapedCoords: a.getSnapedCoords.bind(a),
         getZoom: a.getZoom.bind(a),
         getWidth: a.getWidth.bind(a),
         getHeight: a.getHeight.bind(a),
-        getIsDown:a.getIsDown.bind(a),
+        getIsDown: a.getIsDown.bind(a),
+        
     };
 }
