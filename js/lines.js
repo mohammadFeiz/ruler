@@ -26,11 +26,11 @@
     add: function (obj) {
         obj.id = this.id;
         obj.show = obj.show || true;
-        obj.layer = obj.leyer || layers.getActiveLayer().id;
-        obj.color = obj.color || layers.getActiveLayer().color;
-        canvas.lines.push(obj);
+        //obj.layer = obj.leyer || layers.getActiveLayer().id;
+        //obj.color = obj.color || layers.getActiveLayer().color;
+        app.state.lines.push(obj);
         this.idGenerator();
-        return lines.getLast(1);
+        return Lines.getLast(1);
     },
     remove: function (line,modifySidePoints) {
         var index = lines.getIndexByID(line.id);
@@ -79,11 +79,10 @@
         return canvas.lines[index];
     },
     getLast: function (n) {
-        if (canvas.lines.length < n) {
+        if (app.state.lines.length < n) {
             throw new("error 1005");
-            return false;
         }
-        return canvas.lines[canvas.lines.length - n];
+        return app.state.lines[app.state.lines.length - n];
     },
     getNextID: function (n) {return (parseInt(this.id) + n - 1) + "l";},
     findByCoords: function (x, y) {

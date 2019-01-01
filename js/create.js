@@ -141,8 +141,23 @@ var create = {
     },
     save: function () {
         var o = this.object, points = o.getPoints(), lines = o.getLines();
-        for (var i = 0; i < points.length; i++) { app.state.points.push(points[i]); }
-        for (var i = 0; i < lines.length; i++) { app.state.lines.push(lines[i]); }
+        var addedPoints = [] , addedLines = [];
+        for (var i = 0; i < points.length; i++) { 
+            var addedPoint = Points.add(points[i]); addedPoints.push(addedPoint);
+            if(addedLines[i - 1]){
+                addedLines[i - 1].end.id = addedPoint.id;
+                addedPoint.connectedLines.push({side:"end",id:addedLines[i - 1].id});
+            }
+            if(lines[i]){
+                var addedLine = Lines.add(lines[i]); addedLines.push(addedLine);
+                addedPoint.connectedLines.push({side:"start",id:addedLine.id});
+                addedLine.start.id = addedPoint.id;
+                if(i === points.length - 1){
+                    addedLine.end.id = addedPoints[0].id;
+                    addedPoints[0].connectedLines.push({side:"end",id:addedLine.id});
+                }
+            }
+        }
     },
     getPoints: {
         polyline: function () {

@@ -1,4 +1,4 @@
-var points = {
+var Points = {
     id: "1p",
     idGenerator: function () {
         this.id = (parseInt(this.id) + 1) + "p";
@@ -52,10 +52,10 @@ var points = {
         obj.id = this.id;
         obj.connectedLines = obj.connectedLines || [];
         obj.show = obj.show || true;
-        obj.layer = obj.leyer || layers.getActiveLayer().id;
-        canvas.points.push(obj);
+        //obj.layer = obj.leyer || layers.getActiveLayer().id;
+        app.state.points.push(obj);
         this.idGenerator();
-        return points.getLast(1);
+        return Points.getLast(1);
     },
     breakPoint:function(point){
         if (point.connectedLines.length < 2) { return; }
@@ -120,11 +120,10 @@ var points = {
         return canvas.points[index];
     },
     getLast: function (n) {
-        if (canvas.points.length < n) {
+        if (app.state.points.length < n) {
             throw new ("error 1004");
-            return false;
         }
-        return canvas.points[canvas.points.length - n];
+        return app.state.points[app.state.points.length - n];
     },
     getNextID: function (n) {
         return (parseInt(this.id) + n - 1) + "p";
