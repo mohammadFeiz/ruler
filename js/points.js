@@ -52,7 +52,7 @@ var Points = {
         obj.id = this.id;
         obj.connectedLines = obj.connectedLines || [];
         obj.show = obj.show || true;
-        //obj.layer = obj.leyer || layers.getActiveLayer().id;
+        obj.layer = obj.leyer || layers.getActive().id;
         app.state.points.push(obj);
         this.idGenerator();
         return Points.getLast(1);

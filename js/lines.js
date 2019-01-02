@@ -386,5 +386,14 @@
     getDelta: function (line,measure) {
         var angle = Lines.getRadian(line);
         return { x: Math.abs(measure * Math.cos(angle * Math.PI / 180)), y: Math.abs(measure * Math.sin(angle * Math.PI / 180)) };
+    },
+    haveInnerMeet:function(a,b){
+        var meet = Lines.getMeet(a,b);
+        if(a.start.x <= a.end.x){var minx = a.start.x,maxx = a.end.x;}
+        else{var maxx = a.start.x,minx = a.end.x;}
+        if(a.start.y <= a.end.y){var miny = a.start.y,maxy = a.end.y;}
+        else{var maxy = a.start.y,miny = a.end.y;}
+        if(meet.x<minx || meet.x > maxx || meet.y > maxy || meet.y < miny){return false;}
+        return true;
     }
 }

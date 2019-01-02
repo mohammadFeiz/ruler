@@ -58,12 +58,12 @@ var layers = {
         layers.active(id);
     },
     rename: function (title) {
-        layers.getActiveLayer().title = title;
+        layers.getActive().title = title;
         layers.update();
     },
     remove: function (id) {
         if (layers.model.length < 2) { return false; }
-        var id = layers.getActiveLayer().id;
+        var id = layers.getActive().id;
         for (var i = 0; i < canvas.lines.length; i++) {
             var line = canvas.lines[i];
             if (!line) { continue; }
@@ -160,7 +160,7 @@ var layers = {
         }
         layers.activeIndex = null;
     },
-    getActiveLayer: function () {
+    getActive: function () {
         return layers.model[layers.activeIndex];
     },   
     getObjectByID: function (id) {
@@ -206,7 +206,7 @@ var layers = {
                 });
                 layers.eventHandler("#color-palette .color-palette-item", "mousedown", function (e) {
                     var color = $(e.currentTarget).attr("data-color");
-                    var activeLayer = layers.getActiveLayer();
+                    var activeLayer = layers.getActive();
                     activeLayer.color = color;
                     layers.update();
                     for (var i = 0; i < canvas.lines.length; i++) {
@@ -220,7 +220,7 @@ var layers = {
         },
         {
             id: "layer-rename", iconClass: "mdi mdi-square-edit-outline", callback: function () {
-                var title = layers.getActiveLayer().title;
+                var title = layers.getActive().title;
                 var A = new Alert({
                     buttons: [
                         {
@@ -241,7 +241,7 @@ var layers = {
         },
         {
             id: "layer-remove", iconClass: "mdi mdi-delete", callback: function () {
-                var id = layers.getActiveLayer().id;
+                var id = layers.getActive().id;
                 if (layers.model.length < 2) {
                     var A = new Alert({
                         buttons: [{ title: "close", subscribe: function () { } }],
@@ -252,7 +252,7 @@ var layers = {
                 }
                 var A = new Alert({
                     buttons: [
-                        { title: "yes", subscribe: function () { layers.remove(layers.getActiveLayer().id)} },
+                        { title: "yes", subscribe: function () { layers.remove(layers.getActive().id)} },
                         { title: "cansel" }
                     ],
                     template: "Do You Want To Delete Selected Layer?",

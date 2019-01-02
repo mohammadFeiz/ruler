@@ -32,6 +32,7 @@
     return a;
 }
 var create = {
+    drawing:false,
     firstPoint: true,
     ngonSides: 6,
     ortho: true,
@@ -40,8 +41,9 @@ var create = {
         app.eventHandler("window", "mouseup", $.proxy(this.mouseup, this));
         var mode = app.state.createmode, coords = app.canvas.getMousePosition(), close = ["rectangle", "ngon"].indexOf(mode) !== -1;
         if (this.firstPoint) {
-            this.object = new spline({ start: coords, color: "#fff", mode: mode, sides: this.ngonSides, ortho: this.ortho, close: close }, this.getPoints[mode]);
+            this.object = new spline({ start: coords, color: layers.getActive().color, mode: mode, sides: this.ngonSides, ortho: this.ortho, close: close }, this.getPoints[mode]);
             this.firstPoint = false;
+            this.drawing=true;
         } else {
             this.object.addPoint(coords);
             if (close) { this.firstPoint = true; }
@@ -140,6 +142,7 @@ var create = {
         });
     },
     save: function () {
+        this.drawing=false;
         var o = this.object, points = o.getPoints(), lines = o.getLines();
         var addedPoints = [] , addedLines = [];
         for (var i = 0; i < points.length; i++) { 

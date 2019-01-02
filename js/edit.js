@@ -20,97 +20,42 @@
     drawSelectRect: function () {
         edit.selectRect.end = app.canvas.getMousePosition();
         var sr = edit.selectRect;
-        var x = Math.min(sr.start.x, sr.end.x);
-        var y = Math.min(sr.start.y, sr.end.y);
+        var x = app.getMin(sr.start.x, sr.end.x);
+        var y = app.getMin(sr.start.y, sr.end.y);
         var width = Math.abs(sr.start.x - sr.end.x);
         var height = Math.abs(sr.start.y - sr.end.y);
-        canvas.drawRectangle({
-            x: x,
-            y: y,
-            width: width,
-            height: height,
-            mode: "fill",
-            color: "rgba(136,144,148,0.5)"
-        });
+        app.canvas.drawRectangle({x: x,y: y,width: width,height: height,mode: "fill",color: "rgba(136,144,148,0.5)"});
     },
     selectBySelectRect: function (mode) {
-        var sX = this.selectRect.start.x,
-            sY = this.selectRect.start.y,
-            eX = this.selectRect.end.x,
-            eY = this.selectRect.end.y;
-        if (sX > eX) {
-            var help = sX;
-            sX = eX;
-            eX = help;
-        }
-        if (sY > eY) {
-            var help = sY;
-            sY = eY;
-            eY = help;
-        }
-        var layer = layers.getActiveLayer();
-        if (mode === "point") {
-            var length = app.state.points.length;
+        var s = this.selectRect,sX = s.start.x,sY = s.start.y,eX = s.end.x,eY = s.end.y;
+        if (sX > eX) {var help = sX; sX = eX; eX = help;}
+        if (sY > eY) {var help = sY; sY = eY; eY = help;}
+        var layer = layers.getActive();
+        if (mode === "Point") {
+            var points = app.state.points,length = points.length;
             for (var i = 0; i < length; i++) {
-                var point = app.state.points[i];
-                if (point.layer !== layer.id) {
-                    continue;
-                }
-                if (point.x <= eX && point.x >= sX && point.y <= eY && point.y >= sY) {
-                    Points.select(point);
-                }
+                var point = points[i];
+                if (point.layer !== layer.id) {continue;}
+                if (point.x <= eX && point.x >= sX && point.y <= eY && point.y >= sY) {Points.select(point);}
             }
         } else {
-            var length = app.state.lines.length;
+            var lines = app.state.lines,length = lines.length;
+            var left = {start:{x:sX,y:sY},end:{x:sX,y:eY}};
+            var right = {start:{x:eX,y:sY},end:{x:eX,y:eY}};
+            var top = {start:{x:sX,y:sY},end:{x:eX,y:sY}};
+            var bottom = {start:{x:sX,y:eY},end:{x:eX,y:eY}};
             for (var i = 0; i < length; i++) {
-                var line = app.state.lines[i];
-                if (line.layer !== layer.id) {
-                    continue;
+                var line = lines[i];
+                if (line.layer !== layer.id) {continue;}
+                if(Lines.haveInnerMeet(left,line)||Lines.haveInnerMeet(right,line)||
+                    Lines.haveInnerMeet(top,line)||Lines.haveInnerMeet(bottom,line)){
+                        (mode === "Line") ? Lines.select(line) : Lines.selectSpline(line);
+                        continue;    
                 }
                 if (line.start.x >= sX && line.start.x <= eX && line.end.x >= sX && line.end.x <= eX &&
                     line.start.y >= sY && line.start.y <= eY && line.end.y >= sY && line.end.y <= eY) {
-                    (mode === "line") ? Lines.select(line) : Lines.selectSpline(line);
+                    (mode === "Line") ? Lines.select(line) : Lines.selectSpline(line);
                     continue;
-                }
-                var m = Lines.getMeet(line, { start: { x: sX, y: sY }, end: { x: sX, y: eY } });
-                if (m) {
-                    if (m.y < eY && sY < m.y) {
-                        if (m.x < Math.max(line.start.x, line.end.x) && m.x > Math.min(line.start.x,
-                                line.end.x)) {
-                            (mode === "line") ? Lines.select(line) : Lines.selectSpline(line);
-                            continue;
-                        }
-                    }
-                }
-                m = Lines.getMeet(line, { start: { x: sX, y: sY }, end: { x: eX, y: sY } });
-                if (m) {
-                    if (m.x < eX && sX < m.x) {
-                        if (m.y < Math.max(line.start.y, line.end.y) && m.y > Math.min(line.start.y,
-                                line.end.y)) {
-                            (mode === "line") ? Lines.select(line) : Lines.selectSpline(line);
-                            continue;
-                        }
-                    }
-                }
-                m = Lines.getMeet(line, { start: { x: eX, y: sY }, end: { x: eX, y: eY } });
-                if (m) {
-                    if (m.y < eY && sY < m.y) {
-                        if (m.x < Math.max(line.start.x, line.end.x) && m.x > Math.min(line.start.x,
-                                line.end.x)) {
-                            (mode === "line") ? Lines.select(line) : Lines.selectSpline(line);
-                            continue;
-                        }
-                    }
-                }
-                m = Lines.getMeet(line, { start: { x: sX, y: eY }, end: { x: eX, y: eY } });
-                if (m != null) {
-                    if (m.x < eX && sX < m.x) {
-                        if (m.y < Math.max(line.start.y, line.end.y) && m.y > Math.min(line.start.y,
-                                line.end.y)) {
-                            (mode === "line") ? Lines.select(line) : Lines.selectSpline(line);
-                            continue;
-                        }
-                    }
                 }
             }
         }
@@ -123,67 +68,43 @@
     connectPoints: {
         firstPoint: false,
         mousedown: function () {
-            var point = app.getPoint({ filter: { layer: layers.getActiveLayer().id } });
-            if (!point) { edit.connectpoints.reset(); return; }
-            if (!edit.connectpoints.firstPoint) {
-                edit.connectpoints.firstPoint = point;
-                edit.drawPoint(point.x, point.y);
-                return;
-
-            }
-            if (point.id === edit.connectpoints.firstPoint.id) {
-                edit.connectpoints.reset();
-                return;
-            }
-            if (points.isConnect(point, edit.connectpoints.firstPoint)) {
-                edit.connectpoints.reset();
-                return;
-            }
-            Points.connect(edit.connectpoints.firstPoint, point);
-            edit.connectpoints.reset();
-            //undo.save();
-            app.redraw();
-
+            var point = app.getPoint({ filter: { layer: layers.getActive().id } });
+            var This = edit.connectPoints;
+            if (!point) { edit.connectPoints.reset(); return; }
+            if (!This.firstPoint) {This.firstPoint = point;edit.drawPoint(point.x, point.y);return;}
+            if (point.id === This.firstPoint.id) {This.reset();return;}
+            if (Points.isConnect(point, This.firstPoint)) {This.reset();return;            }
+            Points.connect(This.firstPoint, point);This.reset();undo.save();app.redraw();
         },
         reset: function () {
-            edit.connectpoints.firstPoint = false;
+            edit.connectPoints.firstPoint = false;
             app.redraw();
         }
     },
     joinLines: {
         firstLine: false,
         mousedown: function () {
-            var line = canvas.findLineByCoords({ filter: { layer: layers.getActiveLayer().id } });
-            if (!line) { edit.joinLines.reset(); return; }
-            if (!edit.joinLines.firstLine) {
-                edit.joinLines.firstLine = line;
-                Lines.select(line);
-                app.redraw();
-                return;
-            }
-            if (edit.joinLines.firstLine.id === line.id) { return; }
-            var state = Lines.join(edit.joinLines.firstLine, line);
-            edit.joinLines.reset();
-            if (state) { 
-                //undo.save(); 
-            }
+            var line = app.getLine({ filter: { layer: layers.getActive().id } });
+            var This = edit.joinLines;
+            if (!line) { This.reset(); return; }
+            if (!This.firstLine) {This.firstLine = line; Lines.select(line); app.redraw(); return;}
+            if (This.firstLine.id === line.id) { return; }
+            var state = Lines.join(This.firstLine, line);
+            This.reset();
+            if (state) {undo.save(); }
             app.redraw();
         },
         mousemove: function () { },
         mouseup: function () { },
-        reset: function () {
-            edit.joinLines.firstLine = false;
-            Lines.deselectAll();
-            app.redraw();
-        }
+        reset: function () {edit.joinLines.firstLine = false; Lines.deselectAll(); app.redraw();}
     },
     divide: {
         value: 2,
         mousedown: function () {
-            var line = canvas.findLineByCoords({ filter: { layer: layers.getActiveLayer().id } });
+            var line = app.getLine({ filter: { layer: layers.getActive().id } });
             if (!line) { return; }
             Lines.divide(line, edit.divide.value);
-            //undo.save();
+            undo.save();
             app.redraw();
         },
         setting: function () {
@@ -216,7 +137,7 @@
         //line: null,
         mousedown: function (e) {
             Lines.deselectAll();
-            var line = edit.extendLine.line = canvas.findLineByCoords({ filter: { layer: layers.getActiveLayer().id } });
+            var line = edit.extendLine.line = app.getLine({ filter: { layer: layers.getActive().id } });
             if (!line) { return; }
             Lines.select(line);
             var coords = app.canvas.getMousePosition();
@@ -340,7 +261,7 @@
         offsetedLine: null,
         mousedown: function (e) {
             Lines.deselectAll();
-            var line = canvas.findLineByCoords({ filter: { layer: layers.getActiveLayer().id } });
+            var line = app.getLine({ filter: { layer: layers.getActive().id } });
             if (!line) { return; }
             Lines.select(line);
             var coords = app.canvas.getMousePosition();
@@ -451,7 +372,7 @@
         mode: "xy",
 
         mousedown: function () {
-            var point = canvas.findPointByCoords();
+            var point = app.getPoint();
             if (!point) {
                 edit.alignPoint.reset();
                 app.redraw();
@@ -529,7 +450,7 @@
         selectAll: function () {
             Lines.deselectAll();
             Points.deselectAll();
-            var layer = layers.getActiveLayer();
+            var layer = layers.getActive();
             if (edit.modify.selectMode === "point") {
                 for (var i = 0; i < app.state.points.length; i++) {
                     var point = app.state.points[i];
@@ -746,7 +667,7 @@
                 }
                 else {
                     if (points.selected.length === 1 && edit.modify.autoWeld) {
-                        var point = canvas.findPointByCoords({ coords: points.selected[0], except: { id: points.selected[0].id } });
+                        var point = app.getPoint({ coords: points.selected[0], except: { id: points.selected[0].id } });
                         if (point !== false) {
                             points.moveTo(points.selected[0], point.x, point.y);
                             points.merge(point, points.selected[0]);
@@ -790,7 +711,7 @@
             },
             background: function () {
                 var axisPos = edit.modify.axisPos;
-                var point = canvas.findPointByCoords({ coords: axisPos });
+                var point = app.getPoint({ coords: axisPos });
                 if (point) {
                     edit.modify.setAxisPos(point);
                 }
@@ -815,7 +736,7 @@
                 }
             } else {
                 if (edit.modify.selectMode === "point") {
-                    var point = canvas.findPointByCoords();
+                    var point = app.getPoint();
                     if (point) {
                         Points.select(point);
                         edit.modify.setAxisPos(point);
@@ -824,7 +745,7 @@
                         edit.modify.setAxisPos("hide");
                     }
                 } else if (edit.modify.selectMode === "line") {
-                    var line = canvas.findLineByCoords();
+                    var line = app.getLine();
                     if (line) {
                         Lines.select(line);
                         var center = Lines.getCenter(line);
@@ -834,7 +755,7 @@
                         edit.modify.setAxisPos("hide");
                     }
                 } else if (edit.modify.selectMode === "spline") {
-                    var line = canvas.findLineByCoords();
+                    var line = app.getLine();
                     if (line) {
                         Lines.selectSpline(line);
                         var center = Lines.getCenter(line);
@@ -1031,7 +952,7 @@
         clickMode: null,
         mousedown: function () {
             var coords = app.canvas.getMousePosition();
-            var point = canvas.findPointByCoords();
+            var point = app.getPoint();
             if (!point) {
                 Points.deselectAll();
                 edit.selectRect = {
@@ -1168,7 +1089,7 @@
         step: 10,
         mousedown: function (e) {
             Lines.deselectAll();
-            var line = canvas.findLineByCoords({ filter: { layer: layers.getActiveLayer().id } });
+            var line = app.getLine({ filter: { layer: layers.getActive().id } });
             if (!line) { return; }
             Lines.select(line);
             edit.plumbLine.line = line;
@@ -1310,17 +1231,17 @@
             var line = ap.line = app.getLine(
                 {
                     coords: coords,
-                    //filter: { layer: layers.getActiveLayer().id } }
+                    //filter: { layer: layers.getActive().id } }
                 }
             );
             if (!line) { return; }
             var length = Lines.getLength(line) / 2;
             if (ap.min > Math.floor(length)) { ap.min = Math.floor(length); }
             var delta = Lines.getDelta(line, ap.min);
-            ap.maxX = Math.max(ap.line.start.x, ap.line.end.x) - delta.x;
-            ap.maxY = Math.max(ap.line.start.y, ap.line.end.y) - delta.y;
-            ap.minX = Math.min(ap.line.start.x, ap.line.end.x) + delta.x;
-            ap.minY = Math.min(ap.line.start.y, ap.line.end.y) + delta.y;
+            ap.maxX = app.getMax(ap.line.start.x, ap.line.end.x) - delta.x;
+            ap.maxY = app.getMax(ap.line.start.y, ap.line.end.y) - delta.y;
+            ap.minX = app.getMin(ap.line.start.x, ap.line.end.x) + delta.x;
+            ap.minY = app.getMin(ap.line.start.y, ap.line.end.y) + delta.y;
             ap.point = Lines.getPrependicularPoint(line, coords);
             var sidePoints = Lines.getPoints(line);
             ap.startPoint = sidePoints.start;

@@ -116,7 +116,7 @@
         this.drawPoints();
     },
     getPoint: function (obj) {
-        var x = obj.x, y = obj.y, is = obj.is || {}, isnt = obj.isnt || {}, area = obj.area || 18 / canvas.zoom, points = this.canvas.points;
+        var coords = obj.coords || this.canvas.getMousePosition(), is = obj.is || {}, isnt = obj.isnt || {}, area = obj.area || 18 / this.canvas.getZoom(), points = this.state.points;
         for (var i = 1; i < area; i += 2) {
             for (var j = 0; j < points.length; j++) {
                 var point = points[j];
@@ -125,8 +125,8 @@
                 if (isFiltered) { continue; }
                 for (var prop in isnt) { if (point[prop] === isnt[prop]) { isFiltered = true; break; } }
                 if (isFiltered) { continue; }
-                if (Math.abs(point.x - x) > i) { continue; }
-                if (Math.abs(point.y - y) > i) { continue; }
+                if (Math.abs(point.x - coords.x) > i) { continue; }
+                if (Math.abs(point.y - coords.y) > i) { continue; }
                 return point;
             }
         }
@@ -346,34 +346,6 @@
 
     },
 
-
-    switchButton: function (e) {
-        var element = $(e.currentTarget);
-        var id = element.attr("id");
-        var state;
-        if (element.hasClass("active")) {
-            element.removeClass("active");
-            state = false;
-        } else {
-            element.addClass("active");
-            state = true;
-        }
-        if (id === "pan") {
-            canvas.pan = state;
-        }
-        else if (id === "measure") {
-            app.measuremode = state;
-        }
-    },
-    panCallback: function () {
-        if (app.appmode === "create") {
-            if (create.currentSpline) {
-                create.currentSpline.draw();
-                create.currentSpline.drawHelp();
-                create.currentSpline.setController();
-            }
-        }
-    },
     set_tools_setting_popup_content: function () {
         var id;
         if (app.appmode === "Create") {
@@ -413,7 +385,8 @@
             });
         }
     },
-
+    getMin:function(a,b){if(a<=b){return a;}else{return b;}},
+    getMax:function(a,b){if(a<=b){return b;}else{return a;}},
 }
 
 
@@ -582,7 +555,7 @@ var display = {
         },
         {
             id: "editModes", component: "Dropdown", float: "left", text: "Modify", activeIndex: 0, open: false, containerId: "top-menu", width: 85,
-            options: [{ text: "Modify",value:"modify" },{ text: "Add Point", value: "addPoint" },{ text: "Chamfer", value: "chamfer" },{ text: "Join Lines",value:"joinLines" },
+            options: [{ text: "Modify",value:"modify" },{ text: "Add Point", value: "addPoint" },{text:"connect",value:"connectPoints"},{ text: "Chamfer", value: "chamfer" },{ text: "Join Lines",value:"joinLines" },
                 { text: "Offset Line", value: "offsetLine" },{ text: "Extend Line", value: "extendLine" },{ text: "Plumb Line", value: "plumbLine" },{ text: "Divide Line", value: "divide" }],
             callback: function (value) { app.state.editmode = value; },
             show: function () { return app.state.appmode === "edit"; },
@@ -653,6 +626,7 @@ var display = {
             display.render();
         });
         app.eventHandler(".dropdown .back-drop", "mousedown", function () { var item = display.getObject($(this).attr("data-id")).open = false; display.render(); });
+        if(create.drawing){create.end();}
     },
 };
 
