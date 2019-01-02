@@ -6,10 +6,10 @@
         if (edit[app.state.editmode].reset !== undefined) { edit[app.state.editmode].reset(); }
         app.redraw();
     },
-    mousedown: function () {
+    mousedown: function (e) {
         app.eventHandler("window", "mousemove", $.proxy(this.mousemove, this));
         app.eventHandler("window", "mouseup", $.proxy(this.mouseup, this));
-        this[app.state.editmode].mousedown();
+        this[app.state.editmode].mousedown(e);
     },
     mousemove: function () {if (this[app.state.editmode].mousemove) { this[app.state.editmode].mousemove(); }},
     mouseup: function () {
@@ -265,10 +265,10 @@
             if (!line) { return; }
             Lines.select(line);
             var coords = app.canvas.getMousePosition();
-            var Points = Lines.getPoints(line);
+            var points = Lines.getPoints(line);
             this.startOffset = {
-                x: canvas.x,
-                y: canvas.y,
+                x: app.canvas.x,
+                y: app.canvas.y,
                 line: line,
                 dip: Lines.getDip(line),
                 step: edit.offsetLine.step,
@@ -279,12 +279,11 @@
             app.redraw();
         },
         windowMouseMove: function (e) {
-            var so = edit.offsetLine.startOffset;
-            var line = so.line;
-            edit.offsetLine.offset = canvas.x - so.x;
-            edit.offsetLine.offset = Math.round(edit.offsetLine.offset / so.step) * so.step;
-            edit.offsetLine.offsetedLine = edit.offsetLine.getOffsetedLine();
-            var ol = edit.offsetLine.offsetedLine;
+            var This = edit.offsetLine,so = This.startOffset,line = so.line;
+            This.offset = app.canvas.x - so.x;
+            This.offset = Math.round(edit.offsetLine.offset / so.step) * so.step;
+            This.offsetedLine = This.getOffsetedLine();
+            var ol = This.offsetedLine;
             app.redraw();
             app.drawLine({start:ol.start,end:ol.end,color: "yellow",showDimention: true});
             app.drawLine({start: { x: ol.start.x, y: ol.start.y }, end: { x: line.start.x, y: line.start.y },color: "yellow",lineDash: [4, 4],showDimention: true});},
@@ -311,55 +310,20 @@
             Lines.deselectAll();
             if (edit.offsetLine.offset !== 0) {
                 var ol = edit.offsetLine.offsetedLine;
-                var point1 = Points.add({
-                    x: ol.start.x,
-                    y: ol.start.y,
-                    connectedLines: [{
-                        id: Lines.getNextID(1),
-                        side: "start"
-                    }]
-                });
-                var point2 = Points.add({
-                    x: ol.end.x,
-                    y: ol.end.y,
-                    connectedLines: [{
-                        id: Lines.getNextID(1),
-                        side: "end"
-                    }]
-                });
-                var line = Lines.add({
-                    start: {
-                        x: ol.start.x,
-                        y: ol.start.y,
-                        id: point1.id
-                    },
-                    end: {
-                        x: ol.end.x,
-                        y: ol.end.y,
-                        id: point2.id
-                    }
-                });
-                //undo.save();
+                var point1 = Points.add({x: ol.start.x,y: ol.start.y,connectedLines: [{id: Lines.getNextID(1),side: "start"}]});
+                var point2 = Points.add({x: ol.end.x,y: ol.end.y,connectedLines: [{id: Lines.getNextID(1),side: "end"}]});
+                var line = Lines.add({start: {x: ol.start.x,y: ol.start.y,id: point1.id},end: {x: ol.end.x,y: ol.end.y,id: point2.id}});
+                undo.save();
             }
             app.eventRemover("window", "mousemove", edit.offsetLine.windowMouseMove);
             app.eventRemover("window", "mouseup", edit.offsetLine.windowMouseUp);
             app.redraw();
         },
         setting: function () {
+            var This = edit.offsetLine;
             var A = new Alert({
-                title: "Offset Line Setting",
-                buttons: [{
-                    title: "OK"
-                }],
-                template: [{
-                    title: "Step",
-                    value: edit.offsetLine.step,
-                    start: 0,
-                    step: 1,
-                    min: 1,
-                    end: 100,
-                    onchange: edit.offsetLine.setStep
-                }]
+                title: "Offset Line Setting",buttons: [{title: "OK"}],
+                template: [{title: "Step",value: This.step,start: 0,step: 1,min: 1,end: 100,onchange: This.setStep}]
             });
         },
         setStep: function (value) {
@@ -369,67 +333,33 @@
     alignPoint: {
         firstPoint: false,
         secoundPoint: false,
-        mode: "xy",
-
         mousedown: function () {
-            var point = app.getPoint();
-            if (!point) {
-                edit.alignPoint.reset();
-                app.redraw();
-                return;
-            }
-            if (!edit.alignPoint.firstPoint) {
-                edit.alignPoint.firstPoint = point;
-                edit.drawPoint(point.x, point.y);
-                return;
-
-            }
-            if (point.id === edit.alignPoint.firstPoint.id) {
-                edit.alignPoint.reset();
-                return;
-            }
-            edit.alignPoint.secoundPoint = point;
-            if (edit.alignPoint.mode === "x") {
-                var value = "X";
-            } else if (edit.alignPoint.mode === "y") {
-                var value = "Y";
-            } else if (edit.alignPoint.mode === "xy") {
-                var value = "XY";
-            }
+            var point = app.getPoint(),This = edit.alignPoint;
+            if (!point) {This.reset(); return;}
+            if (!This.firstPoint) {This.firstPoint = point;edit.drawPoint(point.x, point.y);return;}
+            if (point.id === This.firstPoint.id) {This.reset();return;}
+            This.secoundPoint = point;
             var A = new Alert({
                 title: "Align By",
                 buttons: [
-                    { title: "Align X,Y", subscribe: edit.alignPoint.alignXY },
-                    { title: "Align Y", subscribe: edit.alignPoint.alignY },
-                    { title: "Align X", subscribe: edit.alignPoint.alignX },
+                    { title: "Align X,Y", subscribe: This.alignXY },
+                    { title: "Align Y", subscribe: This.alignY },
+                    { title: "Align X", subscribe: This.alignX },
                 ],
                 template: "Select Align Type.",
             });
         },
-        alignX: function () {
-            edit.alignPoint.align("X");
-        },
-        alignY: function () {
-            edit.alignPoint.align("Y");
-        },
-        alignXY: function () {
-            edit.alignPoint.align("XY");
-        },
+        alignX: function () {edit.alignPoint.align("X");},
+        alignY: function () {edit.alignPoint.align("Y");},
+        alignXY: function () {edit.alignPoint.align("XY");},
         align: function (mode) {
-            var x = edit.alignPoint.secoundPoint.x;
-            var y = edit.alignPoint.secoundPoint.y;
-            if (mode === "X") { y = edit.alignPoint.firstPoint.y; }
-            else if (mode === "Y") { x = edit.alignPoint.firstPoint.x; }
-            Points.moveTo(edit.alignPoint.firstPoint, x, y);
-            edit.alignPoint.reset();
-            //undo.save();
+            var This = edit.alignPoint,x = This.secoundPoint.x,y = This.secoundPoint.y;
+            if (mode === "X") { y = This.firstPoint.y; } else if (mode === "Y") { x = This.firstPoint.x; }
+            Points.moveTo(This.firstPoint, x, y); This.reset(); undo.save();
         },
         mousemove: function () { },
         mouseup: function () { },
-        reset: function () {
-            edit.alignPoint.firstPoint = false;
-            app.redraw();
-        }
+        reset: function () {edit.alignPoint.firstPoint = false; app.redraw();}
     },
     modify: {
         isTransformed: false,
@@ -608,7 +538,7 @@
             }
             else { x = obj.x; y = obj.y; }
             this.axisPos = { x: x, y: y };
-            var bodyCoords = canvas.convertCanvasXYToBodyXY(this.axisPos);
+            var bodyCoords = app.canvas.canvasToClient(this.axisPos);
             $("#axis").css({ "left": bodyCoords.x, "top": bodyCoords.y });
             $("#axis-x").html("X:" + this.axisPos.x.toFixed(1));
             $("#axis-y").html("Y:" + (this.axisPos.y * -1).toFixed(1));
@@ -622,7 +552,7 @@
             move: function (e) {
                 var mode = edit.modify.clickedOn,
                     so = edit.modify.startOffset;
-                var offset = canvas.getSnapXY({ x: (app.getClient(e, "X") - so.x) / app.canvas.getZoom(), y: (app.getClient(e, "Y") - so.y) / app.canvas.getZoom() });
+                var offset = app.canvas.getSnapedCoords({ x: (app.getClient(e, "X") - so.x) / app.canvas.getZoom(), y: (app.getClient(e, "Y") - so.y) / app.canvas.getZoom() });
                 offset = {
                     x: (mode === "axisMoveUp" || mode === "axisMoveDown") ? 0 : offset.x,
                     y: (mode === "axisMoveLeft" || mode === "axisMoveRight") ? 0 : offset.y
@@ -633,7 +563,7 @@
             rotate: function (e) { edit.modify.rotate(Math.floor((app.getClient(e, "X") - edit.modify.startOffset.x) / 3)); },
             background: function (e) {
                 var so = edit.modify.startOffset;
-                var offset = canvas.getSnapXY({ x: (app.getClient(e, "X") - so.x) / app.canvas.getZoom(), y: (app.getClient(e, "Y") - so.y) / app.canvas.getZoom() });
+                var offset = app.canvas.getSnapedCoords({ x: (app.getClient(e, "X") - so.x) / app.canvas.getZoom(), y: (app.getClient(e, "Y") - so.y) / app.canvas.getZoom() });
                 edit.modify.setAxisPos({
                     x: so.axisX + offset.x,
                     y: so.axisY + offset.y

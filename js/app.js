@@ -133,23 +133,19 @@
         return false;
     },
     getLine: function (obj) {
-        var c = this.canvas, x = obj.x, y = obj.y, is = obj.is || {}, isnt = obj.isnt || {}, area = obj.area || 18 / this.canvas.getZoom(), lines = app.state.lines;
+        var c = this.canvas,coords = obj.coords || c.getMousePosition(), is = obj.is || {}, 
+        isnt = obj.isnt || {}, area = obj.area || 18 / c.getZoom(), lines = app.state.lines;
         for (var i = 1; i < area; i += 2) {
             for (var j = 0; j < lines.length; j++) {
-                var line = lines[j],
-                    dip = Lines.getDip(line),
-                    minX = Math.min(line.start.x, line.end.x),
-                    maxX = Math.max(line.start.x, line.end.x),
-                    minY = Math.min(line.start.y, line.end.y),
-                    maxY = Math.max(line.start.y, line.end.y),
-                    isFiltered = false;
+                var line = lines[j],s=line.start,e = line.end,dip = Lines.getDip(line),isFiltered = false,
+                    minX = Math.min(s.x, e.x),maxX = Math.max(s.x, e.x),minY = Math.min(s.y, e.y),maxY = Math.max(s.y, e.y);
                 for (var prop in is) { if (line[prop] !== is[prop]) { isFiltered = true; break; } }
                 if (isFiltered) { continue; }
                 for (var prop in isnt) { if (line[prop] === isnt[prop]) { isFiltered = true; break; } }
                 if (isFiltered) { continue; }
-                if (dip === "infinity") { if (Math.abs(minX - x) > i || y < minY || y > maxY) { continue; } }
-                else if (Math.abs(dip) <= 1) { if (x < minX || x > maxX || Math.abs(((dip * (x - line.start.x)) + line.start.y) - y) > i) { continue; } }
-                else { if (y < minY || y > maxY || Math.abs((((y - line.start.y) / dip) + line.start.x) - x) > i) { continue; } }
+                if (dip === "infinity") { if (Math.abs(minX - coords.x) > i || coords.y < minY || coords.y > maxY) { continue; } }
+                else if (Math.abs(dip) <= 1) { if (coords.x < minX || coords.x > maxX || Math.abs(((dip * (coords.x - s.x)) + s.y) - coords.y) > i) { continue; } }
+                else { if (coords.y < minY || coords.y > maxY || Math.abs((((coords.y - s.y) / dip) + s.x) - coords.x) > i) { continue; } }
                 return line;
             }
         }
@@ -464,6 +460,7 @@ function Dropdown (props) {
         str += 'border-radius:' + s.borderRadius + 'px;';
         str += 'font-size:' + s.button_fontSize + 'px;';
         str += 'border:1px solid'+s.color1+';';
+        if(props.disable === true){str+='opacity:0.2;';}
         return str;
     }
     function getPopupStyle() {
@@ -498,8 +495,24 @@ function Dropdown (props) {
         str += 'border-right:4px solid transparent;';
         return str;
     }
+    function getTitleStyle(){
+        var str = '';
+        str += 'position:absolute;';
+        str += 'height:' + (s.item_height - 2) + 'px;';
+        str += 'color:' + s.color1 + ';';
+        str += 'line-height:' + s.item_height + 'px;';
+        str += 'font-size:' + s.button_fontSize + 'px;';
+        str += 'top:0;';
+        str += 'right:calc(100% + '+(s.hMargin * 2)+'px);';
+        return str;
+    }
     var str = '';
     str += '<div class="dropdown" style="' + getStyle() + '" data-id="' + props.id + '">';
+    if(props.title){
+        str+='<div class="dropdown-title" style="'+getTitleStyle()+'">';
+        str+=props.title;
+        str+='</div>';
+    }
     str += '<div style="' + getCaretStyle() + '"></div>';
     if (props.open) {
         str += '<div class="back-drop" data-id="' + props.id + '"></div>';
@@ -532,8 +545,9 @@ var display = {
         {
             id: "sub-menu",
             getStyle: function () {
-                var s = app.style.top_menu, str = 'position:fixed;left:0;width:100%;top:' + s.size + 'px;z-index:1;';
+                var s = app.style.top_menu, str = 'position:fixed;left:0;width:calc(100% - '+(s.hMargin)+'px);top:' + s.size + 'px;z-index:1;';
                 str += 'background:' + s.header_background + ';';
+                str += 'padding:0 '+(s.hMargin/2)+'px;';
                 return str;
             }
         }
@@ -544,7 +558,7 @@ var display = {
             id: "setAppMode", component: "Button", float: "left", text: "Create", containerId: "top-menu", width: 50, background: true,
             callback: function (item) {
                 if (app.state.appmode === "create") { app.state.appmode = "edit"; item.text = "Edit"; }
-                else { app.state.appmode = "edit"; item.text = "Create"; }
+                else { app.state.appmode = "create"; item.text = "Create"; }
             },
         },
         {
@@ -554,7 +568,8 @@ var display = {
             show: function () { return app.state.appmode === "create"; },
         },
         {
-            id: "editModes", component: "Dropdown", float: "left", text: "Modify", activeIndex: 0, open: false, containerId: "top-menu", width: 85,
+            id: "editModes", component: "Dropdown", float: "left", text: "Modify", activeIndex: 0, 
+            open: false, containerId: "top-menu", width: 85,
             options: [{ text: "Modify",value:"modify" },{ text: "Add Point", value: "addPoint" },{text:"connect",value:"connectPoints"},{ text: "Chamfer", value: "chamfer" },{ text: "Join Lines",value:"joinLines" },
                 { text: "Offset Line", value: "offsetLine" },{ text: "Extend Line", value: "extendLine" },{ text: "Plumb Line", value: "plumbLine" },{ text: "Divide Line", value: "divide" }],
             callback: function (value) { app.state.editmode = value; },
@@ -588,6 +603,12 @@ var display = {
         {
             id: "weld", component: "Button", className: "", float: "left", text: "Weld", containerId: "sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && edit.modify.selectMode === "Point"; },
+        },
+        {
+            id: "selectMode", component: "Dropdown", float: "right", text: "Point", open: false, containerId: "sub-menu", width: 45,title:"Mode:",
+            options: [{ text: "Point",value:"Point" },{ text: "Line", value: "Line" },{text:"Spline",value:"Spline"}],
+            callback: function (value) { edit.modify.selectMode = value; },
+            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
         },
     ],
     

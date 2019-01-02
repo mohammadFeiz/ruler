@@ -51,7 +51,7 @@ var create = {
         this.preview();
     },
     mousemove: function (e) {
-        var coords = app.canvas.getMousePosition(), lastPoint = this.object.getLastPoint();
+        var coords = app.canvas.getSnapedCoords(), lastPoint = this.object.getLastPoint();
         lastPoint.x = coords.x; lastPoint.y = coords.y;
         this.preview();
         autoPan.run(app.canvas.canvasToClient(lastPoint), this.mousemove.bind(this));
@@ -118,7 +118,8 @@ var create = {
         app.eventHandler("window", "mousemove", this.panmousemove.bind(this));
         app.eventHandler("window", "mouseup", this.panmouseup);
         var screenPosition = app.canvas.getScreenPosition();
-        this.startOffset = { x: app.getClient(e, "X"), y: app.getClient(e, "Y"), endX: screenPosition.x, endY: screenPosition.y };
+        var client = app.getClient(e);
+        this.startOffset = { x: client.x, y: client.y, endX: screenPosition.x, endY: screenPosition.y };
     },
     panmousemove: function (e) {
         var so = this.startOffset, zoom = app.canvas.getZoom(), coords = app.getClient(e);
