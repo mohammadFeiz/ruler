@@ -1,182 +1,44 @@
-/////////example//////////////
-//var A = new Alert(
-    //{ 
-        //buttons: [
-            //{ title: "yes", subscribe: layers.add }, 
-            //{ title: "cansel" }
-        //], 
-        //template: "Do You Want To Add New Layer?", 
-        //title: "New Layer." 
-    //}
-//);
-//var A = new Alert(
-    //{ 
-        //buttons: [
-            //{ title: "yes", subscribe: layers.add }, 
-            //{ title: "cansel" }
-        //], 
-        //title: "New Layer.",
-        //template: [
-            //{ title: "Snap", type: "switch", value: create.ngon.snap, text: ["ON", "OFF"], onchange: create.ngon.setSnap, },
-            //{title: "Snap Size",type: "slider",value: create.ngon.snapSize,onchange: create.ngon.setSnapSize,start: 1,step: 1,end: 30,},
-            //{
-            //    type: "group button",
-            //    title: "Selection",
-            //    buttons: [
-            //        {
-            //            active:(edit.transform.selectMode === "point"),
-            //            iconClass: "icon icon-vertex",
-            //            value: "Point",
-            //            id:"select-mode-point",
-            //            subscribe: edit.transform.setSelectMode
-            //        },
-            //        {
-            //            active:(edit.transform.selectMode === "line"),
-            //            iconClass: "icon icon-dl",
-            //            value: "Line",
-            //            id:"select-mode-line",
-            //            subscribe: edit.transform.setSelectMode
-            //        },
-            //        {
-            //            active:(edit.transform.selectMode === "spline"),
-            //            iconClass: "icon icon-spline",
-            //            value: "Spline",
-            //            id:"select-mode-spline",
-            //            subscribe: edit.transform.setSelectMode
-            //        },
-            //    ],
-            //},
-            //],  
-    //}
-//);
 
 function Alert(obj) {
     var a = {
         size: 36,
         state:{},
-        updateState: function (obj) {
-            for (prop in obj) {
-                this.state[prop] = obj[prop];
+        render: function () {
+            var str = AlertPopup(this.state);
+            var s = this.state.style;
+            $("body").append(str);
+            components.render({ id: "alertClose", float: s.direction === 'rtl' ? 'left' : 'right', iconClass: "mdi mdi-close", component: "Icon",container:".alert-header",callback:this.close });
+            for (var i = 0; i < this.state.buttons.length; i++) {
+                var button = this.state.buttons[i];
+                components.render({
+                    component: "Button",
+                    id: "alert-botton" +i,
+                    text: button.text,
+                    className:"alert-close",
+                    float: s.direction === 'rtl' ? 'left' : 'right',
+                    width: (this.state.width - (2 * s.padding)) / 3 - (2 * s.hMargin),
+                    container: ".alert-footer",
+                    callback: button.callback,
+                    background: true,
+                    style: { light_color: "#36383d", dark_color: this.state.style.light_color }
+                })
             }
-            if (!Array.isArray(this.state.template)) { this.state.template = [this.state.template]; }
-        },
-        setTemplate: function () {
-            for (var i = 0; i < this.state.template.length; i++) {
-                var template = this.state.template[i];
-                if (typeof template === "string") { $(".alert-body").append(template); break; }
-                else if (template.start !== undefined) { this.getSliderTemplate(template); }
-                else if (typeof template.value === "boolean") {
-                    template.mode = "switch";
-                    this.getSwitchTemplate(template);
-                }
-                else if (template.buttons) { this.getGroupButtonTemplate(template); }
-                else if (typeof template.value === "number") {
-                    template.mode = "numberbox";
-                    this.getNumberboxTemplate(template);
-                }
-            }
-            this.Footer();
+            app.eventHandler("#alert .alert-close","mousedown", this.close);
 
         },
-        getTextTemplate: function (template) {
-            
-        },
-        getSliderTemplate: function (template) {
-            $(".alert-body").append(AlertItem({title:template.title,value:template.value}));
-            var alert_slider = $(".alert-template-control:last");
-            var alert_value = $(".alert-template-value:last");
-            var A = new slider({
-                container: alert_slider,
-                start: template.start,step: template.step,value: template.value,
-                end: template.end,min: template.min,max: template.max,
-                isMobile:canvas.isMobile,
-                ondrag: function (obj) { var value = obj.values[0]; template.onchange(value); alert_value.html(value); },
-                style: { button_width: this.size * (2 / 3), button_height: this.size * (2 / 3), line_width: this.size * (1 / 9) }
-            });
-        },
-        getSwitchTemplate: function (template) {
-            $(".alert-body").append(AlertItem(template));
-            var alert_switch = $(".alert-template-switch:last");
-            var A = new slider({
-                container: alert_switch,
-                start: 0,
-                isMobile: canvas.isMobile,
-                step: 1,
-                end: 1,
-                text: template.text,
-                value: (template.value) ? 1 : 0,
-                ondrag: function (obj) { var value = obj.values[0]; template.onchange((value) ? true : false); },
-                style: { button_width: this.size * (2 / 3), button_height: this.size * (2 / 3), line_width: 0 }
-            });
-        },
-        getNumberboxTemplate: function (template) {
-            $(".alert-body").append(AlertItem(template));
-            var alert_numberbox = $(".alert-template-numberbox:last");
-            if (template.onchange !== undefined) {
-                app.eventHandler(alert_numberbox, "mousedown", function () {
-                    var element = $(this);
-                    keyboard.open({
-                        title: template.title,
-                        close:true,
-                        fields: [{
-                            title: element.attr("data-title"),
-                            value: element.attr("data-value"),
-                            prop:"value"
-                        }],
-                        subscribe: function (p) {
-                            var value = p.value;
-                            element.attr("data-value",value);
-                            element.html(value);
-                            template.onchange(value);
-                        }
-                    });
-                });
-            }
-        },
-        getGroupButtonTemplate: function (template) {
-            var str = '';
-            for (var i = 0; i < template.buttons.length; i++) {
-                var button = template.buttons[i];
-                str += ButtonOfGroup(button);
-            }
-            $(".alert-body").append(AlertItem({ title: template.title, value: template.value }));
-            $(".alert-template-control:last").append(str);
-            for (var i = 0; i < template.buttons.length; i++) {
-                var button = template.buttons[i];
-                app.eventHandler("#alert #" + button.id, "mousedown", function () {
-                    button.subscribe($(this).attr("id"));
-                    var parent = $(this).parent();
-                    parent.find(".alert-template-button").removeClass("active");
-                    $(this).addClass("active");
-                    parent.parent().find(".alert-template-value").html($(this).attr("data-value"));
-                    if (button.close === true) {
-                        $("#alert").remove();
-                    }
-                });
-            }
-        },
-        setLayout: function () {
-            var str = AlertPopup({width:this.state.width,size:this.size,title:this.state.title});
-            $("body").append(str);
-            $(".alert-close").bind("mousedown", this.close);
-        },
         open: function (obj) {
-            this.updateState(obj);
-            this.setLayout();
-            this.setTemplate();
-        },
-        Footer: function () {
-            if (this.state.buttons === null) { return; }
-            for (var i = 0; i < this.state.buttons.length; i++) {
-                if (i > 2) { return; }
-                var button = this.state.buttons[i];
-                $(".alert-footer").append(FooterButton({index:i,title:button.title}));
-                var alert_button = $(".alert-button-container").eq(i);
-                alert_button.bind("mousedown", this.close);
-                if (button.subscribe) {
-                    alert_button.bind("mousedown", button.subscribe);
+            for (prop in obj) { this.state[prop] = obj[prop]; }
+            this.state.button = this.state.buttons || [];
+            if (!Array.isArray(this.state.template)) { this.state.template = [this.state.template]; }
+            this.render();
+            if (typeof this.state.template === "string") { $(".alert-body").append(this.state.template); }
+            else {
+                for (var i = 0; i < this.state.template.length; i++) {
+                    var template = this.state.template[i];
+                    AlertItem[template.type](template,this.state.style);                
                 }
             }
+            
         },
         close: function () {
             $("#alert").remove();
@@ -187,56 +49,135 @@ function Alert(obj) {
 }
 
 function AlertPopup(props) {
-    var width = props.width || (props.size * 8);
-    var str = '<div id="alert" style="width:' + width + 'px;left:calc(50% - ' + (width / 2) + 'px);">';
+    var s = props.style;
+    function getStyle() { return 'position: fixed;top: ' + props.top + 'px;width:' + props.width + 'px;left:calc(50% - ' + (props.width / 2) + 'px);'; }
+    function getHeaderStyle() { return 'z-index: 10;position: relative;width: 100%;height:' + s.size + 'px;'; }
+    function getTitleStyle() { return 'float: ' + (s.direction === 'rtl' ? 'right' : 'left') + ';line-height:' + s.size + 'px;margin-' + (s.direction === 'rtl' ? 'right' : 'left') + ':' + (s.size/4) + 'px;'; }
+    function getBodyStyle() { return 'z-index: 10;position: relative;padding:' + s.padding + 'px;width:calc(100% - ' + (2* s.padding) + 'px);'; }
+    function getFooterStyle() { return 'z-index: 10;position: relative;padding:' + s.padding + 'px;width:calc(100% - ' + (2 * s.padding) + 'px);height:' + s.size + 'px;'; }
+    var str = '<div id="alert" style="' + getStyle() + '">';
     str += '<div class="back-drop"></div>';
-    str += '<div class="alert-header">';
-    str += '<div class="alert-title">' + props.title + '</div>';
-    str += '<div class="alert-close"><span class="mdi mdi-close"></span></div>';
+    str += '<div class="alert-header" style="'+getHeaderStyle()+'">';
+    str += '<div class="header-title" style="'+getTitleStyle()+'">' + props.title + '</div>';
     str += '</div>';
-    str += '<div class="alert-body"></div>';
-    str += '<div class="alert-footer"></div>';
-    str += '</div>';
-    return str;
-}
-
-function FooterButton(props){
-    var str = '';
-    str += '<div class="alert-button-container" data-index="' + props.index + '">';
-    str += '<div class="alert-button">' + props.title + '</div>';
-    str += '</div>';
-    return str;    
-}
-
-function AlertItem(props) {
-    var str = '';
-    str += '<div class="alert-template-item">';
-    str += '<div class="alert-template-title">' + (props.title || '') + '</div>';
-    if (props.mode !== "switch" && props.mode !== "numberbox") {
-        str += '<div class="alert-template-value" data-value="'+props.value+'">' + props.value + '</div>';
-    }
-    str += '<div class="alert-template-control">';
-    if (props.mode === "switch") {
-        str += '<div class="alert-template-switch"></div>';
-    }
-    else if (props.mode === "numberbox") {
-        str += '<div class="alert-template-numberbox" data-title="'+props.title+'" data-value="'+props.value+'">'+props.value+'</div>';
-    }
-    str += '</div>';
+    str += '<div class="alert-body" style="'+getBodyStyle()+'"></div>';
+    str += '<div class="alert-footer" style="'+getFooterStyle()+'"></div>';
     str += '</div>';
     return str;
 }
 
-function ButtonOfGroup(props) {
-    var value = (props.iconClass) ? '' : props.value;
-    var active = (props.active) ? ' active': '';
-    var iconClass = (props.iconClass)? ' ' + props.iconClass:'';
-    var str = '';
-    str += '<div data-value="' + props.value + '" ';
-    str += 'id="' + props.id + '" ';
-    str += 'class="alert-template-button' + iconClass + active + '">' + value + '</div>';
-    return str;
+var AlertItem = {
+    slider: function (props, style) {
+        function getStyle() {
+            var str = '';
+            str += 'position:relative;';
+            str += 'width:calc(100% - 110px);';
+            str += 'height:' + style.size + 'px;';
+            str += 'float:left;';
+            str += 'line-height:' + style.size + 'px;';
+            str += 'color:' + style.light_color + ';';
+            str += 'text-align:center;';
+            return str;
+        }
+        var str = '';
+        str += '<div class="alert-template-item">';
+        str += AlertItemTitle(props,style);
+        str += '<div class="alert-slider" style="'+getStyle()+'" data-id="'+props.id+'"></div>';
+        str += AlertItemValue(props,style);
+        str += '</div>';
+        $(".alert-body").append(str);
+        var A = new slider({
+            container: $(".alert-slider[data-id="+props.id+"]"),
+            start: props.start, step: props.step, value: props.value,
+            end: props.end, min: props.min, max: props.max,
+            ondrag: function (obj) { var value = obj.value[0]; props.onchange(value); $(".alert-item-value[data-id=" + props.id + "]").html(value); },
+            style: { button_width: style.size * (2 / 3), button_height: style.size * (2 / 3), line_width: style.size * (1 / 9) }
+        });
+    },
+    switch: function (props,style) {
+        function getStyle() {
+            var str = '';
+            str += 'border-radius: 45px;';
+            str += 'background: #222;';
+            str += 'box-shadow: inset 2px 2px 10px 1px #222;';
+            str += 'position:relative;';
+            str += 'width:70px;';
+            str += 'text-align:left;';
+            str += 'font-size:' + (style.size / 3) + 'px;';
+            str += 'float:left;';
+            str += 'height:' + (style.size * (3 / 4)) + 'px;';
+            str += 'margin-top:' + (style.size * (1 / 8)) + 'px;';
+            return str;
+        }
+        function getContainerStyle(){
+            var str = '';
+            str += 'position:relative;';
+            str += 'width:calc(100% - 110px - ' + (style.size / 6) + 'px);';
+            str += 'height:' + style.size + 'px;';
+            str += 'float:' + (style.direction === 'rtl' ? 'right' : 'left') + ';';
+            str += 'line-height:' + style.size + 'px;';
+            str += 'color:' + style.light_color + ';';
+            str += 'text-align:center;';
+            return str;
+        }
+        var str = '';
+        str += '<div class="alert-template-item">';
+        str += AlertItemTitle(props, style);
+        str += '<div class="alert-switch-container" style="' + getContainerStyle() + '">';
+        str += '<div class="alert-switch" data-id="'+props.id+'" style="'+getStyle()+'"></div>';
+        str += '</div>';
+        str += '</div>';
+        $(".alert-body").append(str);
+        var A = new slider({
+            container: $(".alert-switch[data-id="+props.id+"]"),
+            start: 0,
+            step: 1,
+            end: 1,
+            text: props.text,
+            value: (props.value) ? 1 : 0,
+            ondrag: function (obj) {
+                var value = obj.value[0];
+                props.onchange(value ? true : false);
+            },
+            style: { button_width: style.size * (2 / 3), button_height: style.size * (2 / 3), line_width: 0 }
+        });
+    }    
 }
+
+
+function AlertItemTitle(props,style) {
+    function getStyle() {
+        var str = '';
+        str += 'position:relative;';
+        str += 'width:'+(80 - style.size/6)+'px;';
+        str += 'white-space:nowrap;';
+        str += 'text-align:left;';
+        str += 'float:' + (style.direction === 'rtl' ? 'right' : 'left') + ';';
+        str += 'height:' + style.size + 'px;';
+        str += 'line-height:' + style.size + 'px;';
+        str += 'margin-' + (style.direction === 'rtl' ? 'right' : 'left') + ':' + (style.size / 6) + 'px;';
+        return str;
+    }
+    return '<div style="'+getStyle()+'">' + (props.title || '') + '</div>';
+}
+
+function AlertItemValue(props, style) {
+    function getStyle() {
+        var str = '';
+        str += 'position:relative;';
+        str += 'width:30px;';
+        str += 'text-align:center;';
+        str += 'font-size:' + (style.size / 3) + 'px;';
+        str += 'float:' + (style.direction === 'rtl' ? 'left' : 'right') + ';';
+        str += 'height:' + style.size + 'px;';
+        str += 'line-height:' + style.size + 'px;';
+        return str;
+    }
+    return '<div class="alert-item-value" style="'+getStyle()+'" data-id="' + props.id + '" data-value="' + (props.value || '') + '">' + (props.value||'') + '</div>';
+}
+
+
+
 
 
 

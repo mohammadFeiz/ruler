@@ -126,17 +126,53 @@ function Canvas(config) {
                 ctx.restore();
             }
             if (obj.showDimension) {
-                ctx.save();
-                ctx.beginPath();
-                ctx.font = this.fontSize / this.zoom + "px arial";
-                ctx.translate(Math.min(obj.x1, obj.x2) + (Math.abs(obj.x1 - obj.x2) / 2), Math.min(obj.y1, obj.y2) + (Math.abs(obj.y1 - obj.y2) / 2));
-                ctx.rotate(Math.atan((obj.y2 - obj.y1) / (obj.x2 - obj.x1)));
-                ctx.textAlign = "center";
-                ctx.fillStyle = "yellow";
-                ctx.fillText(Math.sqrt(Math.pow(obj.x1 - obj.x2, 2) + Math.pow(obj.y1 - obj.y2, 2)).toFixed(1), 0, -3);
-                ctx.closePath();
-                ctx.restore();
+                var center = this.get.line.center(obj);
+                this.drawText({x:center.x,y:center.y,text:this.get.line.length(obj).toFixed(1),angle:this.getTextAngle(obj),textBaseLine:"bottom",color:obj.color,textAlign:"center"});
             }
+        },
+        getTextAngle:function(line){
+            return Math.atan((line.end.y - line.start.y) / (line.start.x - line.end.x)) /Math.PI * 180;
+        },
+        get:{
+            line: {
+                length: function (line) {return Math.sqrt(Math.pow(line.start.x - line.end.x, 2) + Math.pow(line.start.y - line.end.y, 2));},
+                center: function (line) {
+                    return {
+                        x: Math.min(line.start.x, line.end.x) + Math.abs(line.start.x - line.end.x) / 2,
+                        y: Math.min(line.start.y, line.end.y) + Math.abs(line.start.y - line.end.y) / 2
+                    };
+                },
+                dip:function(line){return line.start.x === line.end.x?'infinity':(line.start.y - line.end.y) / (line.start.x - line.end.x);},
+                meet: function (f, s) {
+                    var fDip = a.get.line.dip(f),sDip = a.get.line.dip(s);
+                    if (fDip === "infinity" && sDip === "infinity") { return false; }
+                    else if (fDip == "infinity") { return { x: f.start.x, y: (sDip * (f.start.x - s.start.x)) + s.start.y }; }
+                    else if (sDip == "infinity") { return { x: s.start.x, y: (fDip * (s.start.x - f.start.x)) + f.start.y }; }
+                    else if (Math.abs(fDip - sDip) < 0.0001) { return false; }
+                    else {
+                        var x = (s.start.y - f.start.y + (fDip * f.start.x) - (sDip * s.start.x)) / (fDip - sDip);
+                        var y = (fDip * (x - f.start.x)) + f.start.y;
+                        return { x: x, y: y };
+                    }
+                },
+                angle: function (line) {
+                    var length = a.get.line.length(line),cos = (line.end.x - line.start.x) / length,sin = (line.end.y - line.start.y) / length,angle = Math.acos(cos) / Math.PI * 180;
+                    if (line.end.y < line.start.y) { angle = 360 - angle; }
+                    return 360 - angle;
+                },
+                xByY: function (line, y, dip) {
+                    dip = dip || a.get.dip(line);
+                    if (dip === "infinity") { return line.start.x; }
+                    if (dip === 0) { return false; }
+                    return (y + (dip * line.start.x) - line.start.y) / dip;
+                },
+                yByX: function (line, x, dip) {
+                    dip = dip || a.get.dip(line);
+                    if (dip === "infinity") { return false };
+                    return (dip * x) - (dip * line.start.x) + line.start.y;
+                },
+            }
+
         },
         drawText: function (obj) {//x,y,text,angle,textBaseLine,color,textAlign
             var ctx = this.ctx;
@@ -148,7 +184,7 @@ function Canvas(config) {
             ctx.textBaseline = obj.textBaseLine;
             ctx.font = (obj.fontSize / this.state.zoom) + "px arial";
             ctx.translate(obj.x, obj.y);
-            ctx.rotate(obj.angle * Math.PI / 180);
+            ctx.rotate(obj.angle * Math.PI / -180);
             ctx.textAlign = obj.textAlign;
             ctx.fillStyle = obj.color;
             ctx.fillText(obj.text, 0, 0);
@@ -245,6 +281,6 @@ function Canvas(config) {
         getWidth: a.getWidth.bind(a),
         getHeight: a.getHeight.bind(a),
         getIsDown: a.getIsDown.bind(a),
-        
+        get:a.get,
     };
 }

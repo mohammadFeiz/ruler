@@ -24,10 +24,11 @@
         for (var i = 0; i < list.length; i++) {this.select(Lines.getObjectByID(list[i]));}
     },
     add: function (obj) {
+        var layer = layers.getActive();
         obj.id = this.id;
         obj.show = obj.show || true;
-        //obj.layer = obj.leyer || layers.getActiveLayer().id;
-        //obj.color = obj.color || layers.getActiveLayer().color;
+        obj.layerId = obj.leyerId || layer.id;
+        obj.color = obj.color || layer.color;
         app.state.lines.push(obj);
         this.idGenerator();
         return Lines.getLast(1);
@@ -115,10 +116,6 @@
     //    }
     //    return false;
     //},
-    getDip: function (obj) {
-        if (obj.start.x === obj.end.x) { return "infinity" }
-        else { return (obj.start.y - obj.end.y) / (obj.start.x - obj.end.x);}
-    },
     getRadian: function (obj) {
         var x1 = obj.start.x,y1 = obj.start.y,x2 = obj.end.x,y2 = obj.end.y;
         var radian = (Math.atan((y2 - y1) / (x1 - x2)) / Math.PI * 180);
@@ -136,20 +133,10 @@
         }
         return radian;
     },
-    getAngle:function(obj){
-        var length = Lines.getLength(obj);
-        var cos = (obj.end.x - obj.start.x) / length;
-        var sin = (obj.end.y - obj.start.y) / length;
-        var angle = Math.acos(cos) / Math.PI * 180;
-        if (obj.end.y < obj.start.y) { angle = 360 - angle; }
-        return 360 - angle;
-    },
-    getLength: function (obj) {
-        return Math.sqrt(Math.pow(obj.start.x - obj.end.x, 2) + Math.pow(obj.start.y - obj.end.y, 2));
-    },
+    
+    getLength: function (line) { return Math.sqrt(Math.pow(line.start.x - line.end.x, 2) + Math.pow(line.start.y - line.end.y, 2)); },
     getMeet: function (f, s) {
-        var fDip = this.getDip(f);
-        var sDip = this.getDip(s);
+        var fDip = Lines.getDip(f), sDip = Lines.getDip(s);
         if (fDip === "infinity" && sDip === "infinity") { return false; }
         else if (fDip == "infinity") { return { x: f.start.x, y: (sDip * (f.start.x - s.start.x)) + s.start.y }; }
         else if (sDip == "infinity") { return { x: s.start.x, y: (fDip * (s.start.x - f.start.x)) + f.start.y }; }
@@ -157,8 +144,20 @@
         else {
             var x = (s.start.y - f.start.y + (fDip * f.start.x) - (sDip * s.start.x)) / (fDip - sDip);
             var y = (fDip * (x - f.start.x)) + f.start.y;
-            return {x: x,y: y};
+            return { x: x, y: y };
         }
+    },
+    getDip: function (line) { return line.start.x === line.end.x ? 'infinity' : (line.start.y - line.end.y) / (line.start.x - line.end.x); },
+    getXByY: function (line, y, dip) {
+        dip = dip || a.get.dip(line);
+        if (dip === "infinity") { return line.start.x; }
+        if (dip === 0) { return false; }
+        return (y + (dip * line.start.x) - line.start.y) / dip;
+    },
+    getYByX: function (line, x, dip) {
+        dip = dip || a.get.dip(line);
+        if (dip === "infinity") { return false };
+        return (dip * x) - (dip * line.start.x) + line.start.y;
     },
     extend: function (obj, side, value) {
         if (side === "end") {value *= -1;}
@@ -211,12 +210,6 @@
         else { Points.connect(meetPoint, sMajor); }
 
         return true;
-    },
-    getCenter: function (obj) {
-        return {
-            x: Math.min(obj.start.x, obj.end.x) + Math.abs(obj.start.x - obj.end.x) / 2,
-            y: Math.min(obj.start.y, obj.end.y) + Math.abs(obj.start.y - obj.end.y) / 2
-        };
     },
     isConnect: function (f, s) {
         var fPointsID = [f.start.id, f.end.id],sPointsID = [s.start.id, s.end.id];
@@ -282,22 +275,9 @@
         var line = Lines.getPrependicularLine(line, point);
         return Lines.getLength(line);
     },
-    getXByY: function (line, y, dip) {
-        dip = dip || Lines.getDip(line);
-        if (dip === "infinity") { return line.start.x;}
-        if (dip === 0) {return false;}
-        return (y + (dip * line.start.x) - line.start.y) / dip;
-    },
-    getYByX: function (line, x, dip) {
-        dip = dip || Lines.getDip(line);
-        if (dip === "infinity") {return false};
-        return (dip * x) - (dip * line.start.x) + line.start.y;
-    },
+    
     getRadianWidth: function (f, s) {return Math.abs(Lines.getRadian(s) - Lines.getRadian(f));},
-    getPoints: function (line) {
-        var start = Points.getObjectByID(line.start.id), end = Points.getObjectByID(line.end.id);
-        return {start: start,end: end};
-    },
+    getPoints: function (line) {return {start: Points.getObjectByID(line.start.id),end: Points.getObjectByID(line.end.id)};},
     getPointBySide: function (line, side) { return Points.getObjectByID(line[side].id); },
     getLines: function (obj) {
         var start = false,end = false,startSide = false,endSide = false;

@@ -36,6 +36,7 @@ var create = {
     firstPoint: true,
     ngonSides: 6,
     ortho: true,
+    snapArea:15,
     mousedown: function (e) {
         app.eventHandler("window", "mousemove", $.proxy(this.mousemove, this));
         app.eventHandler("window", "mouseup", $.proxy(this.mouseup, this));
@@ -72,7 +73,7 @@ var create = {
         var points = this.object.getPoints(), lines = this.object.getLines();
         app.canvas.clear();
         for (var i = 0; i < points.length; i++) { app.drawPoint(points[i]); }
-        for (var i = 0; i < lines.length; i++) { app.drawLine(lines[i]); }
+        for (var i = 0; i < lines.length; i++) { app.drawLine($.extend({}, lines[i], {showDimension:i===lines.length - 1})); }
         this.drawLastPoint();
         this.drawController();
     },
@@ -104,7 +105,6 @@ var create = {
     movemousemove: function (e) {
         var lastPoint = this.object.getLastPoint(), client = app.getClient(e), so = this.startOffset, zoom = app.canvas.getZoom();
         var coords = app.canvas.getSnapedCoords({ x: (client.x - so.x) / zoom + so.endX, y: (client.y - so.y) / zoom + so.endY });
-        console.log(client)
         if (lastPoint) { lastPoint.x = coords.x; lastPoint.y = coords.y; }
         this.preview();
     },
@@ -197,9 +197,32 @@ var create = {
             return points;
         }
     },
-    moving:false,
-    autoPan: function (coords, callback) {
-        
+    setting: function () {
+        var template = [
+            { type:"slider", title: "Snap Size", value: create.snapArea, onchange: function (value) { create.snapArea = value; }, start: 1, step: 1, end: 30, }
+        ];
+        if (app.state.createmode === "ngon") {
+            template.push({
+                type:"slider",
+                id:"sides",
+                title: "Sides", value: create.ngonSides,
+                onchange: function (value) { create.ngonSides = value; },
+                start: 3, step: 1, end: 40,
+            });
+            template.push({
+                type:"switch",
+                id:"ortho",title: "Ortho", value: create.ortho, text: ["ON", "OFF"],
+                onchange: function (value) { create.ortho = value; },
+            });
+        }
+        var A = new Alert({
+            buttons: [{ text: "ok" }],
+            template: template,
+            title: app.state.createmode + " setting.",
+            width: 300,
+            top: 100,
+            style:app.style,
+        });
     },
 }
 
