@@ -86,7 +86,7 @@
             float: left;
         }
 
-        #layer, #snap {
+        #layer, #snap,#select-mode {
             float: right;
         }
 
@@ -98,6 +98,24 @@
         }
 #create-modes,#edit-modes{
     width:80px;
+}
+#select-mode{
+    width:45px;
+}
+#sub-menu,#top-menu{
+    position:fixed;
+    left:0;
+    width:calc(100% - 6px);
+    padding:0 3px;
+    background:#222;
+}
+#top-menu{
+    top:0;
+    z-index:10;
+}
+#sub-menu{
+    top:36px;
+    z-index:1;
 }
 
     

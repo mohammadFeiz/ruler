@@ -12,29 +12,7 @@
         background: "#2c2f37",
         gridLineColor: "70,70,70"
     },
-    style: {
-        direction: "ltr",
-        lightFontColor: '#fff',
-        boxShadow: '4px 4px 10px 0px rgba(0,0,0,0.6)',
-        font_color: '#fff',
-        background: "#3e4146",
-        size: 36,
-        light_color: "#ddd",
-        dark_color: "#222",
-        padding: 4,
-        button_fontSize: 12,
-        icon_fontSize: 18,
-        title_fontSize: 12,
-        text_fontSize: 12,
-        item_height: 26,
-        icon_width: 30,
-        hMargin: 2,
-        vMargin: 6,
-        item_borderWidth: 1,
-        borderRadius: 3,
-        header_background: "#222",
-        dropdown_item_margin: 6,
-    },
+    
     init: function () {
         var s = this.state;
         this.canvas = new Canvas({
@@ -278,18 +256,6 @@
         app.eventRemover("window", "mouseup", app.windowMouseUp);
 
     },
-
-    set_tools_setting_popup_content: function () {
-        var id;
-        if (app.appmode === "Create") {
-            id = app.createmode;
-        } else if (app.appmode === "Edit") {
-            id = app.editmode;
-        }
-        $(".tools-setting-group").removeClass("active");
-        $("#tools-setting-group-" + id).addClass("active");
-
-    },
     zoom: function (zoom) {
 
         zoom = parseFloat(zoom.toFixed(2));
@@ -444,27 +410,7 @@ var components = {
 
 
 var display = {
-    containers: [
-        {
-            id: "top-menu", height: 36,
-            getStyle: function () {
-                var str = '', s = app.style;
-                str += 'position:fixed;left:0;top:0;width:calc(100% - ' + (s.hMargin) + 'px);z-index:10;';
-                str += 'background:' + s.header_background + ';';
-                str += 'padding:0 ' + (s.hMargin / 2) + 'px;';
-                return str;
-            }
-        },
-        {
-            id: "sub-menu",
-            getStyle: function () {
-                var s = app.style, str = 'position:fixed;left:0;width:calc(100% - ' + (s.hMargin) + 'px);top:' + s.size + 'px;z-index:1;';
-                str += 'background:' + s.header_background + ';';
-                str += 'padding:0 ' + (s.hMargin / 2) + 'px;';
-                return str;
-            }
-        }
-    ],
+    containers: [{id: "top-menu",},{id: "sub-menu",}],
     items: [
         { component: "Button", id: "main-menu", iconClass: "mdi mdi-menu",className:"icon", container: "#top-menu" },
         {
@@ -539,21 +485,20 @@ var display = {
             id: "weld", component: "Button", iconClass: "", className: "button", text: "Weld", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && edit.modify.selectMode === "Point"; },
         },
-        //{
-        //    id: "selectMode", component: "Dropdown", float: "right", text: "Point", open: false, container: "#sub-menu", width: 55, title: "Mode:",
-        //    options: [{ text: "Point", value: "Point" }, { text: "Line", value: "Line" }, { text: "Spline", value: "Spline" }],
-        //    callback: function (value) { edit.modify.selectMode = value; display.render(); },
-        //    show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
-        //},
+        {
+            component: "Dropdown", id: "select-mode", className: "dropdown", container: "#sub-menu",
+            text:function(){return edit.modify.selectMode},
+            options: [{ text: "Point", value: "Point" }, { text: "Line", value: "Line" }, { text: "Spline", value: "Spline" }],
+            callback: function (value) { edit.modify.selectMode = value; display.render(); },
+            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
+        },
     ],
-
-    getObject: function (id) { for (var i = 0; i < this.items.length; i++) { if (this.items[i].id === id) { return this.items[i]; } } },
     render: function () {
         var str = '';
         for (var i = 0; i < this.containers.length; i++) {
             var container = this.containers[i];
             $('#' + container.id).remove();
-            str += '<div id="' + container.id + '" style="' + container.getStyle() + '"></div>';
+            str += '<div id="' + container.id + '"></div>';
         }
         $("body").append(str);
         for (var i = 0; i < this.items.length; i++) {
