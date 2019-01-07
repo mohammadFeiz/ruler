@@ -339,38 +339,41 @@ var components = {
     },
     setEvents: {
         Button:function(obj){
-            var element = $(obj.container).find("[data-id=" + obj.id + "]");
+            var element = $(obj.container).find("#" + obj.id);
             app.eventHandler(element, "mousedown", function () {
-                var item = components.findItem($(this).attr("data-id"));
+                var item = components.findItem($(this).attr("id"));
                 if (item.callback) { item.callback(item); }
             });
         },
         Dropdown: function (obj) {
-            var element = $(obj.container).find("[data-id=" + obj.id + "]");
-            app.eventHandler(element.find(".dropdown-text"), "mousedown", function () {
-                var element = $(this).parent();
-                var item = components.findItem(element.attr("data-id"));
-                element.html(components.getTemplate.DropdownPopup(item));
+            var dropdown = $(obj.container).find("#" + obj.id);
+            var dropdownText = dropdown.find(".dropdown-text");
+            app.eventHandler(dropdownText, "mousedown", function () {
+                var dropdown = $(this).parent();
+                var item = components.findItem(dropdown.attr("id"));
+                dropdown.html(components.getTemplate.DropdownPopup(item));
                 components.setEvents.DropdownBackdrop(item);
                 components.setEvents.DropdownItem(item);
             });
         },
         DropdownBackdrop:function(obj){
-            var element = $(obj.container).find("[data-id=" + obj.id + "]");
-            app.eventHandler(element.find(".back-drop"), "mousedown", function () {
-                var element = $(this).parent();
-                var item = components.findItem(element.attr("data-id"));
-                element.html(components.getTemplate.DropdownTitle(item));
+            if (!obj) { return; }
+            var backdrop = $(obj.container + ' #' + obj.id + ' .back-drop');
+            app.eventHandler(backdrop, "mousedown", function () {
+                var dropdown = $(this).parent();
+                var item = components.findItem(dropdown.attr("id"));
+                dropdown.html(components.getTemplate.DropdownTitle(item));
                 components.setEvents.Dropdown(item);
             });
         },
         DropdownItem: function (obj) {
-            var element = $(obj.container).find("[data-id=" + obj.id + "]");
-            app.eventHandler(element.find(".dropdown-item"), "mousedown", function () {
-                var element = $(this);
-                var dropdown = element.parents(".dropdown");
-                var item = components.findItem(dropdown.attr("data-id"));
-                var index = element.attr("data-index");
+            if (!obj) { return; }
+            var items = $(obj.container + ' #' + obj.id + ' .dropdown-item');
+            app.eventHandler(items, "mousedown", function () {
+                var dropdownitem = $(this);
+                var index = dropdownitem.attr("data-index");
+                var dropdown = dropdownitem.parent().parent();
+                var item = components.findItem(dropdown.attr("id"));
                 var option = item.options[index];
                 item.text = option.text;
                 if (item.callback) { item.callback(option.value) }
@@ -385,108 +388,34 @@ var components = {
         var item = components.findItem(id);
         for (var prop in obj) { item[prop] = obj[prop]; }
         var container = $("#" + item.containerId);
-        var element = container.find("[data-id=" + id + "]");
+        var element = container.find("#" + id);
         var updatedElement = components.getTemplate[item.component](item);
         element.replaceWith(updatedElement);
         components.setEvents(item);
     },
     getTemplate: {
-        Icon: function (props) {
-            var s = $.extend({}, components.state.style, props.style);
-            function getStyle() {
-                var str = '';
-                str += 'position:relative;';
-                str += 'float:' + props.float + ';';
-                str += 'width:' + s.icon_width + 'px;';
-                str += 'height:' + s.item_height + 'px;';
-                str += 'line-height:' + s.item_height + 'px;';
-                str += 'margin:' + s.vMargin + 'px ' + s.hMargin + 'px;';
-                str += 'text-align:center;';
-                if (props.background) { str += 'color:' + s.dark_color + ';background:' + s.light_color + ';'; }
-                else { str += 'color:' + s.light_color + ';'; }
-                str += 'border-radius:' + s.borderRadius + 'px;';
-                str += 'font-size:' + s.icon_fontSize + 'px;';
-                return str;
-            }
-            var str = '';
-            str += '<div class="icon' + (props.className ? ' ' + props.className : '') + '" style="' + getStyle() + '" data-id="' + props.id + '">';
-            str += '<div class="' + props.iconClass + '"></div>';
+        Button: function (props) {//id,float,width,background,text
+            var text = props.text || "";
+            text = typeof text === "function" ? text() : text;
+            var iconClass = props.iconClass || "";
+            iconClass = typeof iconClass === "function" ? iconClass() : iconClass;
+            var str = '<div class="' + (props.className|| '') + '" id="' + props.id + '">';
+            str += iconClass?'<div class="button-icon ' + props.iconClass + '"></div>':'';
+            str += text?'<div class="button-text">'+text+'</div>':'';
             str += '</div>';
             return str;
         },
-        Button: function (props) {//id,float,width,background,text
-            var s = $.extend({}, components.state.style, props.style);
-            function getStyle() {
-                var str = '';
-                str += 'float:' + props.float + ';';
-                if (props.width) {
-                    str += 'width:' + props.width + 'px;';
-                }
-                else {
-                    str += 'padding:0 ' + s.padding + 'px;';
-                }
-                str += 'height:' + s.item_height + 'px;';
-                str += 'line-height:' + s.item_height + 'px;';
-                str += 'text-align:center;';
-                if (props.background) { str += 'color:' + s.dark_color + ';background:' + s.light_color + ';'; }
-                else { str += 'color:' + s.light_color + ';'; }
-                str += 'margin:' + s.vMargin + 'px ' + s.hMargin + 'px;';
-                str += 'border-radius:' + s.borderRadius + 'px;';
-                str += 'font-size:' + s.button_fontSize + 'px;';
-                return str;
-            }
-            var text = props.text || "";
-            text = typeof text === "function" ? text() : text;
-            return '<div class="button' + (props.className ? ' ' + props.className : '') + '" style="' + getStyle() + '" data-id="' + props.id + '">' + text + '</div>';
-        },
         Dropdown: function (props) {
-            var s = $.extend({}, components.state.style, props.style);
-            function getStyle() {
-                var str = '';
-                str += 'position:relative;';
-                str += 'float:' + props.float + ';';
-                str += 'width:' + props.width + 'px;';
-                str += 'height:' + (s.item_height - 2) + 'px;';
-                if (props.background) { str += 'color:' + s.dark_color + ';background:' + s.light_color + ';'; }
-                else { str += 'color:' + s.light_color + ';'; }
-                str += 'line-height:' + s.item_height + 'px;';
-                str += 'margin:' + s.vMargin + 'px ' + s.hMargin + 'px;';
-                str += 'border-radius:' + s.borderRadius + 'px;';
-                str += 'font-size:' + s.button_fontSize + 'px;';
-                str += 'border:1px solid' + s.light_color + ';';
-                if (props.disable === true) { str += 'opacity:0.2;'; }
-                return str;
-            }
             var str = '';
-            str += '<div class="dropdown' + (props.className ? ' ' + props.className : '') + '" style="' + getStyle() + '" data-id="' + props.id + '">';
+            str += '<div class="' + (props.className || '') + '" id="' + props.id + '">';
             str += components.getTemplate.DropdownTitle(props);
             str += '</div>';
             return str;
         },
         DropdownPopup: function (props) {
-            var s = $.extend({}, components.state.style, props.style);
-            function getPopupStyle() {
-                var str = '';
-                str += 'position:absolute;width:calc(100% - 0px);left:-1px;top:-1px;z-index: 10;overflow:hidden;';
-                if (props.background) { str += 'background:' + s.light_color + ';'; }
-                else { str += 'background:' + s.dark_color + ';'; }
-                str += 'border-radius:' + s.borderRadius + 'px;';
-                str += 'border:1px solid;';
-
-                return str;
-            }
-            function getItemStyle() {
-                var str = '';
-                str += 'position:relative;width:calc(100% - ' + (2 * s.padding) + 'px);';
-                str += 'border-radius:' + s.borderRadius + 'px;';
-                str += 'padding:0 ' + s.padding + 'px;';
-                if (props.background) { str += 'background:' + s.light_color + ';color:' + s.dark_color + ';'; }
-                else { str += 'background:' + s.dark_color + ';color:' + s.light_color + ';'; }
-                str += 'font-size:' + s.button_fontSize + 'px;';
-                str += 'margin-bottom:' + s.dropdown_item_margin + 'px;';
-                str += 'margin-top:' + s.dropdown_item_margin + 'px;';
-                return str;
-            }
+            if (!props) { return; }
+            function getPopupStyle() {return 'position:absolute;width:100%;left:-1px;top:-1px;z-index: 10;overflow:hidden;';}
+            function getItemStyle() {return 'position:relative;width:100%;';}
             var str = '';
             str += '<div class="back-drop" data-id="' + props.id + '"></div>';
             str += '<div class="dropdown-popup" style="' + getPopupStyle() + '">';
@@ -499,36 +428,10 @@ var components = {
             return str;
         },
         DropdownTitle: function (props) {
-            var s = $.extend({}, components.state.style, props.style);
-            function getCaretStyle() {
-                var str = '';
-                str += 'position: absolute;right:8px;top:calc(50% - 2px);';
-                str += 'border-top:4px solid ' + (props.background ? s.dark_color : s.light_color) + ';';
-                str += 'border-left:4px solid transparent;';
-                str += 'border-right:4px solid transparent;';
-                return str;
-            }
-            function getTitleStyle() {
-                var str = '';
-                str += 'position:absolute;';
-                str += 'height:' + (s.item_height - 2) + 'px;';
-                str += 'color:' + s.light_color + ';';
-                str += 'line-height:' + s.item_height + 'px;';
-                str += 'font-size:' + s.button_fontSize + 'px;';
-                str += 'top:0;';
-                str += 'right:calc(100% + ' + (s.hMargin * 2) + 'px);';
-                return str;
-            }
-            function getTextStyle() {
-                var str = '';
-                str += 'width:calc(100% - '+(2 * s.padding)+'px);height:100%;position:absolute;left:0,top:0;';
-                str += 'padding:0 ' + s.padding + 'px;';
-                return str;
-            }
+            var text = props.text || "";
+            text = typeof text === "function" ? text() : text;
             var str = '';
-            /**/str += '<div class="dropdown-title" style="' + getTitleStyle() + '">' + (props.title || "") + '</div>';
-            /**/str += '<div style="' + getCaretStyle() + '"></div>';
-            /**/str += '<div class="dropdown-text" style="'+getTextStyle()+'">'+props.text+'</div>';
+            str += '<div class="dropdown-text">'+text+'</div>';
             return str;
         }
     },
@@ -563,9 +466,9 @@ var display = {
         }
     ],
     items: [
-        { id: "mainMenu", component: "Icon", iconClass: "mdi mdi-menu", float: "left", container: "#top-menu" },
+        { component: "Button", id: "main-menu", iconClass: "mdi mdi-menu",className:"icon", container: "#top-menu" },
         {
-            id: "setAppMode", component: "Button", float: "left", container: "#top-menu", width: 50, background: true,
+            component: "Button", id: "set-app-mode", className: "button", container: "#top-menu",
             text: function () { return app.state.appmode === "create" ? "Create" : "Edit"; },
             callback: function (item) {
                 if (app.state.appmode === "create") { app.state.appmode = "edit"; } else { app.state.appmode = "create"; }
@@ -573,57 +476,75 @@ var display = {
             },
         },
         {
-            id: "createModes", component: "Dropdown", float: "left", text: "Polyline", activeIndex: 0, open: false, container: "#top-menu", width: 85,
+            component: "Dropdown", id: "create-modes",className:"dropdown", container: "#top-menu",
             options: [{ text: "Polyline", value: "polyline" }, { text: "Rectangle", value: "rectangle" }, { text: "NGon", value: "ngon" }, ],
+            text: function () {
+                switch (app.state.createmode) {
+                    case 'polyline': return 'Polyline';
+                    case 'rectangle': return 'rectangle';
+                    case 'ngon': return 'NGon';
+                }
+            },
             callback: function (value) { app.state.createmode = value; display.render(); },
             show: function () { return app.state.appmode === "create"; },
         },
         {
-            id: "editModes", component: "Dropdown", float: "left", text: "Modify", activeIndex: 0,
-            open: false, container: "#top-menu", width: 85,
-            options: [{ text: "Modify", value: "modify" }, { text: "Add Point", value: "addPoint" }, { text: "connect", value: "connectPoints" }, { text: "Chamfer", value: "chamfer" }, { text: "Join Lines", value: "joinLines" },
-                { text: "Offset Line", value: "offsetLine" }, { text: "Extend Line", value: "extendLine" }, { text: "Plumb Line", value: "plumbLine" }, { text: "Divide Line", value: "divide" }],
+            component: "Dropdown", id: "edit-modes",className:"dropdown",container: "#top-menu",
+            options: [{ text: "Modify", value: "modify" }, { text: "Add Point", value: "addPoint" }, { text: "Connect", value: "connectPoints" }, { text: "Chamfer", value: "chamfer" }, { text: "Join Lines", value: "joinLines" },
+            { text: "Offset Line", value: "offsetLine" }, { text: "Extend Line", value: "extendLine" }, { text: "Plumb Line", value: "plumbLine" }, { text: "Divide Line", value: "divide" }],
+            text: function () {
+                switch (app.state.editmode) {
+                    case 'modify': return 'Modify';
+                    case 'addPoint': return 'Add Point';
+                    case 'connectPoints': return 'Connect';
+                    case 'chamfer': return 'Chamfer';
+                    case 'joinLines': return 'Join Lines';
+                    case 'offsetLine': return 'Offset Line';
+                    case 'extendLine': return 'Extend Line';
+                    case 'plumLine': return 'Plumb Line';
+                    case 'divideLine': return 'Divide Line';
+                }
+            },
             callback: function (value) { app.state.editmode = value; display.render(); },
             show: function () { return app.state.appmode === "edit"; },
         },
-        { id: "layer", component: "Icon", iconClass: "mdi mdi-buffer", float: "right", container: "#top-menu" },
-        { id: "snap", component: "Icon", iconClass: "mdi mdi-magnet", float: "right", container: "#top-menu" },
-        { id: "undo", component: "Icon", iconClass: "mdi mdi-undo-variant", float: "right", container: "#top-menu" },
+        { id: "layer", component: "Button", iconClass: "mdi mdi-buffer", className: "icon", container: "#top-menu" },
+        { id: "snap", component: "Button", iconClass: "mdi mdi-magnet", className: "icon", container: "#top-menu" },
         {
-            id: "settings", component: "Icon", iconClass: "mdi mdi-settings", float: "left", container: "#top-menu",
+            id: "settings", component: "Button", iconClass: "mdi mdi-settings", className: "icon", container: "#top-menu",
             callback: function () { window[app.state.appmode].setting(); }
         },
 
         {
-            id: "deleteItem", component: "Icon", iconClass: "mdi mdi-delete", float: "left", container: "#sub-menu",
+            id: "delete-item", component: "Button", iconClass: "mdi mdi-delete", className: "icon", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
         },
         {
-            id: "selectAll", component: "Icon", iconClass: "mdi mdi-select-all", float: "left", container: "#sub-menu",
+            id: "select-all", component: "Button", iconClass: "mdi mdi-select-all", className: "icon", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
         },
         {
-            id: "mirrorX", component: "Icon", iconClass: "mdi mdi-unfold-more-horizontal", float: "left", container: "#sub-menu",
+            id: "mirror-x", component: "Button", iconClass: "mdi mdi-unfold-more-horizontal", className: "icon", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
         },
         {
-            id: "mirrorY", component: "Icon", iconClass: "mdi mdi-unfold-more-vertical", float: "left", container: "#sub-menu",
+            id: "mirror-y", component: "Button", iconClass: "mdi mdi-unfold-more-vertical", className: "icon", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
         },
         {
-            id: "breakPoint", component: "Button", iconClass: "", float: "left", text: "Break", container: "#sub-menu",
+            id: "break-point", component: "Button", iconClass: "", className: "button", text: "Break", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && edit.modify.selectMode === "Point"; },
         },
         {
-            id: "weld", component: "Button", iconClass: "", float: "left", text: "Weld", container: "#sub-menu",
+            id: "weld", component: "Button", iconClass: "", className: "button", text: "Weld", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && edit.modify.selectMode === "Point"; },
         },
-        {
-            id: "selectMode", component: "Dropdown", float: "right", text: "Point", open: false, container: "#sub-menu", width: 55, title: "Mode:",
-            options: [{ text: "Point", value: "Point" }, { text: "Line", value: "Line" }, { text: "Spline", value: "Spline" }],
-            callback: function (value) { edit.modify.selectMode = value; display.render(); },
-            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
-        },
+        //{
+        //    id: "selectMode", component: "Dropdown", float: "right", text: "Point", open: false, container: "#sub-menu", width: 55, title: "Mode:",
+        //    options: [{ text: "Point", value: "Point" }, { text: "Line", value: "Line" }, { text: "Spline", value: "Spline" }],
+        //    callback: function (value) { edit.modify.selectMode = value; display.render(); },
+        //    show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
+        //},
     ],
 
     getObject: function (id) { for (var i = 0; i < this.items.length; i++) { if (this.items[i].id === id) { return this.items[i]; } } },
