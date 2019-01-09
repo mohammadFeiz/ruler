@@ -197,6 +197,7 @@ var create = {
             return points;
         }
     },
+    settingInstance:null,
     setting: function () {
         var template = [
             { type:"slider", title: "Snap Size", value: create.snapArea, onchange: function (value) { create.snapArea = value; }, start: 1, step: 1, end: 30, }
@@ -215,13 +216,10 @@ var create = {
                 onchange: function (value) { create.ortho = value; },
             });
         }
-        var A = new Alert({
-            buttons: [{ text: "ok" }],
+        Alert.open({
+            buttons: [{ text: "ok",callback:Alert.close }],
             template: template,
             title: app.state.createmode + " setting.",
-            width: 300,
-            top: 100,
-            style:app.style,
         });
     },
 }

@@ -6,6 +6,9 @@
         if (edit[app.state.editmode].reset !== undefined) { edit[app.state.editmode].reset(); }
         app.redraw();
     },
+    setting:function(){
+        edit[app.state.editmode].setting();
+    },
     mousedown: function (e) {
         app.eventHandler("window", "mousemove", $.proxy(this.mousemove, this));
         app.eventHandler("window", "mouseup", $.proxy(this.mouseup, this));

@@ -12,7 +12,9 @@
         background: "#2c2f37",
         gridLineColor: "70,70,70"
     },
-    
+    style: {
+        lightFontColor:"#fff",
+    },
     init: function () {
         var s = this.state;
         this.canvas = new Canvas({
@@ -412,9 +414,9 @@ var components = {
 var display = {
     containers: [{id: "top-menu",},{id: "sub-menu",}],
     items: [
-        { component: "Button", id: "main-menu", iconClass: "mdi mdi-menu",className:"icon", container: "#top-menu" },
+        { component: "Button", id: "main-menu", iconClass: "mdi mdi-menu",className:"item icon", container: "#top-menu" },
         {
-            component: "Button", id: "set-app-mode", className: "button", container: "#top-menu",
+            component: "Button", id: "set-app-mode", className: "item button", container: "#top-menu",
             text: function () { return app.state.appmode === "create" ? "Create" : "Edit"; },
             callback: function (item) {
                 if (app.state.appmode === "create") { app.state.appmode = "edit"; } else { app.state.appmode = "create"; }
@@ -422,7 +424,7 @@ var display = {
             },
         },
         {
-            component: "Dropdown", id: "create-modes",className:"dropdown", container: "#top-menu",
+            component: "Dropdown", id: "create-modes", className: "item dropdown", container: "#top-menu",
             options: [{ text: "Polyline", value: "polyline" }, { text: "Rectangle", value: "rectangle" }, { text: "NGon", value: "ngon" }, ],
             text: function () {
                 switch (app.state.createmode) {
@@ -435,7 +437,7 @@ var display = {
             show: function () { return app.state.appmode === "create"; },
         },
         {
-            component: "Dropdown", id: "edit-modes",className:"dropdown",container: "#top-menu",
+            component: "Dropdown", id: "edit-modes", className: "item dropdown", container: "#top-menu",
             options: [{ text: "Modify", value: "modify" }, { text: "Add Point", value: "addPoint" }, { text: "Connect", value: "connectPoints" }, { text: "Chamfer", value: "chamfer" }, { text: "Join Lines", value: "joinLines" },
             { text: "Offset Line", value: "offsetLine" }, { text: "Extend Line", value: "extendLine" }, { text: "Plumb Line", value: "plumbLine" }, { text: "Divide Line", value: "divide" }],
             text: function () {
@@ -454,39 +456,39 @@ var display = {
             callback: function (value) { app.state.editmode = value; display.render(); },
             show: function () { return app.state.appmode === "edit"; },
         },
-        { id: "layer", component: "Button", iconClass: "mdi mdi-buffer", className: "icon", container: "#top-menu" },
-        { id: "snap", component: "Button", iconClass: "mdi mdi-magnet", className: "icon", container: "#top-menu" },
+        { id: "layer", component: "Button", iconClass: "mdi mdi-buffer", className: "item icon", container: "#top-menu" },
+        { id: "snap", component: "Button", iconClass: "mdi mdi-magnet", className: "item icon", container: "#top-menu" },
         {
-            id: "settings", component: "Button", iconClass: "mdi mdi-settings", className: "icon", container: "#top-menu",
+            id: "settings", component: "Button", iconClass: "mdi mdi-settings", className: "item icon", container: "#top-menu",
             callback: function () { window[app.state.appmode].setting(); }
         },
 
         {
-            id: "delete-item", component: "Button", iconClass: "mdi mdi-delete", className: "icon", container: "#sub-menu",
+            id: "delete-item", component: "Button", iconClass: "mdi mdi-delete", className: "item icon", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
         },
         {
-            id: "select-all", component: "Button", iconClass: "mdi mdi-select-all", className: "icon", container: "#sub-menu",
+            id: "select-all", component: "Button", iconClass: "mdi mdi-select-all", className: "item icon", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
         },
         {
-            id: "mirror-x", component: "Button", iconClass: "mdi mdi-unfold-more-horizontal", className: "icon", container: "#sub-menu",
+            id: "mirror-x", component: "Button", iconClass: "mdi mdi-unfold-more-horizontal", className: "item icon", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
         },
         {
-            id: "mirror-y", component: "Button", iconClass: "mdi mdi-unfold-more-vertical", className: "icon", container: "#sub-menu",
+            id: "mirror-y", component: "Button", iconClass: "mdi mdi-unfold-more-vertical", className: "item icon", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
         },
         {
-            id: "break-point", component: "Button", iconClass: "", className: "button", text: "Break", container: "#sub-menu",
+            id: "break-point", component: "Button", iconClass: "", className: "item button", text: "Break", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && edit.modify.selectMode === "Point"; },
         },
         {
-            id: "weld", component: "Button", iconClass: "", className: "button", text: "Weld", container: "#sub-menu",
+            id: "weld", component: "Button", iconClass: "", className: "item button", text: "Weld", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && edit.modify.selectMode === "Point"; },
         },
         {
-            component: "Dropdown", id: "select-mode", className: "dropdown", container: "#sub-menu",
+            component: "Dropdown", id: "select-mode", className: "item dropdown", container: "#sub-menu",
             text:function(){return edit.modify.selectMode},
             options: [{ text: "Point", value: "Point" }, { text: "Line", value: "Line" }, { text: "Spline", value: "Spline" }],
             callback: function (value) { edit.modify.selectMode = value; display.render(); },
