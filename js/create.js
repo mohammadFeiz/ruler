@@ -79,8 +79,8 @@ var create = {
     },
     drawLastPoint: function () {
         var point = this.object.state.points[this.object.state.points.length - 1];
-        app.canvas.drawArc({ x: point.x, y: point.y, radius: 3, color: "orange", mode: "fill" });
-        app.canvas.drawArc({ x: point.x, y: point.y, radius: 6, color: "orange", mode: "stroke" });
+        app.canvas.drawArc({ x: point.x, y: point.y, radius: 3, fill: "orange" });
+        app.canvas.drawArc({ x: point.x, y: point.y, radius: 6, stroke: "orange" });
     },
     drawController: function () {
         var o = this.object, points = o.getPoints(), lines = o.getLines(), lastPoint = points[points.length - 1];
@@ -200,20 +200,23 @@ var create = {
     settingInstance:null,
     setting: function () {
         var template = [
-            { type:"slider", title: "Snap Size", value: create.snapArea, onchange: function (value) { create.snapArea = value; }, start: 1, step: 1, end: 30, }
+            {
+                type: "slider", title: "Snap Size", value: create.snapArea,
+                callback: function (value) {
+                    create.snapArea = value;
+                },
+                start: 1, step: 1, end: 30,
+            }
         ];
         if (app.state.createmode === "ngon") {
             template.push({
-                type:"slider",
-                id:"sides",
-                title: "Sides", value: create.ngonSides,
-                onchange: function (value) { create.ngonSides = value; },
+                type: "slider", title: "Sides",value: create.ngonSides,
+                callback: function (value) { create.ngonSides = value; },
                 start: 3, step: 1, end: 40,
             });
             template.push({
-                type:"switch",
-                id:"ortho",title: "Ortho", value: create.ortho, text: ["ON", "OFF"],
-                onchange: function (value) { create.ortho = value; },
+                type:"switch",title: "Ortho", value: create.ortho,
+                callback: function (value) { create.ortho = value; },
             });
         }
         Alert.open({

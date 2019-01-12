@@ -77,7 +77,7 @@
     getObjectByID: function (id) {
         var index = Lines.getIndexByID(id);
         if (index === false) {return false;}
-        return canvas.Lines[index];
+        return app.state.lines[index];
     },
     getLast: function (n) {
         if (app.state.lines.length < n) {

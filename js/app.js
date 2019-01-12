@@ -59,15 +59,14 @@
         for (var i = 0; i < s.points.length; i++) {
             var point = s.points[i];
             if (point.show === false) { continue; }
-            point.connectedLines = point.connectedLines || [];
             var linesCount = point.connectedLines.length;
             if (linesCount === 1) { this.drawOpenPoint(point) }
             else { this.drawPoint(point); }
         }
     },
     drawLine: function (line) { this.canvas.drawLine(line); },
-    drawPoint: function (point) { this.canvas.drawArc({ x: point.x, y: point.y, radius: 2, color: "#fff", mode: "fill" }); },
-    drawOpenPoint: function (point) { this.canvas.drawRectangle({ position: "center", x: point.x, y: point.y, width: 4, height: 4, color: "#fff", mode: "fill" }); },
+    drawPoint: function (point) { this.canvas.drawArc({ x: point.x, y: point.y, radius: 2, fill: point.selected === true?"red":point.color }); },
+    drawOpenPoint: function (point) { this.canvas.drawRectangle({ center: true, x: point.x, y: point.y, width: 4, height: 4, fill: point.selected === true ? "red" : point.color }); },
     drawAxes: function () {
         this.ctx.save();
         this.ctx.setLineDash([3, 3]);
@@ -82,7 +81,8 @@
         this.drawPoints();
     },
     getPoint: function (obj) {
-        var coords = obj.coords || this.canvas.getMousePosition(), is = obj.is || {}, isnt = obj.isnt || {}, area = obj.area || 18 / this.canvas.getZoom(), points = this.state.points;
+        obj = obj || {};
+        var c = this.canvas,coords = obj.coords || c.getMousePosition(), is = obj.is || {}, isnt = obj.isnt || {}, area = obj.area || 18 / c.getZoom(), points = this.state.points;
         for (var i = 1; i < area; i += 2) {
             for (var j = 0; j < points.length; j++) {
                 var point = points[j];
@@ -99,8 +99,8 @@
         return false;
     },
     getLine: function (obj) {
-        var c = this.canvas, coords = obj.coords || c.getMousePosition(), is = obj.is || {},
-        isnt = obj.isnt || {}, area = obj.area || 18 / c.getZoom(), lines = app.state.lines;
+        obj = obj || {};
+        var c = this.canvas, coords = obj.coords || c.getMousePosition(), is = obj.is || {},isnt = obj.isnt || {}, area = obj.area || 18 / c.getZoom(), lines = this.state.lines;
         for (var i = 1; i < area; i += 2) {
             for (var j = 0; j < lines.length; j++) {
                 var line = lines[j], s = line.start, e = line.end, dip = c.get.line.dip(line), isFiltered = false,
@@ -300,57 +300,72 @@ var components = {
         components.items.push(item);
     },
     render: function (obj) {
-        var template = components.getTemplate[obj.component](obj);
-        $(obj.container).append(template);
+        components[obj.component](obj);
         components.add(obj);
-        components.setEvents[obj.component](obj)
     },
-    setEvents: {
-        Button:function(obj){
-            var element = $(obj.container).find("#" + obj.id);
-            app.eventHandler(element, "mousedown", function () {
-                var item = components.findItem($(this).attr("id"));
-                if (item.callback) { item.callback(item); }
-            });
-        },
-        Dropdown: function (obj) {
-            var dropdown = $(obj.container).find("#" + obj.id);
+    Button: function (obj) {
+        var container = $(obj.container);
+        var text = obj.text || ""; text = typeof text === "function" ? text() : text;
+        var iconClass = obj.iconClass || ""; iconClass = typeof iconClass === "function" ? iconClass() : iconClass;
+        var str = '<div class="' + (obj.className || '') + '" id="' + obj.id + '">';
+        str += iconClass ? '<div class="button-icon ' + iconClass + '"></div>' : '';
+        str += text ? '<div class="button-text">' + text + '</div>' : '';
+        str += '</div>';
+        container.append(str);
+        app.eventHandler(container.find("#" + obj.id), "mousedown", function () {
+            var item = components.findItem($(this).attr("id"));
+            if (item.callback) { item.callback(item); }
+        });
+    },
+    Dropdown:function(obj){
+        var container = $(obj.container);
+        var text = obj.text || ""; text = typeof text === "function" ? text() : text;
+        var str = '';
+        str += '<div class="' + (obj.className || '') + '" id="' + obj.id + '">';
+        /**/str += '<div class="dropdown-text">' + text + '</div>';
+        str += '<div class="back-drop"></div>';
+        str += '<div class="dropdown-popup">';
+        for (var i = 0; i < obj.options.length; i++) {
+            str += '<div class="dropdown-item" data-index="' + i + '">' + obj.options[i].text + '</div>';
+        }
+        str += '</div>';
+        str += '</div>';
+        container.append(str);
+        var dropdownText = container.find(".dropdown-text");
+        var backDrop = container.find(".back-drop");
+        var popup = container.find(".dropdown-popup");
+        var item = container.find(".dropdown-item");
+        backDrop.hide();
+        popup.hide();
+        app.eventHandler(dropdownText, "mousedown", function () {
+            var dropdown = $(this).parent();
+            dropdown.find(".back-drop").show();
+            dropdown.find(".dropdown-popup").show();
+        });
+        app.eventHandler(backDrop, "mousedown", function () {
+            var dropdown = $(this).parent();
+            dropdown.find(".back-drop").hide();
+            dropdown.find(".dropdown-popup").hide();
+        });
+        app.eventHandler(item, "mousedown", function () {
+            var item = $(this);
+            var index = item.attr("data-index");
+            var dropdown = item.parent().parent();
             var dropdownText = dropdown.find(".dropdown-text");
-            app.eventHandler(dropdownText, "mousedown", function () {
-                var dropdown = $(this).parent();
-                var item = components.findItem(dropdown.attr("id"));
-                dropdown.html(components.getTemplate.DropdownPopup(item));
-                components.setEvents.DropdownBackdrop(item);
-                components.setEvents.DropdownItem(item);
-            });
-        },
-        DropdownBackdrop:function(obj){
-            if (!obj) { return; }
-            var backdrop = $(obj.container + ' #' + obj.id + ' .back-drop');
-            app.eventHandler(backdrop, "mousedown", function () {
-                var dropdown = $(this).parent();
-                var item = components.findItem(dropdown.attr("id"));
-                dropdown.html(components.getTemplate.DropdownTitle(item));
-                components.setEvents.Dropdown(item);
-            });
-        },
-        DropdownItem: function (obj) {
-            if (!obj) { return; }
-            var items = $(obj.container + ' #' + obj.id + ' .dropdown-item');
-            app.eventHandler(items, "mousedown", function () {
-                var dropdownitem = $(this);
-                var index = dropdownitem.attr("data-index");
-                var dropdown = dropdownitem.parent().parent();
-                var item = components.findItem(dropdown.attr("id"));
-                var option = item.options[index];
-                item.text = option.text;
-                if (item.callback) { item.callback(option.value) }
-                dropdown.html(components.getTemplate.DropdownTitle(item));
-                components.setEvents.Dropdown(item);
-            });
-        },
-        Icon: function (obj) {components.setEvents.Button(obj);}
+            var backDrop = dropdown.find(".back-drop");
+            var popup = dropdown.find(".dropdown-popup");
+            var id = dropdown.attr("id");
+            var object = components.findItem(id);
+            dropdownText.html(object.options[index].text);
+            if (object.callback) { object.callback(object.options[index].value); }
+            backDrop.hide();
+            popup.hide();
+        });
 
+    },
+    Slider: function (obj) {
+        obj.style = obj.style || { button_width: 24, button_height: 24, line_width: 4 };
+        new slider(obj);
     },
     update: function (id, obj) {
         var item = components.findItem(id);
@@ -360,48 +375,6 @@ var components = {
         var updatedElement = components.getTemplate[item.component](item);
         element.replaceWith(updatedElement);
         components.setEvents(item);
-    },
-    getTemplate: {
-        Button: function (props) {//id,float,width,background,text
-            var text = props.text || "";
-            text = typeof text === "function" ? text() : text;
-            var iconClass = props.iconClass || "";
-            iconClass = typeof iconClass === "function" ? iconClass() : iconClass;
-            var str = '<div class="' + (props.className|| '') + '" id="' + props.id + '">';
-            str += iconClass?'<div class="button-icon ' + props.iconClass + '"></div>':'';
-            str += text?'<div class="button-text">'+text+'</div>':'';
-            str += '</div>';
-            return str;
-        },
-        Dropdown: function (props) {
-            var str = '';
-            str += '<div class="' + (props.className || '') + '" id="' + props.id + '">';
-            str += components.getTemplate.DropdownTitle(props);
-            str += '</div>';
-            return str;
-        },
-        DropdownPopup: function (props) {
-            if (!props) { return; }
-            function getPopupStyle() {return 'position:absolute;width:100%;left:-1px;top:-1px;z-index: 10;overflow:hidden;';}
-            function getItemStyle() {return 'position:relative;width:100%;';}
-            var str = '';
-            str += '<div class="back-drop" data-id="' + props.id + '"></div>';
-            str += '<div class="dropdown-popup" style="' + getPopupStyle() + '">';
-            for (var i = 0; i < props.options.length; i++) {
-                str += '<div class="dropdown-item" style="' + getItemStyle() + '" data-index="' + i + '">';
-                str += props.options[i].text;
-                str += '</div>';
-            }
-            str += '</div>';
-            return str;
-        },
-        DropdownTitle: function (props) {
-            var text = props.text || "";
-            text = typeof text === "function" ? text() : text;
-            var str = '';
-            str += '<div class="dropdown-text">'+text+'</div>';
-            return str;
-        }
     },
 }
 
@@ -456,8 +429,24 @@ var display = {
             callback: function (value) { app.state.editmode = value; display.render(); },
             show: function () { return app.state.appmode === "edit"; },
         },
+        {
+            component: "Dropdown", id: "select-mode", className: "item dropdown", container: "#top-menu",
+            text: function () { return edit.modify.selectMode },
+            options: [{ text: "Point", value: "Point" }, { text: "Line", value: "Line" }, { text: "Spline", value: "Spline" }],
+            callback: function (value) { edit.modify.selectMode = value; display.render(); },
+            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
+        },
         { id: "layer", component: "Button", iconClass: "mdi mdi-buffer", className: "item icon", container: "#top-menu" },
-        { id: "snap", component: "Button", iconClass: "mdi mdi-magnet", className: "item icon", container: "#top-menu" },
+        //{
+        //    id: "snap", component: "Button", iconClass: "mdi mdi-magnet", className: "item icon", container: "#top-menu",
+        //    callback: function () {
+        //        Alert.open({
+        //            title: "Snap Setting",
+        //            template: [{ title:"Snap Size",type: "slider", value: app.canvas.getSnap(), start: 0, end: 100, min: 1, step: 1, callback: app.canvas.setSnap }],
+        //            buttons: [{ text: "ok", callback: Alert.close }]
+        //        });
+        //    }
+        //},
         {
             id: "settings", component: "Button", iconClass: "mdi mdi-settings", className: "item icon", container: "#top-menu",
             callback: function () { window[app.state.appmode].setting(); }
@@ -481,19 +470,21 @@ var display = {
         },
         {
             id: "break-point", component: "Button", iconClass: "", className: "item button", text: "Break", container: "#sub-menu",
-            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && edit.modify.selectMode === "Point"; },
+            show: function () { return edit.modify.breakPointApprove() },
+            callback: function () {edit.modify.breakPoint();}
         },
         {
             id: "weld", component: "Button", iconClass: "", className: "item button", text: "Weld", container: "#sub-menu",
-            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && edit.modify.selectMode === "Point"; },
+            show: function () {return edit.modify.weldPointApprove() },
+            callback: function () { edit.modify.weldPoint();}
         },
         {
-            component: "Dropdown", id: "select-mode", className: "item dropdown", container: "#sub-menu",
-            text:function(){return edit.modify.selectMode},
-            options: [{ text: "Point", value: "Point" }, { text: "Line", value: "Line" }, { text: "Spline", value: "Spline" }],
-            callback: function (value) { edit.modify.selectMode = value; display.render(); },
-            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
+            id: "connect", component: "Button", iconClass: "", className: "item button", text: "Connect", container: "#sub-menu",
+            show: function () {return edit.modify.connectPointsApprove() },
+            callback: function () { edit.modify.connectPoints();}
         },
+        
+            
     ],
     render: function () {
         var str = '';

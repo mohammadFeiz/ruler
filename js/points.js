@@ -12,11 +12,10 @@ var Points = {
                 return;
             }
         }
-        Points.selected.push(obj);
-        obj.color = "red";
         obj.selected = true;
+        Points.selected.push(obj);
     },
-    deselectByID:function(id){
+    deselect:function(id){
         for (var i = 0; i < Points.selected.length; i++) {
             var selected = Points.selected[i];
             if (selected.id === id) {
@@ -49,10 +48,12 @@ var Points = {
         }
     },
     add: function (obj) {
+        var layer = layers.getActive();
         obj.id = this.id;
         obj.connectedLines = obj.connectedLines || [];
-        obj.show = obj.show || true;
-        obj.layer = obj.leyer || layers.getActive().id;
+        obj.show = obj.show === undefined ? true : obj.show;
+        obj.layer = obj.leyer || layer.id;
+        obj.color = obj.color || layer.color;
         app.state.points.push(obj);
         this.idGenerator();
         return Points.getLast(1);

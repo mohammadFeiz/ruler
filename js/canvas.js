@@ -191,32 +191,32 @@ function Canvas(config) {
             ctx.closePath();
             ctx.restore();
         },
+        //required: x(number) , y(number) , radius(number) 
+        //optional: fill(string color) , stroke(string color) , lineWidth(number)(default:1) , start(number)(default=0) , end(number)(default=2*Math.PI)
         drawArc: function (obj) {
+            obj.lineWidth = obj.lineWidth || 1;
+            obj.start = obj.start === undefined ? 0 : obj.start;
+            obj.end = obj.end === undefined ? 2 * Math.PI : obj.end;
             var ctx = this.ctx;
             ctx.beginPath();
-            ctx.arc(obj.x, obj.y, obj.radius, obj.start || 0, obj.end || 2 * Math.PI);
-            if (obj.mode === "fill") {
-                ctx.fillStyle = obj.color;
-                ctx.fill();
-            } else {
-                ctx.lineWidth = (obj.lineWidth ? obj.lineWidth : 1) / this.zoom;
-                ctx.strokeStyle = obj.color;
-                ctx.stroke();
-            }
+            ctx.arc(obj.x, obj.y, obj.radius, obj.start, obj.end);
+            ctx.lineWidth = obj.lineWidth / this.zoom;
+            if (obj.fill) {ctx.fillStyle = obj.fill; ctx.fill();}
+            if(obj.stroke){ctx.strokeStyle = obj.stroke; ctx.stroke();}
             ctx.closePath();
         },
-        drawRectangle: function (obj) {
+        //required: x(number) , y(number) , width(number) , height(number) 
+        //optional: center(boolean)(default:false) , fill(string color) , stroke(string color) , lineWidth(number)(default:1)
+        drawRectangle: function (obj) { 
+            obj.center = obj.center === undefined ? false : obj.center;
+            obj.lineWidth = obj.lineWidth || 1;
             var ctx = this.ctx;
             ctx.beginPath();
-            ctx.rect(obj.x - obj.width / 2, obj.y - obj.height / 2, obj.width, obj.height);
-            if (obj.mode === "fill") {
-                ctx.fillStyle = obj.color || "#000";
-                ctx.fill();
-            } else {
-                ctx.lineWidth = (obj.lineWidth ? obj.lineWidth : 1) / this.zoom;
-                ctx.strokeStyle = obj.color;
-                ctx.stroke();
-            }
+            if (obj.center) {ctx.rect(obj.x - obj.width / 2, obj.y - obj.height / 2, obj.width, obj.height);}
+            else {ctx.rect(obj.x, obj.y, obj.width, obj.height);}
+            ctx.lineWidth = obj.lineWidth / this.zoom;
+            if (obj.fill) {ctx.fillStyle = obj.fill; ctx.fill();}
+            if(obj.stroke) {ctx.strokeStyle = obj.stroke; ctx.stroke();}
             ctx.closePath();
         },
 
@@ -261,7 +261,14 @@ function Canvas(config) {
             return this.isDown;
         },
         getWidth: function () { return this.state.width; },
-        getHeight: function () {return this.state.height;}
+        getHeight: function () { return this.state.height; },
+        getSnap: function () {
+            return this.state.snap;
+        },
+        setSnap: function (value) {
+            this.state.snap = value;
+        }
+
     }
     a.update(config);
     return {
@@ -281,6 +288,8 @@ function Canvas(config) {
         getWidth: a.getWidth.bind(a),
         getHeight: a.getHeight.bind(a),
         getIsDown: a.getIsDown.bind(a),
+        getSnap: a.getSnap.bind(a),
+        setSnap: a.setSnap.bind(a),
         get:a.get,
     };
 }

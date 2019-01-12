@@ -92,45 +92,16 @@ function createStyle() {
 
     ///////////////////////////////////Alert//////////////////////////////////////////////////////
 
-    str += '#alert{z-index: 1000;color:' + font_color + ';box-shadow:' + box_shadow +';}';
-    str += '.alert-header{font-size:' + (alert_size * (2 / 5)) + 'px;background:#2f3034;}';
-    str += '.alert-body{background:' + app.style.background + ';font-size:'+(alert_size/3)+'px;}';
-
-    str += '.alert-footer{background:'+app.style.background+';}';
-
     
-    str += '.alert-button{';
-    str += 'background:' + button_background + ';';
-    str += 'font-size:' + (alert_size * (2 / 5)) + 'px;';
-    str += '}';
-
-    str += '.alert-close span{';
-    str += 'line-height:' + alert_size + 'px;';
-    str += '}';
-
+    
+    
+    
     
 
     
 
-    str += '#alert .alert-template-item{';
-    str += 'position:relative;';
-    str += 'width:100%;';
-    str += 'border-top:1px solid #535458;';
-    str += 'border-bottom:1px solid #141519;';
-    str += 'border-left:1px solid #535458;';
-    str += 'border-right:1px solid #141519;';
-    str += 'height:' + alert_size + 'px;';
-    str += '}';
-
-    str += '#alert .alert-template-control{';
-    str += 'position:relative;';
-    str += 'width:calc(100% - 100px - ' + (alert_size / 6) + 'px);';
-    str += 'height:' + alert_size + 'px;';
-    str += 'float:right;';
-    str += 'line-height:' + alert_size + 'px;';
-    str += 'color:' + font_color + ';';
-    str += 'text-align:center;';
-    str += '}';
+    
+    
 
     str += '#alert .alert-template-button{';
     str += 'position:relative;';
