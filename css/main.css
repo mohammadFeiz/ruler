@@ -70,6 +70,10 @@ body {
     top: -1px;
     z-index: 10;
     overflow: hidden;
+    display:none;
+}
+.dropdown-back-drop {
+    display:none;
 }
 
 .dropdown-item {
@@ -268,3 +272,18 @@ body {
 .keyboard-field.active {
  color:#1ad25f;
 }
+.keyboard-key {
+ float:left;
+ width:33%;
+ margin:0;
+    height:36px;
+    line-height: 36px;
+ font-size:14.4px;
+ box-sizing: border-box;
+}
+.keyboard-number-key.active {
+ background:rgba(255,255,255,0.1);
+}
+
+
+

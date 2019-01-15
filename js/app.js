@@ -13,7 +13,7 @@
         gridLineColor: "70,70,70"
     },
     style: {
-        lightFontColor:"#fff",
+        lightFontColor: "#fff",
     },
     init: function () {
         var s = this.state;
@@ -67,7 +67,7 @@
     drawLine: function (line) {
         this.canvas.drawLine(line);
     },
-    drawPoint: function (point) { this.canvas.drawArc({ x: point.x, y: point.y, radius: 2, fill: point.selected === true?"red":point.color }); },
+    drawPoint: function (point) { this.canvas.drawArc({ x: point.x, y: point.y, radius: 2, fill: point.selected === true ? "red" : point.color }); },
     drawOpenPoint: function (point) { this.canvas.drawRectangle({ center: true, x: point.x, y: point.y, width: 4, height: 4, fill: point.selected === true ? "red" : point.color }); },
     drawAxes: function () {
         this.ctx.save();
@@ -84,7 +84,7 @@
     },
     getPoint: function (obj) {
         obj = obj || {};
-        var c = this.canvas,coords = obj.coords || c.getMousePosition(), is = obj.is || {}, isnt = obj.isnt || {}, area = obj.area || 18 / c.getZoom(), points = this.state.points;
+        var c = this.canvas, coords = obj.coords || c.getMousePosition(), is = obj.is || {}, isnt = obj.isnt || {}, area = obj.area || 18 / c.getZoom(), points = this.state.points;
         for (var i = 1; i < area; i += 2) {
             for (var j = 0; j < points.length; j++) {
                 var point = points[j];
@@ -102,7 +102,7 @@
     },
     getLine: function (obj) {
         obj = obj || {};
-        var c = this.canvas, coords = obj.coords || c.getMousePosition(), is = obj.is || {},isnt = obj.isnt || {}, area = obj.area || 18 / c.getZoom(), lines = this.state.lines;
+        var c = this.canvas, coords = obj.coords || c.getMousePosition(), is = obj.is || {}, isnt = obj.isnt || {}, area = obj.area || 18 / c.getZoom(), lines = this.state.lines;
         for (var i = 1; i < area; i += 2) {
             for (var j = 0; j < lines.length; j++) {
                 var line = lines[j], s = line.start, e = line.end, dip = c.get.line.dip(line), isFiltered = false,
@@ -193,7 +193,7 @@
         }
     },
 
-    
+
     // init: function () {
     //     app.drawControlWidth = Math.ceil(app.sizeA * 3.5);
     //     app.setappmodeitems();
@@ -294,82 +294,87 @@
 
 var components = {
     state: {},
-    init: function (obj) {for (var prop in obj) {this.state[prop] = obj[prop];}},
+    init: function (obj) { for (var prop in obj) { this.state[prop] = obj[prop]; } },
     items: [],
     findItem: function (id) { for (var i = 0; i < this.items.length; i++) { if (this.items[i].id === id) { return this.items[i]; } } },
     add: function (item) {
-        for (var i = 0; i < components.items.length; i++) {if (components.items[i].id === item.id) {components.items[i] = item;return;}}
+        for (var i = 0; i < components.items.length; i++) { if (components.items[i].id === item.id) { components.items[i] = item; return; } }
         components.items.push(item);
     },
     render: function (obj) {
-        components[obj.component](obj);
         components.add(obj);
+        return components[obj.component](obj);
     },
     Button: function (obj) {
-        var container = $(obj.container);
         var text = obj.text || ""; text = typeof text === "function" ? text() : text;
         var iconClass = obj.iconClass || ""; iconClass = typeof iconClass === "function" ? iconClass() : iconClass;
-        var str = '<div class="' + (obj.className || '') + '" id="' + obj.id + '">';
+        var attrs = '';
+        if (obj.attrs) {for (var prop in obj.attrs) {attrs+=' ' + prop + '="' + obj.attrs[prop] + '"'}}
+        var str = '<div class="' + (obj.className || '') + '" id="' + obj.id + '"'+attrs+'>';
         str += iconClass ? '<div class="button-icon ' + iconClass + '"></div>' : '';
         str += text ? '<div class="button-text">' + text + '</div>' : '';
         str += '</div>';
-        container.append(str);
-        app.eventHandler(container.find("#" + obj.id), "mousedown", function () {
-            var item = components.findItem($(this).attr("id"));
-            if (item.callback) { item.callback(item); }
-        });
+        if (obj.callback) {
+            $('body').off('mousedown', '#' + obj.id);
+            $('body').on('mousedown', '#' + obj.id, function (e) {
+                var element = $(e.currentTarget);
+                var item = components.findItem(element.attr("id"));
+                item.callback(e);
+            });
+        }
+        return str;
     },
-    Numberbox:function(obj){
+    Numberbox: function (obj) {
         var str = '';
-        str += '<div class="' + (obj.className || '') + '" id="' + obj.id + '" data-step="'+obj.step+'">';
+        str += '<div class="' + (obj.className || '') + '" id="' + obj.id + '" data-step="' + obj.step + '">';
         str += obj.value === undefined ? '' : obj.value;
         str += '</div>';
     },
-    Dropdown:function(obj){
+    Dropdown: function (obj) {
         var container = $(obj.container);
         var text = obj.text || ""; text = typeof text === "function" ? text() : text;
         var str = '';
         str += '<div class="' + (obj.className || '') + '" id="' + obj.id + '">';
         /**/str += '<div class="dropdown-text">' + text + '</div>';
-        str += '<div class="back-drop"></div>';
+        str += '<div class="back-drop dropdown-back-drop"></div>';
         str += '<div class="dropdown-popup">';
         for (var i = 0; i < obj.options.length; i++) {
             str += '<div class="dropdown-item" data-index="' + i + '">' + obj.options[i].text + '</div>';
         }
         str += '</div>';
         str += '</div>';
-        container.append(str);
-        var dropdownText = container.find(".dropdown-text");
-        var backDrop = container.find(".back-drop");
-        var popup = container.find(".dropdown-popup");
-        var item = container.find(".dropdown-item");
-        backDrop.hide();
-        popup.hide();
-        app.eventHandler(dropdownText, "mousedown", function () {
-            var dropdown = $(this).parent();
+        var dropdownText = '#' + obj.id + " .dropdown-text";
+        $('body').off('mousedown', dropdownText);
+        $('body').on('mousedown', dropdownText, function (e) {
+            var dropdown = $(e.currentTarget).parent();
             dropdown.find(".back-drop").show();
             dropdown.find(".dropdown-popup").show();
         });
-        app.eventHandler(backDrop, "mousedown", function () {
-            var dropdown = $(this).parent();
+
+        var backDrop = '#' + obj.id + " .back-drop";
+        $('body').off('mousedown', backDrop);
+        $('body').on('mousedown', backDrop, function (e) {
+            var dropdown = $(e.currentTarget).parent();
             dropdown.find(".back-drop").hide();
             dropdown.find(".dropdown-popup").hide();
         });
-        app.eventHandler(item, "mousedown", function () {
-            var item = $(this);
-            var index = item.attr("data-index");
-            var dropdown = item.parent().parent();
-            var dropdownText = dropdown.find(".dropdown-text");
-            var backDrop = dropdown.find(".back-drop");
-            var popup = dropdown.find(".dropdown-popup");
-            var id = dropdown.attr("id");
-            var object = components.findItem(id);
-            dropdownText.html(object.options[index].text);
-            if (object.callback) { object.callback(object.options[index].value); }
-            backDrop.hide();
-            popup.hide();
-        });
-
+        if (obj.callback) {
+            var item = '#' + obj.id + " .dropdown-item";
+            $('body').off('mousedown', item);
+            $('body').on('mousedown', item, function (e) {
+                var item = $(e.currentTarget);
+                var index = item.attr("data-index");
+                var dropdown = item.parent().parent();
+                var id = dropdown.attr("id");
+                var object = components.findItem(id);
+                var option = object.options[index];
+                dropdown.find(".dropdown-text").html(option.text);
+                object.callback(option.value);
+                dropdown.find(".back-drop").hide();
+                dropdown.find(".dropdown-popup").hide();
+            });
+        }
+        return str;
     },
     Slider: function (obj) {
         obj.style = obj.style || { button_width: 24, button_height: 24, line_width: 4 };
@@ -393,9 +398,9 @@ var components = {
 
 
 var display = {
-    containers: [{id: "top-menu",},{id: "sub-menu",}],
+    containers: [{ id: "top-menu", }, { id: "sub-menu", }],
     items: [
-        { component: "Button", id: "main-menu", iconClass: "mdi mdi-menu",className:"icon", container: "#top-menu" },
+        { component: "Button", id: "main-menu", iconClass: "mdi mdi-menu", className: "icon", container: "#top-menu" },
         {
             component: "Button", id: "set-app-mode", className: "button", container: "#top-menu",
             text: function () { return app.state.appmode === "create" ? "Create" : "Edit"; },
@@ -445,16 +450,6 @@ var display = {
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
         },
         { id: "layer", component: "Button", iconClass: "mdi mdi-buffer", className: "icon", container: "#top-menu" },
-        //{
-        //    id: "snap", component: "Button", iconClass: "mdi mdi-magnet", className: "icon", container: "#top-menu",
-        //    callback: function () {
-        //        Alert.open({
-        //            title: "Snap Setting",
-        //            template: [{ title:"Snap Size",type: "slider", value: app.canvas.getSnap(), start: 0, end: 100, min: 1, step: 1, callback: app.canvas.setSnap }],
-        //            buttons: [{ text: "ok", callback: Alert.close }]
-        //        });
-        //    }
-        //},
         {
             id: "settings", component: "Button", iconClass: "mdi mdi-settings", className: "icon", container: "#top-menu",
             callback: function () { window[app.state.appmode].setting(); }
@@ -479,17 +474,17 @@ var display = {
         {
             id: "break-point", component: "Button", iconClass: "", className: "button", text: "Break", container: "#sub-menu",
             show: function () { return edit.modify.breakPointApprove() },
-            callback: function () {edit.modify.breakPoint();}
+            callback: function () { edit.modify.breakPoint(); }
         },
         {
             id: "weld", component: "Button", iconClass: "", className: "button", text: "Weld", container: "#sub-menu",
-            show: function () {return edit.modify.weldPointApprove() },
-            callback: function () { edit.modify.weldPoint();}
+            show: function () { return edit.modify.weldPointApprove() },
+            callback: function () { edit.modify.weldPoint(); }
         },
         {
             id: "connect", component: "Button", iconClass: "", className: "button", text: "Connect", container: "#sub-menu",
-            show: function () {return edit.modify.connectPointsApprove() },
-            callback: function () { edit.modify.connectPoints();}
+            show: function () { return edit.modify.connectPointsApprove() },
+            callback: function () { edit.modify.connectPoints(); }
         },
         {
             id: "divide", component: "Button", iconClass: "", className: "button", text: "Divide", container: "#sub-menu",
@@ -500,27 +495,30 @@ var display = {
                     fields: [{ prop: "value", title: "Divide By" }],
                     title: "Divide Line",
                     close: true,
-                    negative:false,
+                    negative: false,
                     callback: edit.modify.divide
                 });
             }
         },
-        
-            
+
+
     ],
     render: function () {
         var str = '';
         for (var i = 0; i < this.containers.length; i++) {
             var container = this.containers[i];
             $('#' + container.id).remove();
-            str += '<div id="' + container.id + '"></div>';
+            str += '<div id="' + container.id + '">';
+            for (var j = 0; j < this.items.length; j++) {
+                var item = this.items[j];
+                if (item.show && item.show() === false) { continue; }
+                if (item.container !== '#' + container.id) { continue; }
+                str += components.render(item);
+            }
+            str += '</div>';
         }
         $("body").append(str);
-        for (var i = 0; i < this.items.length; i++) {
-            var item = this.items[i];
-            if (item.show && item.show() === false) { continue; }
-            components.render(item);
-        }
+
 
     },
 };

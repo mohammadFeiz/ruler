@@ -185,36 +185,12 @@ function createStyle() {
     str += 'color:' + font_color + ';';
     str += box_shadow;
     str += '}';
-    
-
-    
-
     str += '#keyboard-body{';
     str += 'z-index:10;';
     str += 'position:relative;';
     str += 'width:100%;';
     str += 'float:left;';
     str += '}';
-
-    str += '.keyboard-number-key{';
-    str += 'position:relative;';
-    str += 'text-align: center;';
-    str += 'float:left;';
-    str += 'width:' + (keyboard_size * (2)) + 'px;';
-    str += 'height:' + keyboard_size + 'px;';
-    str += 'line-height:' + keyboard_size + 'px;';
-    str += 'font-size:' + (keyboard_size * (2 / 5)) + 'px;';
-    str += '}';
-
-    str += '.keyboard-number-key.active{';
-    str += 'background:rgba(255,255,255,0.1);';
-    str += '}';
-
-    
-
-
-    
-
     str += '.keyboard-number-box{';
     str += 'height:' + (keyboard_size * (2 / 3)) + 'px;';
     str += 'line-height:' + (keyboard_size * (2 / 3)) + 'px;';
