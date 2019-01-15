@@ -12,7 +12,7 @@ body {
     height: 100%;
 }
 
-.item {
+.icon,.button,.text,.dropdown {
     height: 24px;
     line-height: 24px;
     margin: 8px 3px;
@@ -91,11 +91,12 @@ body {
 }
 
 
-#main-menu, #set-app-mode, #settings, #delete-item, #select-all, #mirror-x, #mirror-y, #break-point, #weld, #create-modes, #select-mode, #edit-modes, .alert-header .text,#connect {
+#main-menu, #set-app-mode, #settings, #delete-item, #select-all, #mirror-x, #mirror-y, #break-point, #weld, 
+#create-modes, #select-mode, #edit-modes, .alert-header .text,#connect,#divide,#keyboard-title,.keyboard-label {
     float: left;
 }
 
-#layer, #snap, .alert-header .icon {
+#layer, #snap, .alert-header .icon,#keyboard-close {
     float: right;
 }
 
@@ -230,4 +231,40 @@ body {
     float: right;
     height: 36px;
     line-height: 36px;
+}
+
+
+#keyboard-header{
+    position: relative;
+    z-index:10;
+    width:100%;
+    float:left;
+    background:#222;
+}
+
+.keyboard-field {
+ position: relative;
+ width:100%;
+ float:left;
+  border:1px solid;
+  border-color:#535458 #141519 #141519 #535458;
+}
+#keyboard-ok {
+  float:right;
+  position: relative;
+  width:100%;
+    box-sizing: border-box;
+    margin:12px 0 0 0;
+}
+#keyboard-footer {
+ z-index:10;
+ position: relative;
+ width:100%;
+ float:left;
+  padding:12px;
+  box-sizing: border-box;
+}
+
+.keyboard-field.active {
+ color:#1ad25f;
 }

@@ -1,8 +1,7 @@
 var keyboard = {
-    negative: true,
-    close: false,
-    firstInter: true,
-    state: {},
+    
+    
+    state: { activeIndex: 0, firstInter: true, close: false, negative: true, },
     
     open: function (obj) {
         if (obj.fields === undefined) { alert("keybord fields is required"); }
@@ -10,25 +9,40 @@ var keyboard = {
         this.render();
     },
     render: function () {
-        var str = '';
+        var s = this.state,str = '';
         str += '<div id="keyboard">';
         str += '<div class="back-drop"></div>';
-        str += KeyboardHeader({ title: this.state.title });
-        str += KeyboardBody();
-        str += KeyboardFooter({ fields: this.state.fields, activeIndex: this.state.activeIndex||0 });
+        str += '<div id="keyboard-header"></div>';
+        str += KeyboardBody({ negative: s.negative });
+        str += '<div id="keyboard-footer">';
+        for (var i = 0; i < s.fields.length; i++) {
+            var field = s.fields[i];
+            str += '<div data-index="' + i + '" class="keyboard-field' + ((s.activeIndex === i) ? ' active' : '') + '">';
+            str += '<div class="keyboard-number-box">' + (field.value || 0) + '</div>';
+            str += '</div>';
+        }
+        str += '</div>';
         str += '</div>';
         $("body").append(str);
-        this.eventHandler("#keyboard-close", "mousedown", this.hide);
-        this.eventHandler(".keyboard-number-key", "mousedown", this.getKey);
+        components.render({ id: "keyboard-close", component: "Button", iconClass: "mdi mdi-close",className:"icon",callback:this.close.bind(this),container:"#keyboard-header" });
+        components.render({ id: "keyboard-title", component: "Button",text:s.title, className: "text", container: "#keyboard-header" });
+        components.render({ id: "keyboard-ok", component: "Button", text: "OK", className: "button", container: "#keyboard-footer",callback:this.ok.bind(this) });
+        for (var i = 0; i < s.fields.length; i++) {
+            var field = s.fields[i];
+            components.render({ id: "keyboard-label"+i, component: "Button", text: field.title, className: "text keyboard-label", container: ".keyboard-field[data-index="+i+"]" });
+        }
+        this.eventHandler(".keyboard-number-key", "mousedown", this.getKey.bind(this));
         this.eventHandler(".keyboard-number-key", "mouseup", this.keyUp);
         this.eventHandler(".keyboard-field", "mousedown", this.fieldMouseDown);
-        this.eventHandler("#keyboard-ok", "mousedown", this.ok);
     },
     getClient: function (e, axis) {
         axis = axis.toUpperCase();
         return e.clientX ? e["client" + axis] : e.changedTouches[0]["client" + axis];
     },
-    hide: function () {
+    close: function () {
+        var s = this.state;
+        s.activeIndex = 0;
+        s.firstInter = true;
         $("#keyboard").remove();
     },
     fieldMouseDown: function (e) {
@@ -61,7 +75,7 @@ var keyboard = {
         if (key === "none") { return; }
 
         if (key === "back") {
-            if (this.state.firstInter === true) { activeBox.html(""); this.state.firstInter = false; }
+            if (this.firstInter === true) { activeBox.html(""); this.state.firstInter = false; }
             var currentValue = activeBox.html();
             if (currentValue === "") { activeBox.html("0"); return; }
             if (currentValue.length === 1) { activeBox.html("0"); return; }
@@ -103,8 +117,8 @@ var keyboard = {
             parameters[field.prop] = parseFloat(value);
 
         }
-        this.state.subscribe(parameters);
-        if (this.state.close) { this.hide(); }
+        this.state.callback(parameters);
+        if (this.state.close) { this.close(); }
     },
     eventHandler: function (selector, e, action) {        
         var mobileEvents = {mousedown:"touchstart",mousemove:"tocuhmove",mouseup:"tocuhend"};
@@ -120,20 +134,6 @@ var keyboard = {
     },
 }
 
-function KeyboardHeader(props) {
-    var str = '';
-    str += '<div id="keyboard-header">';
-    str += KeyboardTitle({ title: props.title });
-    str += KeyboardClose();
-    str += '</div>';
-    return str;
-}
-
-function KeyboardClose() {
-    var str = '';
-    str += '<div id="keyboard-close"><span class="mdi mdi-close"></span></div>';
-    return str;
-}
 
 function KeyboardTitle(props) {
     var str = '';
@@ -141,13 +141,13 @@ function KeyboardTitle(props) {
     return str;
 }
 
-function KeyboardBody() {
+function KeyboardBody(props) {
     var str = '';
     str += '<div id="keyboard-body">';
     for (var i = 1; i < 10; i++) {
         str += KeyboardKey({ dataKey: i, text: i });
     }
-    str += KeyboardKey({ dataKey: "-/+", text: "-/+" });
+    str += props.negative === true?KeyboardKey({ dataKey: "-/+", text: "-/+" }):'';
     str += KeyboardKey({ dataKey: "0", text: "0" });
     str += KeyboardKey({ dataKey: "back", text: '<span class="mdi mdi-backspace"></span>' });
     str += '</div>';
@@ -160,29 +160,7 @@ function KeyboardKey(props) {
     return str;
 }
 
-function KeyboardFooter(props) {
-    var str = '';
-    str += '<div id="keyboard-footer">';
-    for (var i = 0; i < props.fields.length; i++) {
-        var field = props.fields[i];
-        str += KeyboardField({ title: field.title, value: field.value, active: props.activeIndex === i ? true : false, index: i });
-    }
-    str += KeyboardOK();
-    str += '</div>';
-    return str;
-}
 
-function KeyboardField(props) {
-    var str = '';
-    str += '<div data-index="' + props.index + '" class="keyboard-field' + ((props.active) ? ' active' : '') + '">';
-    str += '<div class="keyboard-label">' + props.title + '</div>';
-    str += '<div class="keyboard-number-box">' + ((props.value === undefined) ? '0' : props.value) + '</div>';
-    str += '</div>';
-    return str;
-}
 
-function KeyboardOK() {
-    var str = '';
-    str += '<div id="keyboard-ok">OK</div>';
-    return str;
-}
+
+

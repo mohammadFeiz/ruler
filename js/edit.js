@@ -85,35 +85,7 @@
         mouseup: function () { },
         reset: function () { edit.joinLines.firstLine = false; Lines.deselectAll(); app.redraw(); }
     },
-    divide: {
-        value: 2,
-        mousedown: function () {
-            var line = app.getLine({ filter: { layer: layers.getActive().id } });
-            if (!line) { return; }
-            Lines.divide(line, edit.divide.value);
-            undo.save();
-            app.redraw();
-        },
-        setting: function () {
-            var A = new Alert({
-                title: "Divide Setting",
-                buttons: [{
-                    title: "OK"
-                }],
-                template: [{
-                    title: "Divide By",
-                    value: edit.divide.value,
-                    start: 2,
-                    step: 1,
-                    end: 50,
-                    onchange: edit.divide.setValue
-                }]
-            });
-        },
-        setValue: function (value) {
-            edit.divide.value = value;
-        },
-    },
+    
     extendLine: {
         side: null,
         startOffset: null,
@@ -512,8 +484,10 @@
                 }
                 Points.deselect(selected.id);
             }
+            Points.deselectAll();
             edit.modify.setAxisPos("hide");
             app.redraw();
+            display.render();
             //undo.save();
         },
         connectPointsApprove: function () {
@@ -526,6 +500,14 @@
             //undo.save();
             Points.deselectAll();
             app.redraw();
+            display.render();
+        },
+        divide: function(obj){
+                Lines.divide(Lines.selected[0], obj.value);
+                Lines.deselectAll();
+                undo.save();
+                app.redraw();
+                display.render();
         },
         updateModel: function () {
             if (edit.modify.selectMode === "point") {

@@ -42,8 +42,8 @@ function AlertPopup(props) {
 }
 
 function AlertHeader(props) {
-    components.render({ id: "alert-close", iconClass: "mdi mdi-close", className: "item icon alert-close", component: "Button", container: ".alert-header", callback: Alert.close });
-    components.render({ id: "alert-title", text: props.title, className: "item text", component: "Button", container: ".alert-header" });
+    components.render({ id: "alert-close", iconClass: "mdi mdi-close", className: "icon alert-close", component: "Button", container: ".alert-header", callback: Alert.close });
+    components.render({ id: "alert-title", text: props.title, className: "text", component: "Button", container: ".alert-header" });
 }
 
 function AlertBody(props) {
@@ -90,7 +90,7 @@ function AlertFooter(props) {
             component: "Button",
             id: "alert-botton-" + i,
             text: button.text,
-            className: "item button alert-button alert-close",
+            className: "button alert-button alert-close",
             container: ".alert-footer",
             callback: button.callback,
         })

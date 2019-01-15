@@ -187,15 +187,7 @@ function createStyle() {
     str += '}';
     
 
-    str += '#keyboard-header{';
-    str += 'z-index:10;';
-    str += 'font-weight:bold;';
-    str += 'font-size:' + (keyboard_size * (2 / 5)) + 'px;';
-    str += 'position: relative;';
-    str += 'width:100%;';
-    str += 'height:' + keyboard_size + 'px;';
-    str += background2;
-    str += '}';
+    
 
     str += '#keyboard-body{';
     str += 'z-index:10;';
@@ -218,38 +210,10 @@ function createStyle() {
     str += 'background:rgba(255,255,255,0.1);';
     str += '}';
 
-    str += '#keyboard-footer{';
-    str += 'z-index:10;';
-    str += 'position: relative;';
-    str += 'width:100%;';
-    str += 'float:left;';
-    str += '}';
+    
 
-    str += '.keyboard-field{';
-    str += 'position: relative;';
-    str += 'width:calc(100% - ' + (keyboard_size * (2 / 3)) + 'px);';
-    str += 'height:' + keyboard_size + 'px;';
-    str += 'left:' + (keyboard_size * (1 / 3)) + 'px;';
-    str += 'text-align:center;';
-    str += 'border-top:1px solid #535458;';
-    str += 'border-bottom:1px solid #141519;';
-    str += 'border-left:1px solid #535458;';
-    str += 'border-right:1px solid #141519;';
-    str += '}';
 
-    str += '.keyboard-field.active{';
-    str += 'color:' + color + ';';
-    str += '}';
-
-    str += '.keyboard-label{';
-    str += 'position: relative;';
-    str += 'font-size:' + (keyboard_size * (1 / 3)) + 'px;';
-    str += 'line-height:' + keyboard_size + 'px;';
-    str += 'float:left;';
-    str += 'width:calc(100% - ' + ((keyboard_size * (3 / 2)) + (keyboard_size / 3)) + 'px);';
-    str += 'text-align:left;';
-    str += 'margin-left:' + (keyboard_size / 3) + 'px;';
-    str += '}';
+    
 
     str += '.keyboard-number-box{';
     str += 'height:' + (keyboard_size * (2 / 3)) + 'px;';
@@ -264,28 +228,7 @@ function createStyle() {
     str += 'text-align:center;';
     str += '}';
 
-    str += '#keyboard-ok{';
-    str += 'height:' + (keyboard_size) + 'px;';
-    str += 'line-height:' + (keyboard_size) + 'px;';
-    str += 'text-align:center;';
-    str += '}';
-
-    str += '#keyboard-close{';
-    str += 'float:right;';
-    str += 'width:' + (keyboard_size) + 'px;';
-    str += 'height:' + (keyboard_size) + 'px;';
-    str += 'line-height:' + (keyboard_size) + 'px;';
-    str += 'text-align: center;';
-    str += '}';
-
-    str += '#keyboard-title{';
-    str += 'float:left;';
-    str += 'width:calc(100% - ' + (keyboard_size + keyboard_size / 3) + 'px);';
-    str += 'margin-left:' + (keyboard_size / 3) + 'px;';
-    str += 'height:' + (keyboard_size) + 'px;';
-    str += 'line-height: ' + (keyboard_size) + 'px;';
-    str += '}';
-
+    
     /////////////////////////////////////////////////////////////////////////////////////////
     var axis_size = 30;
     str += '#axis{';

@@ -53,20 +53,31 @@
             var line = Lines.selected[i];
             if (line.id === obj.id) {return;}
         }
-        Lines.selected.push(obj);
-        obj.color = "red";
         obj.selected = true;
         obj.showDimention = true;
+        obj.lineDash = [2, 3];
+        Lines.selected.push(obj);
+    },
+    deselect: function (id) {
+        var length = Lines.selected.length;
+        for (var i = 0; i < length; i++) {
+            var line = Lines.selected[i];
+            if (line.id === id) { Lines.selected.splice(i, 1); break; }
+        }
+        var obj = this.getObjectByID(id);
+        if (!obj) { return false; }
+        obj.selected = false;
+        obj.showDimention = false;
+        obj.lineDash = undefined;
     },
     deselectAll: function () {
         var length = Lines.selected.length;
         for (var i = 0; i < length; i++) {
-            var line = Lines.selected[i],layer = layers.getObjectByID(line.layer);
-            line.color = layer.color;
+            var line = Lines.selected[i];
             line.selected = false;
-            line.showDimention = false;
+            line.lineDash = undefined;
         }
-        Lines.selected = [];
+        this.selected = [];
     },
     getIndexByID: function (id) {
         for (var i = 0; i < app.state.lines.length; i++) {

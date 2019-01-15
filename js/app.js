@@ -64,7 +64,9 @@
             else { this.drawPoint(point); }
         }
     },
-    drawLine: function (line) { this.canvas.drawLine(line); },
+    drawLine: function (line) {
+        this.canvas.drawLine(line);
+    },
     drawPoint: function (point) { this.canvas.drawArc({ x: point.x, y: point.y, radius: 2, fill: point.selected === true?"red":point.color }); },
     drawOpenPoint: function (point) { this.canvas.drawRectangle({ center: true, x: point.x, y: point.y, width: 4, height: 4, fill: point.selected === true ? "red" : point.color }); },
     drawAxes: function () {
@@ -317,6 +319,12 @@ var components = {
             if (item.callback) { item.callback(item); }
         });
     },
+    Numberbox:function(obj){
+        var str = '';
+        str += '<div class="' + (obj.className || '') + '" id="' + obj.id + '" data-step="'+obj.step+'">';
+        str += obj.value === undefined ? '' : obj.value;
+        str += '</div>';
+    },
     Dropdown:function(obj){
         var container = $(obj.container);
         var text = obj.text || ""; text = typeof text === "function" ? text() : text;
@@ -387,9 +395,9 @@ var components = {
 var display = {
     containers: [{id: "top-menu",},{id: "sub-menu",}],
     items: [
-        { component: "Button", id: "main-menu", iconClass: "mdi mdi-menu",className:"item icon", container: "#top-menu" },
+        { component: "Button", id: "main-menu", iconClass: "mdi mdi-menu",className:"icon", container: "#top-menu" },
         {
-            component: "Button", id: "set-app-mode", className: "item button", container: "#top-menu",
+            component: "Button", id: "set-app-mode", className: "button", container: "#top-menu",
             text: function () { return app.state.appmode === "create" ? "Create" : "Edit"; },
             callback: function (item) {
                 if (app.state.appmode === "create") { app.state.appmode = "edit"; } else { app.state.appmode = "create"; }
@@ -397,7 +405,7 @@ var display = {
             },
         },
         {
-            component: "Dropdown", id: "create-modes", className: "item dropdown", container: "#top-menu",
+            component: "Dropdown", id: "create-modes", className: "dropdown", container: "#top-menu",
             options: [{ text: "Polyline", value: "polyline" }, { text: "Rectangle", value: "rectangle" }, { text: "NGon", value: "ngon" }, ],
             text: function () {
                 switch (app.state.createmode) {
@@ -410,9 +418,9 @@ var display = {
             show: function () { return app.state.appmode === "create"; },
         },
         {
-            component: "Dropdown", id: "edit-modes", className: "item dropdown", container: "#top-menu",
-            options: [{ text: "Modify", value: "modify" }, { text: "Add Point", value: "addPoint" }, { text: "Connect", value: "connectPoints" }, { text: "Chamfer", value: "chamfer" }, { text: "Join Lines", value: "joinLines" },
-            { text: "Offset Line", value: "offsetLine" }, { text: "Extend Line", value: "extendLine" }, { text: "Plumb Line", value: "plumbLine" }, { text: "Divide Line", value: "divide" }],
+            component: "Dropdown", id: "edit-modes", className: "dropdown", container: "#top-menu",
+            options: [{ text: "Modify", value: "modify" }, { text: "Add Point", value: "addPoint" }, { text: "Chamfer", value: "chamfer" }, { text: "Join Lines", value: "joinLines" },
+            { text: "Offset Line", value: "offsetLine" }, { text: "Extend Line", value: "extendLine" }, { text: "Plumb Line", value: "plumbLine" }],
             text: function () {
                 switch (app.state.editmode) {
                     case 'modify': return 'Modify';
@@ -430,15 +438,15 @@ var display = {
             show: function () { return app.state.appmode === "edit"; },
         },
         {
-            component: "Dropdown", id: "select-mode", className: "item dropdown", container: "#top-menu",
+            component: "Dropdown", id: "select-mode", className: "dropdown", container: "#top-menu",
             text: function () { return edit.modify.selectMode },
             options: [{ text: "Point", value: "Point" }, { text: "Line", value: "Line" }, { text: "Spline", value: "Spline" }],
             callback: function (value) { edit.modify.selectMode = value; display.render(); },
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
         },
-        { id: "layer", component: "Button", iconClass: "mdi mdi-buffer", className: "item icon", container: "#top-menu" },
+        { id: "layer", component: "Button", iconClass: "mdi mdi-buffer", className: "icon", container: "#top-menu" },
         //{
-        //    id: "snap", component: "Button", iconClass: "mdi mdi-magnet", className: "item icon", container: "#top-menu",
+        //    id: "snap", component: "Button", iconClass: "mdi mdi-magnet", className: "icon", container: "#top-menu",
         //    callback: function () {
         //        Alert.open({
         //            title: "Snap Setting",
@@ -448,40 +456,54 @@ var display = {
         //    }
         //},
         {
-            id: "settings", component: "Button", iconClass: "mdi mdi-settings", className: "item icon", container: "#top-menu",
+            id: "settings", component: "Button", iconClass: "mdi mdi-settings", className: "icon", container: "#top-menu",
             callback: function () { window[app.state.appmode].setting(); }
         },
 
         {
-            id: "delete-item", component: "Button", iconClass: "mdi mdi-delete", className: "item icon", container: "#sub-menu",
+            id: "delete-item", component: "Button", iconClass: "mdi mdi-delete", className: "icon", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
         },
         {
-            id: "select-all", component: "Button", iconClass: "mdi mdi-select-all", className: "item icon", container: "#sub-menu",
+            id: "select-all", component: "Button", iconClass: "mdi mdi-select-all", className: "icon", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
         },
         {
-            id: "mirror-x", component: "Button", iconClass: "mdi mdi-unfold-more-horizontal", className: "item icon", container: "#sub-menu",
+            id: "mirror-x", component: "Button", iconClass: "mdi mdi-unfold-more-horizontal", className: "icon", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
         },
         {
-            id: "mirror-y", component: "Button", iconClass: "mdi mdi-unfold-more-vertical", className: "item icon", container: "#sub-menu",
+            id: "mirror-y", component: "Button", iconClass: "mdi mdi-unfold-more-vertical", className: "icon", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
         },
         {
-            id: "break-point", component: "Button", iconClass: "", className: "item button", text: "Break", container: "#sub-menu",
+            id: "break-point", component: "Button", iconClass: "", className: "button", text: "Break", container: "#sub-menu",
             show: function () { return edit.modify.breakPointApprove() },
             callback: function () {edit.modify.breakPoint();}
         },
         {
-            id: "weld", component: "Button", iconClass: "", className: "item button", text: "Weld", container: "#sub-menu",
+            id: "weld", component: "Button", iconClass: "", className: "button", text: "Weld", container: "#sub-menu",
             show: function () {return edit.modify.weldPointApprove() },
             callback: function () { edit.modify.weldPoint();}
         },
         {
-            id: "connect", component: "Button", iconClass: "", className: "item button", text: "Connect", container: "#sub-menu",
+            id: "connect", component: "Button", iconClass: "", className: "button", text: "Connect", container: "#sub-menu",
             show: function () {return edit.modify.connectPointsApprove() },
             callback: function () { edit.modify.connectPoints();}
+        },
+        {
+            id: "divide", component: "Button", iconClass: "", className: "button", text: "Divide", container: "#sub-menu",
+            show: function () { return Lines.selected.length === 1; },
+            callback: function () {
+                keyboard.open({
+                    isMobile: app.state.isMobile,
+                    fields: [{ prop: "value", title: "Divide By" }],
+                    title: "Divide Line",
+                    close: true,
+                    negative:false,
+                    callback: edit.modify.divide
+                });
+            }
         },
         
             
