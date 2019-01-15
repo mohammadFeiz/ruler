@@ -12,7 +12,7 @@ body {
     height: 100%;
 }
 
-.icon,.button,.text,.dropdown {
+.icon,.button,.text,.dropdown,.numberbox {
     height: 24px;
     line-height: 24px;
     margin: 8px 3px;
@@ -237,6 +237,16 @@ body {
     line-height: 36px;
 }
 
+#keyboard {
+ z-index:10000;
+ position:fixed;
+ width:216px;
+ left:calc(50% - 108px);
+ top:50px;
+ opacity:0.9;
+ background:#3e4146;
+ box-shadow:4px 4px 10px 0px rgba(0,0,0,0.6);
+}
 
 #keyboard-header{
     position: relative;
@@ -246,6 +256,12 @@ body {
     background:#222;
 }
 
+#keyboard-body {
+ z-index:10;
+ position:relative;
+ width:100%;
+ float:left;
+}
 .keyboard-field {
  position: relative;
  width:100%;
@@ -269,9 +285,7 @@ body {
   box-sizing: border-box;
 }
 
-.keyboard-field.active {
- color:#1ad25f;
-}
+
 .keyboard-key {
  float:left;
  width:33%;
@@ -281,9 +295,18 @@ body {
  font-size:14.4px;
  box-sizing: border-box;
 }
-.keyboard-number-key.active {
+.keyboard-key.active {
  background:rgba(255,255,255,0.1);
 }
 
-
+.keyboard-numberbox {
+ border-bottom:1px solid;
+ width:54px;
+ float:right;
+ border-radius:0;
+ text-align:center;
+}
+.keyboard-field.active .keyboard-label, .keyboard-field.active .keyboard-numberbox{
+ color:#1ad25f;
+}
 

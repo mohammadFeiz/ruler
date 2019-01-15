@@ -329,6 +329,7 @@ var components = {
         str += '<div class="' + (obj.className || '') + '" id="' + obj.id + '" data-step="' + obj.step + '">';
         str += obj.value === undefined ? '' : obj.value;
         str += '</div>';
+        return str;
     },
     Dropdown: function (obj) {
         var container = $(obj.container);

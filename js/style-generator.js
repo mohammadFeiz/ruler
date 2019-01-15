@@ -172,38 +172,8 @@ function createStyle() {
     str += '.full-keyboard-key:before{content:"";position:absolute;width:calc(100% - 6px);height:calc(100% - 6px);border:1px solid rgba(255,255,255,0.1);left:2px;top:2px;border-radius:6px;}';
     ////////////////////////////////////////////////////////////////////////////////////////
 
-    str += '#keyboard{';
-    str+='z-index:10000;';
-    str += 'position:fixed;';
-    str += 'width:' + (keyboard_size * (6)) + 'px;';
-    str += 'left:calc(50% - ' + (keyboard_size * (3)) + 'px);';
-    str += 'top:50px;';
-    str += 'opacity:0.9;';
-    str += 'font-size:' + (keyboard_size / 3) + 'px;';
-    str += background;
-    str += transition;
-    str += 'color:' + font_color + ';';
-    str += box_shadow;
-    str += '}';
-    str += '#keyboard-body{';
-    str += 'z-index:10;';
-    str += 'position:relative;';
-    str += 'width:100%;';
-    str += 'float:left;';
-    str += '}';
-    str += '.keyboard-number-box{';
-    str += 'height:' + (keyboard_size * (2 / 3)) + 'px;';
-    str += 'line-height:' + (keyboard_size * (2 / 3)) + 'px;';
-    str += 'margin:' + (keyboard_size * (1 / 6)) + 'px 0;';
-    str += 'border-bottom:1px solid;';
-    str += 'display: inline-block;';
-    str += 'position: relative;';
-    str += 'top:0;';
-    str += 'width:' + (keyboard_size * (3 / 2)) + 'px;';
-    str += 'float:right;';
-    str += 'text-align:center;';
-    str += '}';
-
+    
+    
     
     /////////////////////////////////////////////////////////////////////////////////////////
     var axis_size = 30;

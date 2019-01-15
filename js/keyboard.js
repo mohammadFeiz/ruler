@@ -1,5 +1,5 @@
 var keyboard = {
-    state: { activeIndex: 0, firstInter: true, close: false, negative: true, },
+    state: { activeIndex: 0, firstInter: true, close: false, negative: true, isMobile:false},
     open: function (obj) {
         if (obj.fields === undefined) { alert("keybord fields is required"); }
         for (var prop in obj) {this.state[prop] = obj[prop];}
@@ -26,15 +26,14 @@ var keyboard = {
             var field = s.fields[i];
             str += '<div data-index="' + i + '" class="keyboard-field' + ((s.activeIndex === i) ? ' active' : '') + '">';
             str += components.render({ id: "keyboard-label" + i, component: "Button", text: field.title, className: "text keyboard-label" });
-            str += '<div class="keyboard-number-box">' + (field.value || 0) + '</div>';
+            str += components.render({ id: "keyboard-numberbox" + i, component: "Numberbox", value: field.value===undefined?0:field.value, className: "numberbox keyboard-numberbox" });
             str += '</div>';
         }
         str += components.render({ id: "keyboard-ok", component: "Button", text: "OK", className: "button", callback: this.ok.bind(this) });
         str += '</div>';
         str += '</div>';
         $("body").append(str);
-        
-        //this.eventHandler(".keyboard-field", "mousedown", this.fieldMouseDown);
+        this.eventHandler(".keyboard-field", "mousedown", this.fieldMouseDown.bind(this));
     },
     getClient: function (e, axis) {
         axis = axis.toUpperCase();
@@ -50,17 +49,17 @@ var keyboard = {
         var element = $(e.currentTarget);
         $(".keyboard-field").removeClass("active");
         element.addClass("active");
-        this.eventHandler("window", "mousemove", this.fieldMouseMove);
-        this.eventHandler("window", "mouseup", this.fieldMouseUp);
+        this.eventHandler("window", "mousemove", $.proxy(this.fieldMouseMove,this));
+        this.eventHandler("window", "mouseup", $.proxy(this.fieldMouseUp,this));
         this.state.startOffset = this.getClient(e, "Y");
         this.state.activeIndex = element.attr("data-index");
-        this.state.selectedFieldValue = parseFloat(element.find(".keyboard-number-box").html());
+        this.state.selectedFieldValue = parseFloat(element.find(".keyboard-numberbox").html());
         this.state.firstInter = true;
     },
     fieldMouseMove: function (e) {
         var offset = this.state.startOffset - this.getClient(e,"Y");
         if (Math.abs(offset) < 3) { return; }
-        var field = $(".keyboard-field .keyboard-number-box").eq(this.state.activeIndex);
+        var field = $(".keyboard-field .keyboard-numberbox").eq(this.state.activeIndex);
         offset = Math.floor(offset / 12);
         field.html(this.state.selectedFieldValue + offset);
     },
@@ -71,7 +70,7 @@ var keyboard = {
     getKey: function (e) {
         var element = $(e.currentTarget);
         var key = element.attr("data-key");
-        var activeBox = $(".keyboard-field").eq(this.state.activeIndex).find(".keyboard-number-box");
+        var activeBox = $(".keyboard-field").eq(this.state.activeIndex).find(".keyboard-numberbox");
         if (key === "none") { return; }
 
         if (key === "back") {
@@ -112,13 +111,25 @@ var keyboard = {
         var length = this.state.fields.length;
         for (var i = 0; i < length; i++) {
             var field = this.state.fields[i];
-            var value = $(".keyboard-number-box").eq(i).html();
+            var value = $(".keyboard-numberbox").eq(i).html();
             if (value === "" || value === "-") { value = 0; }
             parameters[field.prop] = parseFloat(value);
 
         }
         this.state.callback(parameters);
         if (this.state.close) { this.close(); }
+    },
+    eventHandler: function (selector, e, action) {
+        var mobileEvents = { down: "touchstart", move: "tocuhmove", up: "tocuhend" };
+        var element = typeof selector === "string" ? (selector === "window" ? $(window) : $(selector)) : selector;
+        var event = this.state.isMobile ? mobileEvents[e] : e;
+        element.unbind(event, action).bind(event, action);
+    },
+    eventRemover: function (selector, e, action) {
+        var mobileEvents = { down: "touchstart", move: "tocuhmove", up: "tocuhend" };
+        var element = typeof selector === "string" ? (selector === "window" ? $(window) : $(selector)) : selector;
+        var event = this.state.isMobile ? mobileEvents[e] : e;
+        element.unbind(event, action);
     },
 }
 
