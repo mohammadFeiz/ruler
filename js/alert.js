@@ -20,6 +20,8 @@ function AlertPopup(props) {
     var str = '<div id="alert">';
     str += '<div class="back-drop"></div>';
     str += '<div class="alert-header" style="float:left;position:relative;">';
+    str += components.render({ id: "alert-close", iconClass: "mdi mdi-close", className: "icon alert-close", component: "Button", callback: Alert.close });
+    str += components.render({ id: "alert-title", text: props.title, className: "text", component: "Button" });    
     str += '</div>';
     str += '<div class="alert-body" style="float:left;position:relative;">';
     if (typeof props.template === "string") { str += props.template; }
@@ -41,10 +43,6 @@ function AlertPopup(props) {
     return str;
 }
 
-function AlertHeader(props) {
-    components.render({ id: "alert-close", iconClass: "mdi mdi-close", className: "icon alert-close", component: "Button", container: ".alert-header", callback: Alert.close });
-    components.render({ id: "alert-title", text: props.title, className: "text", component: "Button", container: ".alert-header" });
-}
 
 function AlertBody(props) {
     if (typeof props.template === "string") { return ''; }
