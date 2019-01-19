@@ -26,9 +26,8 @@
     add: function (obj) {
         var layer = layers.getActive();
         obj.id = this.id;
-        obj.show = obj.show || true;
-        obj.layerId = obj.leyerId || layer.id;
-        obj.color = obj.color || layer.color;
+        obj.layer = layer;
+        obj.color = layer.color;
         app.state.lines.push(obj);
         this.idGenerator();
         return Lines.getLast(1);
@@ -151,7 +150,7 @@
         if (fDip === "infinity" && sDip === "infinity") { return false; }
         else if (fDip == "infinity") { return { x: f.start.x, y: (sDip * (f.start.x - s.start.x)) + s.start.y }; }
         else if (sDip == "infinity") { return { x: s.start.x, y: (fDip * (s.start.x - f.start.x)) + f.start.y }; }
-        else if (Math.abs(fDip - sDip) < 0.0001) { return false; }
+        else if (Math.abs(fDip - sDip) < 0.0001) {return false;}
         else {
             var x = (s.start.y - f.start.y + (fDip * f.start.x) - (sDip * s.start.x)) / (fDip - sDip);
             var y = (fDip * (x - f.start.x)) + f.start.y;
@@ -380,11 +379,14 @@
     },
     haveInnerMeet:function(a,b){
         var meet = Lines.getMeet(a,b);
-        if(a.start.x <= a.end.x){var minx = a.start.x,maxx = a.end.x;}
-        else{var maxx = a.start.x,minx = a.end.x;}
-        if(a.start.y <= a.end.y){var miny = a.start.y,maxy = a.end.y;}
-        else{var maxy = a.start.y,miny = a.end.y;}
-        if(meet.x<minx || meet.x > maxx || meet.y > maxy || meet.y < miny){return false;}
+        if (meet.x < a.start.x && meet.x < a.end.x) { return false;}
+        if (meet.x > a.start.x && meet.x > a.end.x) { return false; }
+        if (meet.x < b.start.x && meet.x < b.end.x) { return false; }
+        if (meet.x > b.start.x && meet.x > b.end.x) { return false; }
+        if (meet.y < a.start.y && meet.y < a.end.y) { return false; }
+        if (meet.y > a.start.y && meet.y > a.end.y) { return false; }
+        if (meet.y < b.start.y && meet.y < b.end.y) { return false; }
+        if (meet.y > b.start.y && meet.y > b.end.y) { return false; }
         return true;
     }
 }

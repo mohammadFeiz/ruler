@@ -182,7 +182,6 @@ function createStyle() {
     str += 'height:0;';
     str += 'opacity:0.6;';
     str += 'position: fixed;';
-    str += 'display:none;';
     str += '}';
     
     str += '#axis:before{';
@@ -197,7 +196,7 @@ function createStyle() {
     str += 'top:calc(-' + (axis_size * (1.25)) + 'px - ' + axis_size + 'px);';
     str += '}';
 
-    str += '#axisBackground{';
+    str += '#axis-background{';
     str += 'position:absolute;';
     str += 'left:0;';
     str += 'top:0;';
@@ -275,7 +274,7 @@ function createStyle() {
     str += '}';
 
 
-    str += '#axisBackground:before{';
+    str += '#axis-background:before{';
     str += 'content:"";';
     str += 'position:absolute;';
     str += 'width:6px;';
@@ -294,7 +293,7 @@ function createStyle() {
     str += 'left:calc(-' + (axis_size * (1.25)) + 'px - ' + axis_size + 'px + 0px);';
     str += '}';
 
-    str += '.axis-icon{';
+    str += '#axis .icon{';
     str += 'background:rgba(255,255,255,0.1);';
     str += 'top:-'+(axis_size / 2)+'px;';
     str += 'position:relative;';
@@ -306,62 +305,14 @@ function createStyle() {
     str += 'border-radius:100%;';
     str += 'line-height:' + axis_size + 'px;';
     str += 'font-size:' + (axis_size * (0.5)) + 'px;';
+    str += 'margin:0;';
     str += '}';
 
-
-
-    str += '#axisRotate{transform: rotate(45deg);}';
-
-    str += '#axisRotate .axis-icon{';
-    str += 'transform: rotate(-45deg);';
+    str += '#axis .axis-icon-container.active .icon{';
+    str += 'color:chartreuse;';
+    str += 'box-shadow:0 0 4px 1px chartreuse;';
+    str += 'background:none';
     str += '}';
-
-    str += '#axisKeyboard{';
-    str += 'transform: rotate(-45deg);';
-    str += '}';
-
-    str += '#axisKeyboard .axis-icon{';
-    str += 'transform: rotate(45deg);';
-    str += '}';
-    str += '#axisMoveUp{';
-    str += 'transform: rotate(-90deg)';
-    str += '}';
-
-    str += '#axisMoveUp .axis-icon{';
-    str += 'transform: rotate(90deg);';
-    str += '}';
-
-    str += '#axisMoveDown{';
-    str += 'transform: rotate(90deg);';
-    str += '}';
-
-    str += '#axisMoveDown .axis-icon{';
-    str += 'transform: rotate(-90deg);';
-    str += '}';
-
-    str += '#axisMoveLeft{';
-    str += 'transform: rotate(180deg);';
-    str += '}';
-
-    str += '#axisMoveLeft .axis-icon{';
-    str += 'transform: rotate(-180deg);';
-    str += '}';
-    str += '#axisCenter{';
-    str += 'transform: rotate(-135deg);';
-    str += '}';
-
-    str += '#axisCenter .axis-icon{';
-    str += 'transform: rotate(135deg);';
-    str += '}';
-    str += '#axisMove{';
-    str += 'transform: rotate(135deg);';
-    str += '}';
-
-    str += '#axisMove .axis-icon{';
-    str += 'transform: rotate(-135deg);';
-    str += '}';
-
-
 
     //////////////////////////////////////////////////////////////////////////////////////////
     var color_palette_size = 36;

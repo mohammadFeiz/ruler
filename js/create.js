@@ -40,7 +40,7 @@ var create = {
     mousedown: function (e) {
         app.eventHandler("window", "mousemove", $.proxy(this.mousemove, this));
         app.eventHandler("window", "mouseup", $.proxy(this.mouseup, this));
-        var mode = app.state.createmode, coords = app.canvas.getMousePosition(), close = ["rectangle", "ngon"].indexOf(mode) !== -1;
+        var mode = app.state.createmode, coords = app.canvas.getSnapedCoords(), close = ["rectangle", "ngon"].indexOf(mode) !== -1;
         if (this.firstPoint) {
             this.object = new spline({ start: coords, color: layers.getActive().color, mode: mode, sides: this.ngonSides, ortho: this.ortho, close: close }, this.getPoints[mode]);
             this.firstPoint = false;
@@ -64,14 +64,17 @@ var create = {
         screenCorrection.run(app.canvas.canvasToClient(this.object.getLastPoint()), function () { app.redraw(); create.preview();});
     },
     end: function () {
+        if (!this.object) { return;}//اگر این تابع بی دلیل در تغییر مود برنامه صدا زده شد ادامه نده
         this.firstPoint = true;
         createControl.close();
         this.save();
+        this.object = undefined;
         app.redraw();
     },
     preview: function () {
         var points = this.object.getPoints(), lines = this.object.getLines();
         app.canvas.clear();
+        app.redraw();
         for (var i = 0; i < points.length; i++) { app.drawPoint(points[i]); }
         for (var i = 0; i < lines.length; i++) { app.drawLine($.extend({}, lines[i], {showDimension:i===lines.length - 1})); }
         this.drawLastPoint();
@@ -144,8 +147,9 @@ var create = {
     },
     save: function () {
         this.drawing=false;
-        var o = this.object, points = o.getPoints(), lines = o.getLines();
-        var addedPoints = [] , addedLines = [];
+        var points = this.object.getPoints(), lines = this.object.getLines();
+        if (lines.length === 0) { return;}
+        var addedPoints = [], addedLines = [];
         for (var i = 0; i < points.length; i++) { 
             var addedPoint = Points.add(points[i]); addedPoints.push(addedPoint);
             if(addedLines[i - 1]){

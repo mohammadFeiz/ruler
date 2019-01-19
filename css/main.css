@@ -96,7 +96,7 @@ body {
 
 
 #main-menu, #set-app-mode, #settings, #delete-item, #select-all, #mirror-x, #mirror-y, #break-point, #weld, 
-#create-modes, #select-mode, #edit-modes, .alert-header .text,#connect,#divide,#keyboard-title,.keyboard-label {
+#create-modes, #select-mode, #edit-modes, .alert-header .text,#connect,#divide,#keyboard-title,.keyboard-label,#join {
     float: left;
 }
 

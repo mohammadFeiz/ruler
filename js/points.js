@@ -28,7 +28,7 @@ var Points = {
         var length = Points.selected.length;
         for (var i = 0; i < length; i++) {
             var point = Points.selected[i];
-            var layer = layers.getObjectByID(point.layer);
+            var layer = layers.getObjectByID(point.layer.id);
             point.color = layer.color;
             point.selected = false;
         }
@@ -51,9 +51,8 @@ var Points = {
         var layer = layers.getActive();
         obj.id = this.id;
         obj.connectedLines = obj.connectedLines || [];
-        obj.show = obj.show === undefined ? true : obj.show;
-        obj.layer = obj.leyer || layer.id;
-        obj.color = obj.color || layer.color;
+        obj.layer = layer;
+        obj.color = layer.color;
         app.state.points.push(obj);
         this.idGenerator();
         return Points.getLast(1);

@@ -29,6 +29,7 @@
         app.canvas.drawRectangle({ x: sr.start.x, y: sr.start.y, width: width, height: height, fill: "rgba(136,144,148,0.5)" });
     },
     selectBySelectRect: function (mode) {
+        var success = false;
         var s = this.selectRect, sX = s.start.x, sY = s.start.y, eX = s.end.x, eY = s.end.y;
         if (sX > eX) { var help = sX; sX = eX; eX = help; }
         if (sY > eY) { var help = sY; sY = eY; eY = help; }
@@ -37,8 +38,8 @@
             var points = app.state.points, length = points.length;
             for (var i = 0; i < length; i++) {
                 var point = points[i];
-                if (point.layer !== layer.id) { continue; }
-                if (point.x <= eX && point.x >= sX && point.y <= eY && point.y >= sY) { Points.select(point); }
+                if (point.layer.id !== layer.id) { continue; }
+                if (point.x <= eX && point.x >= sX && point.y <= eY && point.y >= sY) { Points.select(point); success = true;}
             }
         } else {
             var lines = app.state.lines, length = lines.length;
@@ -48,19 +49,22 @@
             var bottom = { start: { x: sX, y: eY }, end: { x: eX, y: eY } };
             for (var i = 0; i < length; i++) {
                 var line = lines[i];
-                if (line.layer !== layer.id) { continue; }
+                if (line.layer.id !== layer.id) { continue; }
                 if (Lines.haveInnerMeet(left, line) || Lines.haveInnerMeet(right, line) ||
                     Lines.haveInnerMeet(top, line) || Lines.haveInnerMeet(bottom, line)) {
                     (mode === "Line") ? Lines.select(line) : Lines.selectSpline(line);
+                    success = true;
                     continue;
                 }
                 if (line.start.x >= sX && line.start.x <= eX && line.end.x >= sX && line.end.x <= eX &&
                     line.start.y >= sY && line.start.y <= eY && line.end.y >= sY && line.end.y <= eY) {
                     (mode === "Line") ? Lines.select(line) : Lines.selectSpline(line);
+                    success = true;
                     continue;
                 }
             }
         }
+        return success;
     },
     drawPoint: function (x, y) {
         var size = 3 / app.canvas.getZoom();
@@ -68,24 +72,8 @@
         app.canvas.drawArc({ x: x, y: y, radius: size * 2, color: "orange", mode: "stroke" });
     },
 
-    joinLines: {
-        firstLine: false,
-        mousedown: function () {
-            var line = app.getLine({ filter: { layer: layers.getActive().id } });
-            var This = edit.joinLines;
-            if (!line) { This.reset(); return; }
-            if (!This.firstLine) { This.firstLine = line; Lines.select(line); app.redraw(); return; }
-            if (This.firstLine.id === line.id) { return; }
-            var state = Lines.join(This.firstLine, line);
-            This.reset();
-            if (state) { undo.save(); }
-            app.redraw();
-        },
-        mousemove: function () { },
-        mouseup: function () { },
-        reset: function () { edit.joinLines.firstLine = false; Lines.deselectAll(); app.redraw(); }
-    },
-    
+
+
     extendLine: {
         side: null,
         startOffset: null,
@@ -183,7 +171,8 @@
             //undo.save();
         },
         reset: function () {
-            edit.extendLine.line = null;
+            edit[app.state.editmode].reset();
+            //edit.extendLine.line = null;
             app.redraw();
         },
         setting: function () {
@@ -324,10 +313,9 @@
     modify: {
         isTransformed: false,
         selectMode: "Point",
-        axisPos: null,
         type: "none",
         rotateNumber: 0,
-        copyMode: true,
+        copyMode: false,
         startOffset: null,
         clickedOn: "none",
         points: [],
@@ -336,7 +324,8 @@
         mousePosition: null,
         lines: [],
         copyModel: [],
-        autoWeld: true,
+        autoWeldArea: 40,
+        axisSnapArea: 10,
         selectAll: function () {
             Lines.deselectAll();
             Points.deselectAll();
@@ -435,7 +424,6 @@
             return false;
         },
         weldPoint: function (state) {
-
             for (var i = 0; i < Points.selected.length; i++) {
                 var selected1 = Points.selected[i];
                 var id1 = selected1.id;
@@ -459,9 +447,9 @@
             }
             if (Points.selected[0]) { edit.modify.setAxisPos(Points.selected[0]); }
             else { edit.modify.setAxisPos("hide"); }
+            undo.save();
             app.redraw();
             display.render();
-            //undo.save();
         },
         breakPointApprove: function () {
             for (var i = 0; i < Points.selected.length; i++) {
@@ -486,38 +474,44 @@
             }
             Points.deselectAll();
             edit.modify.setAxisPos("hide");
+            undo.save();
             app.redraw();
             display.render();
-            //undo.save();
         },
         connectPointsApprove: function () {
-            if (Points.selected.length !== 2) { return false;}
+            if (Points.selected.length !== 2) { return false; }
             if (Points.isConnect(Points.selected[0], Points.selected[1])) { return false; }
-            else { return true;}
+            else { return true; }
         },
         connectPoints: function () {
             Points.connect(Points.selected[0], Points.selected[1]);
-            //undo.save();
             Points.deselectAll();
+            undo.save();
             app.redraw();
             display.render();
         },
-        divide: function(obj){
-                Lines.divide(Lines.selected[0], obj.value);
-                Lines.deselectAll();
-                undo.save();
-                app.redraw();
-                display.render();
+        divide: function (obj) {
+            Lines.divide(Lines.selected[0], obj.value);
+            Lines.deselectAll();
+            undo.save();
+            app.redraw();
+            display.render();
+        },
+        joinLines: function () {
+            Lines.join(Lines.selected[0], Lines.selected[1]);
+            Lines.deselectAll();
+            undo.save();
+            app.redraw();
+            display.render();
         },
         updateModel: function () {
-            if (edit.modify.selectMode === "point") {
+            if (edit.modify.selectMode === "Point") {
                 this.points = Points.selected;
             } else {
                 this.points = Lines.getPointsOfSelected();
-
             }
             this.pointsState = [];
-            var axisPos = edit.modify.axisPos;
+            var axisPos = axis.getPosition();
             var length = this.points.length;
             for (var i = 0; i < length; i++) {
                 var point = this.points[i];
@@ -536,126 +530,64 @@
         reset: function () {
             edit.modify.setAxisPos("hide");
         },
-        setAxisPos: function (obj) {
-            if (obj === "hide") { $("#axis").hide(); return; }
-            $("#axis").show();
-            var x, y;
-            if (obj === "center") {
-                if (this.selectMode === "point") { var center = Points.getCenterOfSelected(); }
-                else { var center = Lines.getCenterOfSelected(); }
-                x = center.x; y = center.y;
-            }
-            else { x = obj.x; y = obj.y; }
-            this.axisPos = { x: x, y: y };
-            var bodyCoords = app.canvas.canvasToClient(this.axisPos);
-            $("#axis").css({ "left": bodyCoords.x, "top": bodyCoords.y });
-            $("#axis-x").html("X:" + this.axisPos.x.toFixed(1));
-            $("#axis-y").html("Y:" + (this.axisPos.y * -1).toFixed(1));
-        },
-        mousedown: function () {
+        mousedown: function (e) {
+            var This = edit.modify;
             var coords = app.canvas.getMousePosition();
-            edit.selectRect = { start: { x: coords.x, y: coords.y }, end: { x: coords.x, y: coords.y } };
-            console.log(edit.selectRect);
-            //this.clickedOn = "canvas";
+            var axisPos = axis.getPosition();
+            if (axis.mode === "none") { edit.selectRect = { start: { x: coords.x, y: coords.y }, end: { x: coords.x, y: coords.y } }; }
+            else {
+                var client = app.getClient(e);
+                This.updateModel();
+                This.startOffset = { x: client.x, y: client.y, axisX: axisPos.x, axisY: axisPos.y };
+            }
         },
-        mousemove: function () {
+        mousemove: function (e) {
             app.redraw();
-            edit.drawSelectRect();
+            var This = edit.modify;
+            var so = This.startOffset;
+            var client = app.getClient(e);
+            if (axis.mode === "none") { edit.drawSelectRect(); }
+            else {
+                if (["axis-move", "axis-move-horizontal", "axis-move-vertical"].indexOf(axis.mode) !== -1) {
+                    var offset = app.canvas.getSnapedCoords({ x: (client.x - so.x) / app.canvas.getZoom(), y: (client.y - so.y) / app.canvas.getZoom() });
+                    offset = { x: (axis.mode === "axis-move-vertical") ? 0 : offset.x, y: (axis.mode === "axis-move-horizontal") ? 0 : offset.y };
+                    This.move(offset);
+                }
+                else if (axis.mode === "axis-rotate") {
+                    var offset = Math.floor((client.x - so.x) / 4);
+                    This.rotate(offset);
+                }
+                else if (axis.mode === "axis") {
+                    app.eventHandler("window", "mousemove", edit.modify.windowMouseMove.background);
+                    app.eventHandler("window", "mouseup", edit.modify.windowMouseUp.background);
+                }
+
+            }
         },
         mouseup: function (e) {
             var sr = edit.selectRect, This = edit.modify;
-            if (Lines.getLength(sr) >= 3) {
-                edit.selectBySelectRect(This.selectMode);
-                if (This.selectMode === "Point") { This.setAxisPos(Points.getCenterOfSelected()); }
-                else { This.setAxisPos(Lines.getCenterOfSelected()); }
-            } else {
-                if (This.selectMode === "Point") {
-                    var point = app.getPoint();
-                    if (point) { Points.select(point); This.setAxisPos(point); }
-                    else { Points.deselectAll(); This.setAxisPos("hide"); }
-                } else if (This.selectMode === "Line") {
-                    var line = app.getLine();
-                    if (line) { Lines.select(line); This.setAxisPos(app.canvas.get.line.center(line)); }
-                    else { Lines.deselectAll(); This.setAxisPos("hide"); }
-                } else if (This.selectMode === "Spline") {
-                    var line = app.getLine();
-                    if (line) { Lines.selectSpline(line); This.setAxisPos(app.canvas.get.line.center(line)); }
-                    else { Lines.deselectAll(); This.setAxisPos("hide"); }
-                }
-            }
-            app.redraw();
-            display.render();
-        },
-        windowMouseMove: {
-            move: function (e) {
-                var mode = edit.modify.clickedOn,
-                    so = edit.modify.startOffset;
-                var offset = app.canvas.getSnapedCoords({ x: (app.getClient(e, "X") - so.x) / app.canvas.getZoom(), y: (app.getClient(e, "Y") - so.y) / app.canvas.getZoom() });
-                offset = {
-                    x: (mode === "axisMoveUp" || mode === "axisMoveDown") ? 0 : offset.x,
-                    y: (mode === "axisMoveLeft" || mode === "axisMoveRight") ? 0 : offset.y
-                };
-                console.log(offset);
-                edit.modify.move(offset);
-            },
-            rotate: function (e) { edit.modify.rotate(Math.floor((app.getClient(e, "X") - edit.modify.startOffset.x) / 3)); },
-            background: function (e) {
-                var so = edit.modify.startOffset;
-                var offset = app.canvas.getSnapedCoords({ x: (app.getClient(e, "X") - so.x) / app.canvas.getZoom(), y: (app.getClient(e, "Y") - so.y) / app.canvas.getZoom() });
-                edit.modify.setAxisPos({
-                    x: so.axisX + offset.x,
-                    y: so.axisY + offset.y
-                });
-            }
-        },
-        windowMouseUp: {
-            move: function () {
-                if (edit.modify.copyMode && edit.modify.selectMode !== "point") {
-                    lines.deselectAll();
-                    for (var i = 0; i < edit.modify.lines.length; i++) {
-                        var line = edit.modify.lines[i];
-                        var addedLine = lines.add({
-                            start: { x: line.start.x, y: line.start.y, id: points.getNextID(1) },
-                            end: { x: line.end.x, y: line.end.y, id: points.getNextID(2) }
-                        });
-                        var addedPoint1 = points.add({
-                            x: line.start.x,
-                            y: line.start.y,
-                            connectedLines: [{ side: "start", id: addedLine.id }]
-                        });
-                        var addedPoint2 = points.add({
-                            x: line.end.x,
-                            y: line.end.y,
-                            connectedLines: [{ side: "end", id: addedLine.id }]
-                        });
-                        lines.select(addedLine);
-                    }
-
-
+            if (axis.mode === "none") {
+                if (Lines.getLength(sr) >= 3) {
+                    if (edit.selectBySelectRect(This.selectMode)) {axis.setPosition("center");}
                 }
                 else {
-                    if (points.selected.length === 1 && edit.modify.autoWeld) {
-                        var point = app.getPoint({ coords: points.selected[0], except: { id: points.selected[0].id } });
-                        if (point !== false) {
-                            points.moveTo(points.selected[0], point.x, point.y);
-                            points.merge(point, points.selected[0]);
-                            points.updateSelected();
-                            points.deselectAll();
-                            edit.modify.setAxisPos("hide");
+                    if (This.selectMode === "Point") {
+                        var point = app.getPoint();
+                        if (point) { Points.select(point); axis.setPosition(point); }
+                        else { Points.deselectAll(); axis.close(); }
+                    }
+                    else {
+                        var line = app.getLine();
+                        if (line) {
+                            if (This.selectMode === "Line") { Lines.select(line); } else { Lines.selectSpline(line); }
+                            axis.setPosition(app.canvas.get.line.center(line));
                         }
+                        else { Lines.deselectAll(); axis.close(); }
                     }
                 }
-                app.redraw();
-                app.eventRemover("window", "mousemove", edit.modify.windowMouseMove.move);
-                app.eventRemover("window", "mouseup", edit.modify.windowMouseUp.move);
-
-                if (edit.modify.isTransformed) {
-                    edit.modify.isTransformed = false;
-                    //undo.save();
-                }
-            },
-            rotate: function () {
-                if (edit.modify.copyMode && edit.modify.selectMode !== "point") {
+            }
+            else {
+                if (edit.modify.copyMode && edit.modify.selectMode !== "Point") {
                     Lines.deselectAll();
                     for (var i = 0; i < edit.modify.lines.length; i++) {
                         var line = edit.modify.lines[i];
@@ -663,65 +595,149 @@
                             start: { x: line.start.x, y: line.start.y, id: Points.getNextID(1) },
                             end: { x: line.end.x, y: line.end.y, id: Points.getNextID(2) }
                         });
-                        var addedPoint1 = Points.add({ x: line.start.x, y: line.start.y, connectedLines: [{ side: "start", id: addedLine.id }] });
-                        var addedPoint2 = Points.add({ x: line.end.x, y: line.end.y, connectedLines: [{ side: "end", id: addedLine.id }] });
+                        var addedPoint1 = Points.add({
+                            x: line.start.x,
+                            y: line.start.y,
+                            connectedLines: [{ side: "start", id: addedLine.id }]
+                        });
+                        var addedPoint2 = Points.add({
+                            x: line.end.x,
+                            y: line.end.y,
+                            connectedLines: [{ side: "end", id: addedLine.id }]
+                        });
                         Lines.select(addedLine);
                     }
-                    app.redraw();
                 }
-                $("#axis-angle").html(0);
-                app.eventRemover("window", "mousemove", edit.modify.windowMouseMove.rotate);
-                app.eventRemover("window", "mouseup", edit.modify.windowMouseUp.rotate);
-                if (edit.modify.isTransformed) {
-                    edit.modify.isTransformed = false;
-                    //undo.save();
+                else {
+                    if (edit.modify.isTransformed) {
+                        edit.modify.isTransformed = false;
+                        edit.modify.rotateNumber = parseInt($("#axis-angle").html());
+                    }
+                    if (Points.selected.length === 1) {
+                        var point = app.getPoint({ area: edit.modify.autoWeldArea, coords: Points.selected[0], except: { id: Points.selected[0].id } });
+                        if (point) {
+                            Points.moveTo(points.selected[0], point.x, point.y);
+                            Points.deselectAll();
+                            axis.close();
+                        }
+                    }
                 }
-            },
-            background: function () {
-                var axisPos = edit.modify.axisPos;
-                var point = app.getPoint({ coords: axisPos });
-                if (point) {
-                    edit.modify.setAxisPos(point);
-                }
-                app.eventRemover("window", "mousemove", edit.modify.windowMouseMove.background);
-                app.eventRemover("window", "mouseup", edit.modify.windowMouseUp.background);
+                undo.save();
             }
+            app.redraw();
+            display.render();
         },
+        mouseup: function (e) {
 
-        buttonmousedown: function (e) {
+            var sr = edit.selectRect, This = edit.modify;
+            if (axis.mode === "none") {
+                if (Lines.getLength(sr) >= 3) {
+                    if (edit.selectBySelectRect(This.selectMode)) { axis.setPosition("center"); }
+                }
+                else {
+                    if (This.selectMode === "Point") {
+                        var point = app.getPoint();
+                        if (point) { Points.select(point); axis.setPosition(point); }
+                        else { Points.deselectAll(); axis.close(); }
+                    }
+                    else {
+                        var line = app.getLine();
+                        if (line) {
+                            if (This.selectMode === "Line") { Lines.select(line); } else { Lines.selectSpline(line); }
+                            axis.setPosition(app.canvas.get.line.center(line));
+                        }
+                        else { Lines.deselectAll(); axis.close(); }
+                    }
+                }
+            }
+            else {
+                if (edit.modify.copyMode && edit.modify.selectMode !== "Point") {
+                    Lines.deselectAll();
+                    for (var i = 0; i < edit.modify.lines.length; i++) {
+                        var line = edit.modify.lines[i];
+                        var addedLine = Lines.add({
+                            start: { x: line.start.x, y: line.start.y, id: Points.getNextID(1) },
+                            end: { x: line.end.x, y: line.end.y, id: Points.getNextID(2) }
+                        });
+                        var addedPoint1 = Points.add({
+                            x: line.start.x,
+                            y: line.start.y,
+                            connectedLines: [{ side: "start", id: addedLine.id }]
+                        });
+                        var addedPoint2 = Points.add({
+                            x: line.end.x,
+                            y: line.end.y,
+                            connectedLines: [{ side: "end", id: addedLine.id }]
+                        });
+                        Lines.select(addedLine);
+                    }
+                }
+                else {
+                    if (edit.modify.isTransformed) {
+                        edit.modify.isTransformed = false;
+                        edit.modify.rotateNumber = parseInt($("#axis-angle").html());
+                    }
+                    if (Points.selected.length === 1) {
+                        var point = app.getPoint({ area: edit.modify.autoWeldArea, coords: Points.selected[0], except: { id: Points.selected[0].id } });
+                        if (point) {
+                            Points.moveTo(points.selected[0], point.x, point.y);
+                            Points.deselectAll();
+                            axis.close();
+                        }
+                    }
+                }
+                undo.save();
+            }
+            app.redraw();
+            display.render();
+        },
+        axisButton:function(e){
+            var This = edit.modify;
             var button = $(e.currentTarget).parent();
-            var mode = button.attr("id");
-            edit.modify.updateModel();
-            edit.modify.startOffset = {
-                x: app.getClient(e, "X"),
-                y: app.getClient(e, "Y"),
-                axisX: edit.modify.axisPos.x,
-                axisY: edit.modify.axisPos.y
-            };
-            edit.modify.clickedOn = mode;
-            if (["axisMove", "axisMoveUp", "axisMoveDown", "axisMoveLeft", "axisMoveRight"].indexOf(mode) !== -1) {
-                app.eventHandler("window", "mousemove", edit.modify.windowMouseMove.move);
-                app.eventHandler("window", "mouseup", edit.modify.windowMouseUp.move);
+            var id = button.attr("id");
+            if (button.hasClass("radio")) {
+                if (button.hasClass("active")) { button.removeClass("active"); axis.mode = "none"; }
+                else { $("#axis .radio").removeClass("active"); button.addClass("active"); axis.mode = button.attr("id"); }
             }
-            else if (mode === "axis") {
-                app.eventHandler("window", "mousemove", edit.modify.windowMouseMove.background);
-                app.eventHandler("window", "mouseup", edit.modify.windowMouseUp.background);
+            else if (button.hasClass("toggle")) {
+                if (This.selectMode === "Point") {
+                    Alert.open({ title: "Cannot active clone mode!!!", template: "because select mode is 'Point'. for active copy mode , set select mode to 'Line' or 'Spline'.", buttons: [{text:"ok",callback:Alert.close}]});
+                }
+                else {
+                    button.toggleClass("active"); edit.modify.copyMode = !edit.modify.copyMode;
+                }
             }
-            else if (mode === "axisRotate") {
-                app.eventHandler("window", "mousemove", edit.modify.windowMouseMove.rotate);
-                app.eventHandler("window", "mouseup", edit.modify.windowMouseUp.rotate);
-            } else if (mode === "axisCenter") {
-                edit.modify.setAxisPos("center");
-            } else if (mode === "axisKeyboard") {
+            else if (id === "axis-center") { axis.setPosition("center"); }
+            else if (id === "axis-hide") { axis.close(); axis.mode = "none"; }
+            else if (id === "axis-keyboard") {
                 keyboard.open({
                     fields: [{ title: "X", prop: "x" }, { title: "Y", prop: "y" }, { title: "Angle", prop: "angle" }],
-                    subscribe: edit.modify.transformTo,
-                    float: false,
-                    negative: true,
-                    title: "Transform To:"
+                    callback: edit.modify.transformTo, float: false, negative: true, title: "Transform To:"
                 });
             }
+            
+        },
+        backgroundmousedown:function(e){
+            app.eventHandler("window", "mousemove", edit.modify.backgroundmousemove);
+            app.eventHandler("window", "mouseup", edit.modify.backgroundmouseup);
+            var axisPos = axis.getPosition();
+            var client = app.getClient(e);
+            edit.startOffset = { x: client.x, y: client.y, axisX: axisPos.x, axisY: axisPos.y };
+        },
+        backgroundmousemove: function (e) {
+            var so = edit.startOffset;
+            var client = app.getClient(e);
+            var offset = { x: (client.x - so.x) / app.canvas.getZoom(), y: (client.y - so.y) / app.canvas.getZoom() };
 
+            axis.setPosition(app.canvas.getSnapedCoords({x:so.axisX + offset.x,y:so.axisY + offset.y}));
+        },
+        backgroundmouseup: function (e) {
+            app.eventRemover("window", "mousemove", edit.modify.backgroundmousemove)
+            app.eventRemover("window", "mouseup", edit.modify.backgroundmouseup);
+            var point = app.getPoint({ area: edit.modify.axisSnapArea, coords: axis.getPosition(), except: { id: Points.selected[0].id } });
+            if (point) {
+                axis.setPosition({x:point.x, y:point.y});
+            }
         },
         exportToNewLayer: function () {
             var id = layers.getId();
@@ -741,7 +757,7 @@
         move: function (offset) {
             if (offset.x === 0 && offset.y === 0) { return; }
             var so = edit.modify.startOffset;
-            edit.modify.setAxisPos({ x: so.axisX + offset.x, y: so.axisY + offset.y }); // Move Axis
+            axis.setPosition({ x: so.axisX + offset.x, y: so.axisY + offset.y }); // Move Axis
             if (this.copyMode && edit.modify.selectMode !== "point") {
                 app.redraw();
                 this.lines = [];
@@ -764,14 +780,14 @@
             edit.modify.isTransformed = true;
         },
         rotate: function (offset) {
-            $("#axis-angle").html(((offset) % 360) + "&deg;");
-            if (this.copyMode && edit.modify.selectMode !== "point") {
+            $("#axis-angle").html((edit.modify.rotateNumber + offset) + "&deg;");
+            var axisPos = axis.getPosition();
+            if (this.copyMode && edit.modify.selectMode !== "Point") {
                 app.redraw();
                 this.lines = [];
                 var length = edit.modify.linesState.length;
                 for (var k = 0; k < length; k++) {
                     var lineState = edit.modify.linesState[k];
-                    var axisPos = edit.modify.axisPos;
                     var rotatedStart = Points.getCoordsByRotate({ x: lineState.start.x, y: lineState.start.y }, offset + lineState.start.radian, axisPos);
                     var rotatedEnd = Points.getCoordsByRotate({ x: lineState.end.x, y: lineState.end.y }, offset + lineState.end.radian, axisPos);
                     this.lines.push({ start: rotatedStart, end: rotatedEnd });
@@ -782,12 +798,11 @@
                 for (var k = 0; k < length; k++) {
                     var point = edit.modify.points[k];
                     var pointsState = edit.modify.pointsState[k];
-                    var axisPos = edit.modify.axisPos;
                     Points.rotateTo(point, pointsState.radian + offset, axisPos);
                 }
                 app.redraw();
             }
-            this.isTransformed = true;
+            edit.modify.isTransformed = true;
         },
         transformTo: function (obj) {
             edit.modify.startOffset = {
@@ -844,23 +859,11 @@
                 ]
             });
         },
-
-        setAutoWeld: function (value) {
-            edit.modify.autoWeld = value;
-        },
-        setSelectMode: function (id) {
+        reset: function () {
             Points.deselectAll();
             Lines.deselectAll();
-            edit.modify.setAxisPos("hide");
+            axis.close();
             app.redraw();
-            if (id === "select-mode-point") {
-                edit.modify.selectMode = "point";
-            } else if (id === "select-mode-line") {
-                edit.modify.selectMode = "line";
-            } else if (id === "select-mode-spline") {
-                edit.modify.selectMode = "spline";
-            }
-            edit.modify.openToolbar();
         }
     },
     chamfer: {
@@ -1210,4 +1213,66 @@
             edit.addPoint.min = min;
         },
     },
+}
+
+
+
+var axis = {
+    mode: "none",
+    opened:false,
+    buttons: [
+        { id: "axis-move-horizontal", iconClass: "mdi mdi-arrow-right-bold", className: "axis-icon-container radio", active: function () { return edit.modify.axisMode === "axis-move-horizontal" ? ' active' : '' } },
+        { id: "axis-rotate", iconClass: "mdi mdi-loop", className: "axis-icon-container radio", active: function () { return edit.modify.axisMode === "axis-rotate" ? ' active' : '' } },
+        { id: "axis-hide", iconClass: "mdi mdi-cancel", className: "axis-icon-container" },
+        { id: "axis-center", iconClass: "mdi mdi-image-filter-center-focus", className: "axis-icon-container" },
+        { id: "axis-keyboard", iconClass: "mdi mdi-keyboard", className: "axis-icon-container" },
+        { id: "axis-copy", iconClass: "mdi mdi-content-copy", className: "axis-icon-container toggle", active: function () { return edit.modify.copyMode ? ' active' : '' } },
+        { id: "axis-move-vertical", iconClass: "mdi mdi-arrow-up-bold", className: "axis-icon-container radio", active: function () { return edit.modify.axisMode === "axis-move-vertical" ? ' active' : '' } },
+        { id: "axis-move", iconClass: "mdi mdi-arrow-all", className: "axis-icon-container radio", active: function () { return edit.modify.axisMode === "axis-move" ? ' active' : '' } },
+    ],
+    open: function (coords) {
+        console.log("open");
+        axis.opened = true;
+        edit.modify.rotateNumber = 0;
+        var str = '';
+        str += '<div id="axis">';
+        str += '<div id="axis-background">';
+        str += '<div id="axis-x"><div class="title">X:</div><div class="value"></div></div>';
+        str += '<div id="axis-y"><div class="title">Y:</div><div class="value"></div></div>';
+        str += '<div id="axis-angle"><div class="title">Angle:</div><div class="value"></div></div>';
+        str += '</div>';
+        for (var i = 0; i < this.buttons.length; i++) {
+            var button = this.buttons[i];
+            str += '<div id="' + button.id + '" class="' + (button.className + (button.active ? button.active() : '')) + '" style="transform:rotate(' + (i * 45) + 'deg)">';
+            str += components.render({
+                id: button.id + "-icon", component: "Button", className: "icon " + button.iconClass, style: 'transform:rotate(' + (i * -45) + 'deg);',
+                callback: edit.modify.axisButton,
+            });
+            str += '</div>';
+        }
+        str += '</div>';
+        $("body").append(str);
+        app.eventHandler("#axis-background", "mousedown", edit.modify.backgroundmousedown);
+        this.setPosition(coords);
+    },
+    close: function () {
+        $("#axis").remove();
+        axis.opened = false;
+        axis.mode = "none";
+    },
+    setPosition: function (obj) {
+        if (axis.opened === false) { axis.open(obj); return;}
+        var coords;
+        if (obj === "center") { coords = edit.modify.selectMode === "Point" ? Points.getCenterOfSelected() : Lines.getCenterOfSelected(); }
+        else { coords = obj; }
+        var bodyCoords = app.canvas.canvasToClient(coords);
+        $("#axis").css({ "left": bodyCoords.x, "top": bodyCoords.y });
+        $("#axis-x").html("X:" + coords.x.toFixed(1));
+        $("#axis-y").html("Y:" + (coords.y * -1).toFixed(1));
+    },
+    getPosition: function () {
+        var axis = $("#axis");
+        return app.canvas.clientToCanvas({ x: parseInt(axis.css("left")), y: parseInt(axis.css("top")) });
+    }
+
 }
