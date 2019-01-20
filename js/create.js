@@ -142,7 +142,11 @@ var create = {
             negative: true,
             title: mode + " to:",
             close: (mode === "ngon" || mode === "rectangle" || mode === "frame"),
-            callback: this.object.to
+            callback: function(obj){
+                var lastPoint = create.object.getLastPoint();
+                var newPoint = {x:lastPoint.x + obj.x,y:lastPoint.y+obj.y*-1};
+                create.object.to(newPoint); create.preview();
+            }
         });
     },
     save: function () {

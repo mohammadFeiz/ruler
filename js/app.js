@@ -467,10 +467,12 @@ var display = {
         {
             id: "mirror-x", component: "Button", iconClass: "mdi mdi-unfold-more-horizontal", className: "icon", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
+            callback:function(){edit.modify.mirrorX()}
         },
         {
             id: "mirror-y", component: "Button", iconClass: "mdi mdi-unfold-more-vertical", className: "icon", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
+            callback:function(){edit.modify.mirrorY()}
         },
         {
             id: "break-point", component: "Button", iconClass: "", className: "button", text: "Break", container: "#sub-menu",

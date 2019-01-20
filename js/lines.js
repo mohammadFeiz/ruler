@@ -379,6 +379,7 @@
     },
     haveInnerMeet:function(a,b){
         var meet = Lines.getMeet(a,b);
+        if(!meet){return false;}
         if (meet.x < a.start.x && meet.x < a.end.x) { return false;}
         if (meet.x > a.start.x && meet.x > a.end.x) { return false; }
         if (meet.x < b.start.x && meet.x < b.end.x) { return false; }

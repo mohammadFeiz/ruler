@@ -369,15 +369,15 @@
         },
         mirrorX: function () { edit.modify.mirror("x"); },
         mirrorY: function () { edit.modify.mirror("y"); },
-        mirror: function (axis) {
-            var center = edit.modify.axisPos;
-            if (edit.modify.selectMode === "point") {
+        mirror: function (ax) {
+            var center = axis.getPosition();
+            if (edit.modify.selectMode === "Point") {
                 if (Points.selected.length < 2) { return; }
                 for (var i = 0; i < Points.selected.length; i++) {
                     var point = Points.selected[i];
-                    var distance = center[axis] - point[axis];
+                    var distance = center[ax] - point[ax];
                     var pos = { x: point.x, y: point.y };
-                    pos[axis] += 2 * distance;
+                    pos[ax] += 2 * distance;
                     Points.moveTo(point, pos.x, pos.y);
                 }
             }
@@ -386,9 +386,9 @@
                 var selected = Lines.getPointsOfSelected();
                 for (var i = 0; i < selected.length; i++) {
                     var point = selected[i];
-                    var distance = center[axis] - point[axis];
+                    var distance = center[ax] - point[axis];
                     var pos = { x: point.x, y: point.y };
-                    pos[axis] += 2 * distance;
+                    pos[ax] += 2 * distance;
                     Points.moveTo(point, pos.x, pos.y);
                 }
             }
