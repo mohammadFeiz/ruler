@@ -445,8 +445,8 @@
                     return;
                 }
             }
-            if (Points.selected[0]) { edit.modify.setAxisPos(Points.selected[0]); }
-            else { edit.modify.setAxisPos("hide"); }
+            if (Points.selected[0]) { axis.setPosition(Points.selected[0]); }
+            else { axis.setPosition("hide"); }
             undo.save();
             app.redraw();
             display.render();
@@ -627,70 +627,6 @@
             app.redraw();
             display.render();
         },
-        mouseup: function (e) {
-
-            var sr = edit.selectRect, This = edit.modify;
-            if (axis.mode === "none") {
-                if (Lines.getLength(sr) >= 3) {
-                    if (edit.selectBySelectRect(This.selectMode)) { axis.setPosition("center"); }
-                }
-                else {
-                    if (This.selectMode === "Point") {
-                        var point = app.getPoint();
-                        if (point) { Points.select(point); axis.setPosition(point); }
-                        else { Points.deselectAll(); axis.close(); }
-                    }
-                    else {
-                        var line = app.getLine();
-                        if (line) {
-                            if (This.selectMode === "Line") { Lines.select(line); } else { Lines.selectSpline(line); }
-                            axis.setPosition(app.canvas.get.line.center(line));
-                        }
-                        else { Lines.deselectAll(); axis.close(); }
-                    }
-                }
-            }
-            else {
-                if (edit.modify.copyMode && edit.modify.selectMode !== "Point") {
-                    Lines.deselectAll();
-                    for (var i = 0; i < edit.modify.lines.length; i++) {
-                        var line = edit.modify.lines[i];
-                        var addedLine = Lines.add({
-                            start: { x: line.start.x, y: line.start.y, id: Points.getNextID(1) },
-                            end: { x: line.end.x, y: line.end.y, id: Points.getNextID(2) }
-                        });
-                        var addedPoint1 = Points.add({
-                            x: line.start.x,
-                            y: line.start.y,
-                            connectedLines: [{ side: "start", id: addedLine.id }]
-                        });
-                        var addedPoint2 = Points.add({
-                            x: line.end.x,
-                            y: line.end.y,
-                            connectedLines: [{ side: "end", id: addedLine.id }]
-                        });
-                        Lines.select(addedLine);
-                    }
-                }
-                else {
-                    if (edit.modify.isTransformed) {
-                        edit.modify.isTransformed = false;
-                        edit.modify.rotateNumber = parseInt($("#axis-angle").html());
-                    }
-                    if (Points.selected.length === 1) {
-                        var point = app.getPoint({ area: edit.modify.autoWeldArea, coords: Points.selected[0], except: { id: Points.selected[0].id } });
-                        if (point) {
-                            Points.moveTo(points.selected[0], point.x, point.y);
-                            Points.deselectAll();
-                            axis.close();
-                        }
-                    }
-                }
-                undo.save();
-            }
-            app.redraw();
-            display.render();
-        },
         axisButton:function(e){
             var This = edit.modify;
             var button = $(e.currentTarget).parent();
@@ -734,7 +670,7 @@
         backgroundmouseup: function (e) {
             app.eventRemover("window", "mousemove", edit.modify.backgroundmousemove)
             app.eventRemover("window", "mouseup", edit.modify.backgroundmouseup);
-            var point = app.getPoint({ area: edit.modify.axisSnapArea, coords: axis.getPosition(), except: { id: Points.selected[0].id } });
+            var point = app.getPoint({ area: edit.modify.axisSnapArea, coords: axis.getPosition() });
             if (point) {
                 axis.setPosition({x:point.x, y:point.y});
             }

@@ -66,8 +66,8 @@
     drawLine: function (line) {
         this.canvas.drawLine(line);
     },
-    drawPoint: function (point) { this.canvas.drawArc({ x: point.x, y: point.y, radius: 2, fill: point.selected === true ? "red" : point.color }); },
-    drawOpenPoint: function (point) { this.canvas.drawRectangle({ center: true, x: point.x, y: point.y, width: 4, height: 4, fill: point.selected === true ? "red" : point.color }); },
+    drawPoint: function (point) { this.canvas.drawArc({ x: point.x, y: point.y, radius: 2, fill: point.selected === true ? "red" : "#fff" }); },
+    drawOpenPoint: function (point) { this.canvas.drawRectangle({ center: true, x: point.x, y: point.y, width: 4, height: 4, fill: point.selected === true ? "red" : "yellow" }); },
     drawAxes: function () {
         this.ctx.save();
         this.ctx.setLineDash([3, 3]);

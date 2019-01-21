@@ -11,9 +11,10 @@
         getMode: function () { return this.state.mode; },
         getLines: function () {
             var s = this.state, lines = [], points = this.getPoints();
+            if (points.length < 2) { return [];}//در حالتی که یک پوینت بیشتر موجود نیست لاینی نباید تولید شود این مشکل در حالت کلوز ترو خود را نشان می دهد
             var length = points.length + (s.close ? 1 : 0);
             for (var i = 1; i < length; i++) {
-                var prevIndex = i - 1, index = i, lastPoint = points[prevIndex], point = points[index] || points[0];
+                var lastPoint = points[i - 1], point = points[i] || points[0];
                 var line = { start: { x: lastPoint.x, y: lastPoint.y }, end: { x: point.x, y: point.y }, color: s.color, };
                 lines.push(line);
             }
@@ -91,12 +92,12 @@ var create = {
         if (o.getMode() === "polyline") {
             control.close = points.length > 2;
             control.join = lines.length > 2 && Lines.getMeet(lines[0], lines[lines.length - 1]) !== false;
-            control.remove = points.length > 0;
+            control.remove = points.length > 1;
         }
         control.coords = { x: lastPoint.x, y: lastPoint.y };
         createControl.open(control);
     },
-    drawcontrolremove: function () { this.object.state.points.pop(); this.preview(); },
+    drawcontrolremove: function () { this.object.state.points.pop(); screenCorrection.run(app.canvas.canvasToClient(this.object.getLastPoint()), function () { app.redraw(); create.preview(); }); },
     drawcontrolclose: function () { this.object.close(); this.end(); },
     drawcontroljoin: function () { this.object.join(); this.end(); },
     drawcontrolmove: function (e) {
@@ -145,7 +146,8 @@ var create = {
             callback: function(obj){
                 var lastPoint = create.object.getLastPoint();
                 var newPoint = {x:lastPoint.x + obj.x,y:lastPoint.y+obj.y*-1};
-                create.object.to(newPoint); create.preview();
+                create.object.to(newPoint);
+                screenCorrection.run(app.canvas.canvasToClient(create.object.getLastPoint()), function () { app.redraw(); create.preview(); });
             }
         });
     },
@@ -259,7 +261,7 @@ var autoPan = {
 
 
 var screenCorrection = {
-    margin: { left: 80+0, top: 80+0, right: 80+0, bottom: 80+0 },//80 is createControl.style.distance
+    margin: { left: 80+0, top: 80+36, right: 80+0, bottom: 80+0 },//80 is createControl.style.distance
     run: function (coords,callback) {
         var c = app.canvas;
         var speed = 2, x = coords.x, y = coords.y, m = this.margin, width = c.getWidth(), height = c.getHeight();
