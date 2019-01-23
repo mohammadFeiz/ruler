@@ -37,11 +37,17 @@ var create = {
     firstPoint: true,
     ngonSides: 6,
     ortho: true,
-    snapArea: 15,
+    autoWeldArea: 15,
+    getAutoWeldCoords:function(coords){
+        var point = app.getPoint({ coords: coords, area: this.autoWeldArea });
+        if (point) { coords = { x: point.x, y: point.y }; }
+        return coords;
+    },
     mousedown: function (e) {
         app.eventHandler("window", "mousemove", $.proxy(this.mousemove, this));
         app.eventHandler("window", "mouseup", $.proxy(this.mouseup, this));
-        var mode = app.state.createmode, coords = app.canvas.getSnapedCoords(), close = ["rectangle", "ngon"].indexOf(mode) !== -1;
+        var mode = app.state.createmode, close = ["rectangle", "ngon"].indexOf(mode) !== -1;
+        var coords = this.getAutoWeldCoords(app.canvas.getSnapedCoords());
         if (this.firstPoint) {
             this.object = new spline({ start: coords, color: layers.getActive().color, mode: mode, sides: this.ngonSides, ortho: this.ortho, close: close }, this.getPoints[mode]);
             this.firstPoint = false;
@@ -62,7 +68,10 @@ var create = {
         app.eventRemover("window", "mousemove", this.mousemove);
         app.eventRemover("window", "mouseup", this.mouseup);
         if (this.firstPoint) { this.end(); }
-        screenCorrection.run(app.canvas.canvasToClient(this.object.getLastPoint()), function () { create.preview(); });
+        var lastPoint = this.object.getLastPoint();
+        var coords = this.getAutoWeldCoords(lastPoint);
+        lastPoint.x = coords.x; lastPoint.y = coords.y;
+        screenCorrection.run(app.canvas.canvasToClient(lastPoint), function () { create.preview(); });
     },
     end: function () {
         if (this.drawing === false) { return;} // drawing = false is mean that current drawing is saved
@@ -212,9 +221,9 @@ var create = {
     setting: function () {
         var template = [
             {
-                type: "slider", title: "Snap Size", value: create.snapArea,
+                type: "slider", title: "Auto Weld", value: create.autoWeldArea,
                 callback: function (value) {
-                    create.snapArea = value;
+                    create.autoWeldArea = value;
                 },
                 start: 1, step: 1, end: 30,
             }
