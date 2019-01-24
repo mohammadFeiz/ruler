@@ -13,9 +13,9 @@ body {
 }
 
 .icon,.button,.text,.dropdown,.numberbox {
-    height: 24px;
-    line-height: 24px;
-    margin: 8px 3px;
+    height: 30px;
+    line-height: 30px;
+    margin: 5px 3px;
     color: #fff;
     font-size: 12px;
     border-radius: 2px;
@@ -37,8 +37,8 @@ body {
 
 .dropdown {
     position: relative;
-    height: 22px;
-    line-height: 22px;
+    height: 28px;
+    line-height: 28px;
     border: 1px solid;
 }
 
@@ -96,11 +96,11 @@ body {
 
 
 #main-menu, #set-app-mode, #settings, #delete-item, #select-all, #mirror-x, #mirror-y, #break-point, #weld, 
-#create-modes, #select-mode, #edit-modes, .alert-header .text,#connect,#divide,#keyboard-title,.keyboard-label,#join {
+#create-modes, #select-mode, #edit-modes, .alert-header .text,#connect,#divide,#keyboard-title,.keyboard-label,#join,#layer-popup .icon,#full-keyboard-close,#full-keyboard-ok {
     float: left;
 }
 
-#layer, #snap, .alert-header .icon,#keyboard-close {
+#layer, #snap, .alert-header .icon,#keyboard-close,#full-keyboard-close {
     float: right;
 }
 
@@ -124,7 +124,7 @@ body {
     left: 0;
     width: calc(100% - 6px);
     padding: 0 3px;
-    background: #222;
+    background: #414a51;
 }
 
 #top-menu {
@@ -144,13 +144,14 @@ body {
     left: calc(50% - 170px);
     z-index: 1000;
     color: #fff;
+    background:#425768;
 }
 
 .alert-header {
     z-index: 10;
     position: relative;
     width: 100%;
-    background: #222;
+    background: #414a51;
 }
 
 
@@ -162,7 +163,6 @@ body {
     position: relative;
     padding: 6px;
     width: calc(100% - 12px);
-    background: #444;
     font-size:12px;
 }
 
@@ -171,13 +171,12 @@ body {
     position: relative;
     padding: 6px;
     width: calc(100% - 12px);
-    background: #444;
 }
 
 .alert-button {
     float: right;
     width: calc(33% - 22px);
-    background:#222;
+    background:#414a51;
 }
 
 .alert-switch-container {
@@ -309,4 +308,128 @@ body {
 .keyboard-field.active .keyboard-label, .keyboard-field.active .keyboard-numberbox{
  color:#1ad25f;
 }
+#layer-popup {
+ position: fixed;
+ z-index:100;
+ color: #fff;
+ background:#425768;
+ width: 156px;
+ height: calc(100% - 40px);
+ top: 40px;
+ right:-156px;
+    transition:0.3s;
+}
+#layer-popup.active {
+ right:0;
+ transition:0.3s;
+}
 
+
+.layer-item {
+ position: relative;
+ width: calc(100% - 4px);
+ border-top:1px solid #647588;
+ border-bottom:1px solid #141519;
+ background:#425768;
+}
+.layer-item.active {
+    background:#647588;
+ color: #1ad25f;
+}
+#layer-popup .layer-item .text {
+  width:calc(100% - 55px);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow:hidden;
+  margin-left:0;
+  padding-left:0;
+}
+
+#layer-popup #layer-header {
+ position: absolute;
+ width: 100%;
+ left: 0;
+ top: 0;
+ background:#414a51;
+ background-size:250px 350px;
+ z-index:10;
+  padding:0 3px;
+  box-sizing: border-box
+}
+#layer-popup #layer-footer {
+ position: absolute;
+ width: 100%;
+ left: 0;
+ bottom: 0;
+ background:#414a51;
+ background-size:250px 350px;
+ z-index:10;
+  padding:0 3px;
+  box-sizing: border-box
+}
+
+#layer-body {
+ position: absolute;
+ width: 100%;
+ left: 0;
+ overflow: hidden;
+ z-index:10;
+ top: 40px;
+ height: calc(100% - 80px);
+}
+.color-pallete-item{
+    background:Red;
+    width:36px;
+    height:36px;
+    float:left;
+}
+#full-keyboard {
+ position:fixed;
+ width:100%;
+ left:0;
+ bottom:0;
+ z-index: 10000;
+ background:#425768;
+ padding:12px;
+ padding-top:0;
+ box-sizing: border-box;
+}
+.full-keyboard-key {
+ float:left;
+ width:calc(10% - 24px);
+ position:relative;
+ border:1px solid rgba(255,255,255,0.1);
+ border-radius:6px;
+ margin:3px;
+}
+.full-keyboard-row {
+    float:left;
+ position: relative;
+ width:100%;
+ z-index:10;
+}
+#full-keyboard-title{
+    float:left;
+}
+
+.full-keyboard-key#full-keyboard-keyA{
+    margin-left:calc(5% + 2px);
+}
+#full-keyboard-show {
+ color:#71b0ab;
+ text-align:center;
+ float:left;
+ background:rgba(0,0,0,0.2);
+ line-height:30px;
+    margin-top:5px;
+ height:30px;
+ width:calc(100% - 30px);
+}
+
+ 
+.full-keyboard-key.full-keyboard-backspace {
+ width:calc(15% - 7px);
+}
+.full-keyboard-key.full-keyboard-space {
+ width:calc(15% - 25px);
+}

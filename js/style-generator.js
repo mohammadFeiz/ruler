@@ -135,42 +135,7 @@ function createStyle() {
     str += '}';
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    str += '#full-keyboard{position:fixed;width:calc(100% - 12px);left:0;bottom:0;z-index: 10000;border:6px solid ' + full_keyboard_background + ';';
-    str += 'background:' + full_keyboard_background + ';';
-    str += 'height:' + (full_keyboard_height * 6) + 'px;';
-    str += '}';
-    str += '.full-keyboard-key{float:left;text-align:center;width:10%;color:' + lightFontColor + ';position:relative;';
-    str += 'height:' + full_keyboard_height + 'px;';
-    str += 'line-height: ' + full_keyboard_height + 'px;';
-    str += '}';
-    str += '#full-keyboard .full-keyboard-row{position: relative;width:100%;z-index:10;';
-    str += 'height:' + full_keyboard_height + 'px;';
-    str += '}';
-    str += '#full-keyboard-title {color:' + lightFontColor + ';text-align:left;margin-left:12px;';
-    str += 'line-height:' + full_keyboard_height + 'px;';
-    str += 'width:calc(100% - 12px);';
-    str += '}';
-    str += '#full-keyboard-show {color:#71b0ab;text-align:center;float:left;background:rgba(0,0,0,0.2);';
-    str += 'line-height:' + full_keyboard_height + 'px;';
-    str += 'height:' + full_keyboard_height + 'px;';
-    str += 'width:calc(100% - ' + (full_keyboard_height * 2) + 'px);';
-    str += '}';
-    str += '#full-keyboard-close {text-align:center;float:left;color:' + lightFontColor + ';';
-    str += 'line-height:' + full_keyboard_height + 'px;';
-    str += 'width:' + full_keyboard_height + 'px;';
-    str += '}';
-    str += '#full-keyboard-ok {text-align:center;float:left;color:' + lightFontColor + ';';
-    str += 'line-height:' + full_keyboard_height + 'px;';
-    str += 'width:' + full_keyboard_height + 'px;';
-    str += '}';
-
-    str += '.full-keyboard-key-empty{float:left;width:5%;';
-    str += 'height:' + full_keyboard_height + 'px;';
-    str += '}';
-    str += '.full-keyboard-key.full-keyboard-back-space{width:15%}';
-    str += '.full-keyboard-key.full-keyboard-space{width:15%}';
-    str += '.full-keyboard-key:before{content:"";position:absolute;width:calc(100% - 6px);height:calc(100% - 6px);border:1px solid rgba(255,255,255,0.1);left:2px;top:2px;border-radius:6px;}';
-    ////////////////////////////////////////////////////////////////////////////////////////
+    
 
     
     
@@ -392,91 +357,7 @@ function createStyle() {
     str += 'display:block;';
     str += '}';
     ///////////////////////////////////////////////////////////////////////////
-    str += '#layer-popup{';
-    str += 'position: fixed;';
-    str += 'z-index:100;';
-    str += 'color: ' + font_color + ';';
-    str += background;
-    str += 'width: ' + (Math.max(layers.footerItems.length,layers.headerItems.length) * layer_size) + 'px;';
-    str += 'height: calc(100% - ' + top_menu_size + 'px);';
-    str += 'right: ' + (Math.max(layers.footerItems.length, layers.headerItems.length) * layer_size * -1) + 'px;';
-    str += 'top: ' + top_menu_size + 'px;';
-    str += transition;
-    str += '}';
-    str += '#layer-popup.active{';
-    str += 'right: 0;';
-    str += transition;
-    str += '}';
     
-    str += '#layer-popup .icon-container{';
-    str += 'border-radius:100%;';
-    str += 'text-align:center;';
-    str += 'float: left;';
-    str += 'width: ' + layer_size + 'px;';
-    str += 'height: ' + layer_size + 'px;';
-    str += 'text-align:center;';
-    str += '}';
-
-    str += '#layer-popup .icon-container .icon{';
-    str += 'line-height:' + layer_size + 'px;';
-    str += 'font-size:' + (layer_size / 9 * 4) + 'px;';
-    str += '}';
-
-    str += '#layer-popup .layer-item{';
-    str += 'position: relative;';
-    str += 'width: 100%;';
-    str += 'border-top:1px solid #535458;';
-    str += 'border-bottom:1px solid #141519;';
-    str += background;
-    str += 'height: ' + layer_size + 'px;';
-    str += '}';
-
-    str += '#layer-popup .layer-item.active{';
-    str += 'background:#646464;';
-    str += 'color: ' + color + ';';
-    str += '}';
-
-    str += '#layer-popup .layer-item .title{';
-    str += 'position: relative;';
-    str += 'float: left;';
-    str += 'font-size:' + (layer_size / 3) + 'px;';
-    str += 'line-height:' + layer_size + 'px;';
-    str += 'padding-left:' + (layer_size / 8) + 'px;';
-    str += 'width: calc(100% - ' + layer_size + 'px - ' + (layer_size / 8) + 'px);';
-    str += '}';
-
-    
-    str += '#layer-popup #layer-header{';
-    str += 'position: absolute;';
-    str += 'width: 100%;';
-    str += 'left: 0;';
-    str += 'top: 0;';
-    str += background2;
-    str += 'z-index:10;';
-    str += '}';
-
-    str += '#layer-popup #layer-footer{';
-    str += 'position: absolute;';
-    str += 'width: 100%;';
-    str += 'left: 0;';
-    str += 'bottom: 0;';
-    str += background2;
-    str += 'z-index:10;';
-    str += '}';
-
-    str += '#layer-header .icon-container, #layer-footer .icon-container {';
-    str += 'float: left;';
-    str += '}';
-
-    str += '#layer-body {';
-    str += 'position: absolute;';
-    str += 'width: 100%;';
-    str += 'left: 0;';
-    str += 'overflow: hidden;';
-    str += 'z-index:10;';
-    str += 'top: ' + layer_size + 'px;';
-    str += 'height: calc(100% - ' + (layer_size * 2) + 'px);';
-    str += '}';
     
     ////////////////////////////////////////////////////////////////////////////////
     str += '#alert .r-slider-button,#app-mode .r-slider-button {';

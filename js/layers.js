@@ -1,168 +1,127 @@
 var layers = {
     id: "2layer", activeIndex: 0,
-    idGenerator: function () {layers.id = (parseInt(layers.id) + 1) + "layer";},
-    getEyeIconClass:function(state){
-        return state?"icon mdi mdi-eye":"icon mdi mdi-eye-off";
-    },
-    model: [{ id:"1layer",title: "layer 1", color: "#fff", show: true, active: true }],
+    showAll: true,
+    getId: function () { var id = this.id; this.id = (parseInt(id) + 1) + "layer"; return id; },
+    model: [{ id: "1layer", title: "layer 1", color: "#fff", show: true, active: true }],
     open: function () {
-        var str = LayerPopup({headerItems:layers.headerItems,footerItems:layers.footerItems});
-        $("body").append(str);
+        this.render("init"); // in init mode #layers-popup will render by animation
         setTimeout(function () { $("#layer-popup").addClass("active"); }, 10);
-        layers.update();
-        for (var i = 0; i < layers.headerItems.length; i++) {
-            var item = layers.headerItems[i];
-            layers.eventHandler("#layer-popup #" + item.id, "mousedown", item.callback);
-        }
-        for (var i = 0; i < layers.footerItems.length; i++) {
-            var item = layers.footerItems[i];
-            layers.eventHandler("#layer-popup #" + item.id, "mousedown", item.callback);
-        }
-        layers.eventHandler("#layer-popup .back-drop","mousedown",layers.close);
     },
-    close:function(){
+    close: function () {
         $("#layer-popup").removeClass("active");
         setTimeout(function () { $("#layer-popup").remove(); }, 300);
-
     },
-    eventHandler: function (selector, event, action) {
-        if (canvas.isMobile) {
-            if (event === "mousedown") { event = "touchstart"; }
-            else if (event === "mousemove") { event = "touchmove"; }
-            else if (event === "mouseup") { event = "touchend"; }
-        }
-        if (selector === "window") { $(window).unbind(event, action).bind(event, action); }
-        else if (typeof selector === "string") { $(selector).unbind(event, action).bind(event, action); }
-        else { selector.unbind(event, action).bind(event, action); }
-    },
-    update: function () {
+    render: function (mode) {
+        $("#layer-popup").remove();
+        var className = mode === "init" ? '' : 'active';
         var str = '';
-        for (var i = 0; i < layers.model.length; i++) {
-            var item = layers.model[i];
-            str += LayerItem({item:item});
+        str += '<div id="layer-popup" class="' + className + '">';
+        /**/str += components.render({ component: "DIV", id: "layer-back-drop", className: "back-drop", callback: layers.close });
+        /**/str += '<div id="layer-header">';
+        /*****/for (var i = 0; i < this.headerItems.length; i++) { str += components.render(this.headerItems[i]); }
+        /**/str += '</div>';
+        str += '<div id="layer-body">';
+        for (var i = 0; i < this.model.length; i++) {
+            var model = this.model[i];
+            str += '<div data-index="' + i + '" class="layer-item' + (model.active ? ' active' : '') + '" style="border-left:4px solid ' + model.color + ';" id="' + model.id + '">';
+            str += components.render({
+                component: "Button", id: "layer-item-icon" + i, className: "icon", iconClass: model.show ? "mdi mdi-eye" : "mdi mdi-eye-off",
+                callback: function (e) { layers.setVisibility($(e.currentTarget).parent().attr("id")); }
+            });
+            str += components.render({
+                component: "Button", id: "layer-item-text" + i, className: "text", text: model.title,
+                callback: function (e) { layers.active($(e.currentTarget).parent().attr("id")); }
+            });
+            str += '</div>';
         }
-        $("#layer-body").html(str);
-        layers.eventHandler("#layer-body .icon-container", "mousedown", function (e) {
-            var id = $(e.currentTarget).parent().attr("id");
-            layers.setVisibility(id);
-        });
-        layers.eventHandler("#layer-body .title", "mousedown", function (e) {layers.active($(e.currentTarget).parent().attr("id"));});
+        str += '</div>';
+        str += '<div id="layer-footer">';
+        for (var i = 0; i < this.footerItems.length; i++) { str += components.render(this.footerItems[i]); }
+        str += '</div>';
+        str += '</div>';
+        $("body").append(str);
     },
     add: function () {
-        layers.deactiveAll();
-        var id = layers.id,num = parseInt(id);
-        layers.idGenerator();
-        var newLayer = { title: "layer " + num, id: id, color: "#fff", show: true };
-        layers.model.push(newLayer);
-        layers.update();
-        layers.active(id);
+        this.deactiveAll(); var id = this.getId();
+        var length = this.model.length;
+        this.model.push({ title: "layer " + parseInt(id), id: id, color: "#fff", show: true, active: true });
+        this.activeIndex = length;
+        this.render();
     },
     rename: function (title) {
         layers.getActive().title = title;
-        layers.update();
+        layers.render();
     },
     remove: function (id) {
         if (layers.model.length < 2) { return false; }
         var id = layers.getActive().id;
-        for (var i = 0; i < canvas.lines.length; i++) {
-            var line = canvas.lines[i];
+        for (var i = 0; i < app.state.lines.length; i++) {
+            var line = app.state.lines[i];
             if (!line) { continue; }
-            if (line.layer === id) { canvas.lines.splice(i, 1);  i--;  }
-            canvas.redraw();
+            if (line.layer.id === id) { app.state.lines.splice(i, 1); i--; }
         }
-        for (var j = 0; j < canvas.points.length; j++) {
-            var point = canvas.points[j];
+        for (var j = 0; j < app.state.points.length; j++) {
+            var point = app.state.points[j];
             if (!point) { continue; }
-            if (point.layer === id) { canvas.points.splice(j, 1);  j--; }
+            if (point.layer.id === id) { app.state.points.splice(j, 1); j--; }
         }
         for (var k = 0; k < layers.model.length; k++) {
             var layer = layers.model[k];
             if (layer.id === id) { layers.model.splice(k, 1); break; }
         }
         layers.active(layers.model[layers.model.length - 1].id);
-        layers.update();
-        canvas.redraw();
+        layers.render();
+        app.redraw();
     },
-    getVisibles:function(){
-        var visibleLayers = layers.model.map(function (item) {if (item.show) { return item.id; }});
-        return visibleLayers;
+    moveUp: function () {
+        if (!this.activeIndex) { return; }
+        var active = this.model[this.activeIndex];
+        this.model.splice(this.activeIndex, 1);
+        this.model.splice(this.activeIndex - 1, 0, active);
+        this.activeIndex--;
+        this.render();
     },
-    getHiddens:function(){
-        var hiddenLayers = layers.model.map(function (item) {if (!item.show) { return item.id; }});
-        return hiddenLayers;
+    moveDown: function () {
+        if (this.activeIndex === this.model.length - 1) { return; }
+        var active = this.model[this.activeIndex];
+        this.model.splice(this.activeIndex, 1);
+        this.model.splice(this.activeIndex + 1, 0, active);
+        this.activeIndex++;
+        this.render();
     },
-    setVisibility:function(id){
-        if (id === "all") {
-            var element = $("#layer-visibility");
-            var items = $(".layer-item");
-            element.toggleClass("active");
-            var state = element.hasClass("active");
-            element.find("span").attr("class", layers.getEyeIconClass(state));
-            items.find(".icon-container span").attr("class", layers.getEyeIconClass(state));
-            for (var i = 0; i < layers.model.length; i++) {
-                var layer = layers.model[i];
-                layer.show = state;
-            }
-        }
-        else {
-            var object = layers.getObjectByID(id);
-            object.show = !object.show;
-            $(".layer-item#" + id + " span.icon").attr("class", layers.getEyeIconClass(object.show));
-        }
-        var hiddenLayers = layers.getHiddens();
-        for(var i = 0; i < canvas.lines.length; i++){
-            var line = canvas.lines[i];
-            if(hiddenLayers.indexOf(line.layer)===-1){line.show = true;}
-            else{line.show = false;}
-        }
-        for(var i = 0; i < canvas.points.length; i++){
-            var point = canvas.points[i];
-            if(hiddenLayers.indexOf(point.layer)===-1){point.show = true;}
-            else{point.show = false;}
-        }
-        canvas.redraw();
-    },  
+    getVisibles: function () { return this.model.map(function (item) { if (item.show) { return item; } }); },
+    getHiddens: function () { return this.model.map(function (item) { if (!item.show) { return item; } }); },
+    setVisibility: function (id) {
+        if (id === "all") { this.showAll = !this.showAll; for (var i = 0; i < this.model.length; i++) { this.model[i].show = this.showAll; } }
+        else { var object = layers.getObjectByID(id); object.show = !object.show; }
+        this.render(); app.redraw();
+    },
     mergeVisibles: function () {
-        var list = layers.getVisibles();
-        var id = list[0];
-        var color = layers.getObjectByID(id).color;
-        for (var i = 0; i < canvas.lines.length; i++) {
-            var line = canvas.lines[i];
-            if (line.show) {
-                line.layer = id;
-                line.color = color;
-            }
+        var list = this.getVisibles();
+        if (list.length < 2) { return; }
+        var mergedLayer = list[0];
+        for (var i = 0; i < app.state.lines.length; i++) {
+            var line = app.state.lines[i];
+            var success = false;
+            for (var i = 1; i < list.length; i++) { if (line.layer.id === list[i].id) { success = true; break; } }
+            if (!success) { continue; }
+            line.layer = mergedLayer;
         }
-        for (var i = 0; i < canvas.points.length; i++) {
-            var point = canvas.points[i];
-            if (point.show) {
-                point.layer = id;
-            }
+        for (var i = 0; i < app.state.points.length; i++) {
+            var point = app.state.points[i];
+            var success = false;
+            for (var i = 1; i < list.length; i++) { if (point.layer.id === list[i].id) { success = true; break; } }
+            if (!success) { continue; }
+            point.layer = mergedLayer;
         }
-        for (var i = 1; i < list.length; i++) {layers.remove(list[i]);}
-        layers.active(id);
-        layers.update();
-        canvas.redraw();
+        for (var i = 1; i < list.length; i++) { this.remove(list[i]); }
+        this.active(id);
+        this.render();
+        app.redraw();
     },
-    active: function (id) {
-        layers.deactiveAll();
-        $("#layer-body .layer-item#" + id).addClass("active");
-        var index = layers.getIndexByID(id);
-        var object = layers.model[index];
-        object.active = true;
-        layers.activeIndex = index;
-    },
-    deactiveAll: function () {
-        $("#layer-body .layer-item").removeClass("active");
-        for (var i = 0; i < layers.model.length; i++) {
-            var layer = layers.model[i]
-            layer.active = false;
-        }
-        layers.activeIndex = null;
-    },
-    getActive: function () {
-        return layers.model[layers.activeIndex];
-    },   
+    active: function (id) { this.deactiveAll(); var index = this.getIndexByID(id); this.model[index].active = true; this.activeIndex = index; this.render(); },
+    deactiveAll: function () { for (var i = 0; i < this.model.length; i++) { this.model[i].active = false; } this.activeIndex = null; },
+    getActive: function () { return this.model[layers.activeIndex]; },
     getObjectByID: function (id) {
         for (var i = 0; i < layers.model.length; i++) {
             if (layers.model[i].id === id) { return layers.model[i]; }
@@ -177,62 +136,84 @@ var layers = {
     },
     headerItems: [
             {
-                id: "layer-visibility",iconClass: "mdi mdi-eye",active: true,
-                callback: function () {layers.setVisibility("all");}
+                component: "Button",
+                id: "layer-visibility",
+                className: "icon",
+                iconClass: function () { return layers.showAll ? 'mdi mdi-eye' : 'mdi mdi-eye-off' },
+                callback: function () { layers.setVisibility("all"); }
             },
             {
-                id: "layer-add",iconClass: "mdi mdi-plus",
+                component: "Button",
+                id: "layer-add",
+                className: "icon",
+                iconClass: "mdi mdi-plus",
                 callback: function () {
-                    var A = new Alert({
+                    Alert.open({
                         buttons: [
-                            { title: "yes", subscribe: layers.add },
-                            { title: "cansel" }
+                            { text: "yes", callback: function () { layers.add(); Alert.close(); } },
+                            { text: "cansel", callback: Alert.close }
                         ],
-                        template: "Do You Want To Add New Layer?",
+                        template: "Do you want to add new layer?",
                         title: "New Layer."
                     });
                 }
             },
-            { id: "layer-duplicate", iconClass: "mdi mdi-image-filter-none" },
-            { id: "layer-move-down", iconClass: "mdi mdi-arrow-down-bold" },
-            { id: "layer-move-up", iconClass: "mdi mdi-arrow-up-bold" },
+            {
+                component: "Button",
+                id: "layer-duplicate",
+                className: "icon",
+                iconClass: "mdi mdi-image-filter-none"
+            },
+            {
+                component: "Button",
+                id: "layer-move-down",
+                className: "icon",
+                iconClass: "mdi mdi-arrow-down-bold",
+                callback: function () { layers.moveDown(); }
+            },
+            {
+                component: "Button",
+                id: "layer-move-up",
+                className: "icon",
+                iconClass: "mdi mdi-arrow-up-bold",
+                callback: function () { layers.moveUp(); }
+            },
     ],
     footerItems: [
-        { 
-            id: "layer-pallete", iconClass: "mdi mdi-palette",callback:function(){
-                $("body").append(ColorPalette({ colors: layers.colors }));
-                layers.eventHandler("#color-palette .back-drop", "mousedown", function () {
-                    $("#color-palette").remove();
+        {
+            id: "layer-pallete", iconClass: "mdi mdi-palette", component: "Button", className: "icon", callback: function () {
+                Alert.open({
+                    buttons: [{ text: "Close", callback: function () { Alert.close(); } }],
+                    template: {
+                        type: "color pallete", callback: function (e) {
+                            var color = $(e.currentTarget).attr("data-color");
+                            var active = layers.getActive();
+                            active.color = color;
+                            layers.render();
+                            app.redraw();
+                            Alert.close();
+                        }
+                    },
+                    title: "Select layer color."
                 });
-                layers.eventHandler("#color-palette .color-palette-item", "mousedown", function (e) {
-                    var color = $(e.currentTarget).attr("data-color");
-                    var activeLayer = layers.getActive();
-                    activeLayer.color = color;
-                    layers.update();
-                    for (var i = 0; i < canvas.lines.length; i++) {
-                        var line = canvas.lines[i];
-                        if (line.layer === activeLayer.id) {line.color = color;}
-                    }
-                    canvas.redraw();
-                    $("#color-palette").remove();
-                });
-            } 
+            },
         },
         {
-            id: "layer-rename", iconClass: "mdi mdi-square-edit-outline", callback: function () {
+            id: "layer-rename", iconClass: "mdi mdi-square-edit-outline", component: "Button", className: "icon", callback: function () {
                 var title = layers.getActive().title;
-                var A = new Alert({
+                Alert.open({
                     buttons: [
                         {
-                            title: "yes", subscribe: function () {
+                            text: "yes", callback: function () {
                                 full_keyboard.open({
-                                    value: title,
+                                    text: title,
                                     title: "Inter New Name For Selected Layer:",
-                                    subscribe: layers.rename
+                                    callback: layers.rename
                                 });
+                                Alert.close();
                             }
                         },
-                        {title: "cansel"}
+                        { text: "cansel", callback: Alert.close }
                     ],
                     template: "Do You Want To Rename Selected Layer?",
                     title: "Rename Layer."
@@ -240,20 +221,20 @@ var layers = {
             }
         },
         {
-            id: "layer-remove", iconClass: "mdi mdi-delete", callback: function () {
+            id: "layer-remove", iconClass: "mdi mdi-delete", component: "Button", className: "icon", callback: function () {
                 var id = layers.getActive().id;
                 if (layers.model.length < 2) {
-                    var A = new Alert({
-                        buttons: [{ title: "close", subscribe: function () { } }],
+                    Alert.open({
+                        buttons: [{ text: "close", callback: Alert.close }],
                         template: "Can Not Delete This Layer!!!",
                         title: "Delete Failed."
                     });
                     return false;
                 }
-                var A = new Alert({
+                Alert.open({
                     buttons: [
-                        { title: "yes", subscribe: function () { layers.remove(layers.getActive().id)} },
-                        { title: "cansel" }
+                        { text: "yes", callback: function () { layers.remove(layers.getActive().id); Alert.close(); } },
+                        { text: "cansel", callback: Alert.close }
                     ],
                     template: "Do You Want To Delete Selected Layer?",
                     title: "Delete Layer."
@@ -262,76 +243,29 @@ var layers = {
             }
         },
         {
-            id: "layer-merge-visible", iconClass: "mdi mdi-eye-plus", callback:function() {
+            id: "layer-merge-visible", iconClass: "mdi mdi-eye-plus", component: "Button", className: "icon", callback: function () {
                 var list = layers.getVisibles();
-                if (list.length < 2) { return false; }
-                var A = new Alert({
+                if (list.length < 2) {
+                    Alert.open({
+                        buttons: [{ text: "Close", callback: Alert.close }, ],
+                        template: "Visible layers are less than 2.",
+                        title: "Merge visibles error."
+                    });
+                    return false;
+                }
+                Alert.open({
                     buttons: [
-                        { title: "yes", subscribe: layers.mergeVisibles },
-                        { title: "cansel" }
+                        { text: "Yes", callback: function () { layers.mergeVisibles(); Alert.close(); } },
+                        { text: "Cansel", callback: Alert.close }
                     ],
                     template: "Do You Want To Merge All Visible Layers?",
                     title: "Merge Visible Layers."
                 });
             }
         },
-        { id: "layer-merge-all", iconClass: "mdi mdi-arrow-collapse-vertical" },
+        { id: "layer-merge-all", iconClass: "mdi mdi-arrow-collapse-vertical", component: "Button", className: "icon" },
     ],
-    colors: ["#ff0000", "#ff4e00", "#ffa800", "#fcff00", "#f5eeb2", "#12ff00", "#2e4f0b", "#00f0ff", "#008aff", "#2400ff", "#1c4663",
-        "#41366f", "#7c6c92", "#8400ff", "#ff6868", "#ff00ba", "#72441c", "#482a0b", "#8a8a8a", "#ffffff" ],
-}
 
-function LayerPopup(props) {
-    var headerItems = props.headerItems;
-    var footerItems = props.footerItems;
-    var str = '';
-    str += '<div id="layer-popup" class="popup">';
-    str += LayerBackDrop();
-    str += LayerToolbar({id:"layer-header", items: headerItems });
-    str += LayerBody();
-    str += LayerToolbar({id:"layer-footer", items: footerItems });
-    str += '</div>';
-    return str;
-}
-
-function LayerBackDrop() {return '<div class="back-drop"></div>';}
-
-function LayerToolbar(props) {
-    var str = '<div id="'+props.id+'">';
-    for (var i = 0; i < props.items.length; i++) {
-        var item = props.items[i];
-        str += LayerButton({ item: item });
-    }
-    str += '</div>';
-    return str;
-}
-
-function LayerButton(props) {
-    var item = props.item;
-    var active = item.active === true ? ' active' : '';
-    var str = '';
-    str += '<div class="icon-container layer-button' + active + '" id="' + item.id + '">';
-    str += '<span class="icon ' + item.iconClass + '"></span>';
-    str += '</div>';
-    return str;
-}
-
-function LayerBody(props) {return '<div id="layer-body"></div>';}
-
-function LayerItem(props) {
-    var item = props.item;
-    var active = item.active === true ? ' active' : '';
-    var visibilityIconClass = item.show ? 'mdi mdi-eye' : 'mdi mdi-eye-off';
-    function getStyle() {
-        return 'border-left:4px solid '+item.color+';';
-    }
-    var str = '<div class="layer-item ' + active + '" style="'+getStyle()+'" id="' + item.id + '">';
-    str += '<div class="icon-container">';
-    str += '<span class="icon ' + visibilityIconClass + '"></span>';
-    str += '</div>';
-    str += '<span class="title">' + item.title + '</span>';
-    str += '</div>';
-    return str;
 }
 
 function ColorPalette(props) {
@@ -346,7 +280,7 @@ function ColorPalette(props) {
     str += '</div>';
     str += '<div id="color-palette-body">';
     for (var i = 0; i < props.colors.length; i++) {
-        str += PaletteItem({color:props.colors[i]});
+        str += PaletteItem({ color: props.colors[i] });
     }
     str += '</div>';
     str += '</div>';
@@ -355,6 +289,6 @@ function ColorPalette(props) {
 
 function PaletteItem(props) {
     var str = '';
-    str += '<div data-color="'+props.color+'" class="color-palette-item" style="background:' + props.color + '"></div>';
+    str += '<div data-color="' + props.color + '" class="color-palette-item" style="background:' + props.color + '"></div>';
     return str;
 }

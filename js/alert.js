@@ -23,6 +23,18 @@ function AlertPopup(props) {
     str += '</div>';
     str += '<div class="alert-body" style="float:left;position:relative;">';
     if (typeof props.template === "string") { str += props.template; }
+    else if (typeof props.template === "object") {
+        if (props.template.type === "color pallete") {
+            var colors = ["#ff0000", "#ff4e00", "#ffa800", "#fcff00", "#f5eeb2", "#12ff00", "#2e4f0b", "#00f0ff", "#008aff", "#2400ff", "#1c4663",
+            "#41366f", "#7c6c92", "#8400ff", "#ff6868", "#ff00ba", "#72441c", "#482a0b", "#8a8a8a", "#ffffff"];
+            for (var i = 0; i < colors.length; i++) {
+                str += components.render({
+                    component: "DIV", id: "color-pallete-item-" + i, className: "color-pallete-item", attrs: { "data-color": colors[i] }, style: "background:" + colors[i] + ";",
+                    callback: props.template.callback
+                });
+            }
+        }
+    }
     else {
         for (var i = 0; i < props.template.length; i++) {
             var template = props.template[i];

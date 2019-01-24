@@ -43,7 +43,6 @@ var Points = {
                 Points.selected.splice(i, 1);
                 length--;
                 i--;
-
             }
         }
     },
@@ -154,8 +153,7 @@ var Points = {
     rotateTo: function (point, radian, center) {
         var coords = this.getCoordsByRotate(point, radian, center);
         this.moveTo(point, coords.x, coords.y);
-    },
-    
+    },  
     removeConnectedLine: function (point, id) {
         for (var i = 0; i < point.connectedLines.length; i++) {
             var cl = point.connectedLines[i];
@@ -327,27 +325,6 @@ var Points = {
                 id: lineEndID
             }
         });
-    },
-    getCenterOfSelected: function () {
-        var length = Points.selected.length;
-        if (length === 0) {
-            return false;
-        }
-        var minX = Points.selected[0].x,
-            maxX = Points.selected[0].x,
-            minY = Points.selected[0].y,
-            maxY = Points.selected[0].y;
-        for (var i = 0; i < length; i++) {
-            var point = Points.selected[i];
-            minX = Math.min(minX, point.x);
-            minY = Math.min(minY, point.y);
-            maxX = Math.max(maxX, point.x);
-            maxY = Math.max(maxY, point.y);
-        }
-        return {
-            x: (minX + maxX) / 2,
-            y: (minY + maxY) / 2
-        };
     },
     getCenterOfList: function (list) {
         var length = list.length;

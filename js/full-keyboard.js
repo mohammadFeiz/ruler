@@ -1,39 +1,49 @@
 var full_keyboard = {
-    state:{},
-    updateState: function (obj) {
-        for (var prop in obj) {
-            this.state[prop] = obj[prop];
-        }
-        this.state.value = this.state.value || "";
-        this.state.title = this.state.title || "";
-    },
+    state: {},
     open: function (obj) {
-        this.updateState(obj);
+        this.state = {};
+        for (prop in obj) { this.state[prop] = obj[prop]; }
         this.render();
-        this.eventHandler("#full-keyboard-close", "mousedown", this.close);
-        this.eventHandler("#full-keyboard-ok", "mousedown", this.submit);
-        this.eventHandler(".full-keyboard-key", "mousedown", this.keyDown);
-        this.eventHandler("window", "mouseup", this.keyUp);
     },
     render: function () {
         var str = '';
         str += '<div id="full-keyboard" class="">';
-        str += '<div class="back-drop"></div>';
-        str += FullKeyboardHeader({title:this.state.title});
-        str += FullKeyboardDisplay({value:this.state.value});
+        str += components.render({ component: "DIV", id: "full-keyboard-back-drop", className: "back-drop", callback: full_keyboard.close });
+        str += '<div class="full-keyboard-row">';
+        str += components.render({ component: "Button", className: "text", id: "full-keyboard-title", text: this.state.title });
+        str += components.render({ id: "full-keyboard-close", component: "Button", iconClass: "mdi mdi-close", className: "icon", callback: full_keyboard.close });
+        str += '</div>';
+        str += '<div class="full-keyboard-row">';
+        str += '<div id="full-keyboard-show">' + this.state.text + '</div>';
+        str += components.render({ id: "full-keyboard-ok", component: "Button", iconClass: "mdi mdi-send", className: "icon", callback: full_keyboard.submit.bind(full_keyboard) });
+        str += '</div>';
         var list = [];
-        for (var i = 1; i <= 10; i++) {
-            var text = i;
-            if (i === 10) { text = 0; }
-            list.push(text);
+        for (var i = 1; i <= 10; i++) { var text = i; if (i === 10) { text = 0; } list.push(text); }
+        str += '<div class="full-keyboard-row">';
+        for (var i = 0; i < list.length; i++) {
+            str += components.render({ id: "full-keyboard-key" + list[i], component: "Button", text: list[i], className: "button full-keyboard-key", callback: full_keyboard.keyDown, attrs: { 'data-key': list[i] } });
         }
-        str += FullKeyboardRow({ list: list,lastRow:false });
+        str += '</div>';
         list = ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"];
-        str += FullKeyboardRow({ list: list, lastRow: false });
+        str += '<div class="full-keyboard-row">';
+        for (var i = 0; i < list.length; i++) {
+            str += components.render({ id: "full-keyboard-key" + list[i], component: "Button", text: list[i], className: "button full-keyboard-key", callback: full_keyboard.keyDown, attrs: {'data-key':list[i]} });
+        }
+        str += '</div>';
         list = ["A", "S", "D", "F", "G", "H", "J", "K", "L"];
-        str += FullKeyboardRow({ list: list, lastRow: false });
+        str += '<div class="full-keyboard-row">';
+        for (var i = 0; i < list.length; i++) {
+            str += components.render({ id: "full-keyboard-key" + list[i], component: "Button", text: list[i], className: "button full-keyboard-key", callback: full_keyboard.keyDown, attrs: { 'data-key': list[i] } });
+        }
+        str += '</div>';
         list = ["Z", "X", "C", "V", "B", "N", "M"];
-        str += FullKeyboardRow({ list: list, lastRow: true });
+        str += '<div class="full-keyboard-row">';
+        str += components.render({ id: "full-keyboard-space", component: "Button", text: "space", className: "button full-keyboard-key full-keyboard-space", callback: full_keyboard.keyDown });
+        for (var i = 0; i < list.length; i++) {
+            str += components.render({ id: "full-keyboard-key" + list[i], component: "Button", text: list[i], className: "button full-keyboard-key", callback: full_keyboard.keyDown, attrs: { 'data-key': list[i] } });
+        }
+        str += components.render({ id: "full-keyboard-backspace", component: "Button", iconClass: "mdi mdi-backspace", className: "icon full-keyboard-key full-keyboard-backspace", callback: full_keyboard.keyDown });
+        str += '</div>';
         str += '</div>';
         $("body").append(str);
     },
@@ -43,7 +53,7 @@ var full_keyboard = {
     submit: function () {
         var value = $("#full-keyboard-show").html();
         if (value === "") { return; }
-        this.state.subscribe(value);
+        this.state.callback(value);
         $("#full-keyboard").remove();
     },
     keyDown: function (e) {
@@ -61,7 +71,7 @@ var full_keyboard = {
             return;
         }
         else {
-            var value = element.html();
+            var value = element.attr("data-key");
             value = value.toLowerCase();
         }
         display.html(displayValue + value);
@@ -89,49 +99,4 @@ var full_keyboard = {
         else if (typeof selector === "string") { $(selector).unbind(event, $.proxy(action, this)); }
         else { selector.unbind(event, $.proxy(action, this)); }
     },
-}
-function FullKeyboardRow(props) {
-    var str = '';
-    str += '<div class="full-keyboard-row">';
-    if (props.lastRow) {
-        str += '<div class="full-keyboard-key full-keyboard-space" id="full-keyboard-space">space</div>';
-    }
-    for (var i = 0; i < props.list.length; i++) {
-        str += FullKeyboardKey({text:props.list[i]});
-    }
-    if (props.lastRow) {
-        str += '<div class="full-keyboard-key full-keyboard-back-space" id="full-keyboard-backspace">';
-        str += '<span class="mdi mdi-backspace"></span>';
-        str += '</div>';
-    }
-    str += '</div>';
-    return str;
-}
-
-function FullKeyboardKey(props) {
-    var str = '';
-    str += '<div class="full-keyboard-key">' + props.text + '</div>';
-    return str;
-}
-
-function FullKeyboardHeader(props) {
-    var str = '';
-    str += '<div class="full-keyboard-row">';
-    str += '<div id="full-keyboard-title">'+props.title+'</div>';
-    str += '</div>';
-    return str;
-}
-
-function FullKeyboardDisplay(props) {
-    var str = '';
-    str += '<div class="full-keyboard-row">';
-    str += '<div id="full-keyboard-close">';
-    str += '<span class="mdi mdi-close"></span>';
-    str += '</div>';
-    str += '<div id="full-keyboard-show">'+props.value+'</div>';
-    str += '<div id="full-keyboard-ok">';
-    str += '<span class="mdi mdi-send"></span>';
-    str += '</div>';
-    str += '</div>';
-    return str;
 }

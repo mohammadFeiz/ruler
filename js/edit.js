@@ -324,7 +324,7 @@
         mousePosition: null,
         lines: [],
         copyModel: [],
-        autoWeldArea: 40,
+        autoWeldArea: 15,
         axisSnapArea: 10,
         selectAll: function () {
             Lines.deselectAll();
@@ -363,7 +363,7 @@
                 }
                 Lines.deselectAll();
             }
-            edit.modify.setAxisPos("hide");
+            axis.close();
             //undo.save();
             app.redraw();
         },
@@ -383,7 +383,7 @@
             }
             else {
                 if (Lines.selected.length === 0) { return; }
-                var selected = Lines.getPointsOfSelected();
+                var selected = Lines.getPointsOfList(Lines.selected);
                 for (var i = 0; i < selected.length; i++) {
                     var point = selected[i];
                     var distance = center[ax] - point[axis];
@@ -446,7 +446,7 @@
                 }
             }
             if (Points.selected[0]) { axis.setPosition(Points.selected[0]); }
-            else { axis.setPosition("hide"); }
+            else { axis.close(); }
             undo.save();
             app.redraw();
             display.render();
@@ -473,7 +473,7 @@
                 Points.deselect(selected.id);
             }
             Points.deselectAll();
-            edit.modify.setAxisPos("hide");
+            axis.close();
             undo.save();
             app.redraw();
             display.render();
@@ -508,7 +508,7 @@
             if (edit.modify.selectMode === "Point") {
                 this.points = Points.selected;
             } else {
-                this.points = Lines.getPointsOfSelected();
+                this.points = Lines.getPointsOfList(Lines.selected);
             }
             this.pointsState = [];
             var axisPos = axis.getPosition();
@@ -528,7 +528,7 @@
             }
         },
         reset: function () {
-            edit.modify.setAxisPos("hide");
+            axis.close();
         },
         mousedown: function (e) {
             var This = edit.modify;
@@ -614,11 +614,16 @@
                         edit.modify.rotateNumber = parseInt($("#axis-angle").html());
                     }
                     if (Points.selected.length === 1) {
-                        var point = app.getPoint({ area: edit.modify.autoWeldArea, coords: Points.selected[0], except: { id: Points.selected[0].id } });
+                        var selected = Points.selected[0];
+                        var connectedPoints = Points.getConnectedPoints(selected);
+                        var forbidenIds = [selected.id];
+                        for (var i = 0; i < connectedPoints.length; i++) {
+                            forbidenIds.push(connectedPoints[i].id);
+                        }
+                        var point = app.getPoint({ area: edit.modify.autoWeldArea, coords: Points.selected[0], isnt: { id: forbidenIds } });
                         if (point) {
-                            Points.moveTo(points.selected[0], point.x, point.y);
-                            Points.deselectAll();
-                            axis.close();
+                            Points.moveTo(Points.selected[0], point.x, point.y);
+                            axis.setPosition(point);
                         }
                     }
                 }
@@ -1199,7 +1204,7 @@ var axis = {
     setPosition: function (obj) {
         if (axis.opened === false) { axis.open(obj); return;}
         var coords;
-        if (obj === "center") { coords = edit.modify.selectMode === "Point" ? Points.getCenterOfSelected() : Lines.getCenterOfSelected(); }
+        if (obj === "center") { coords = edit.modify.selectMode === "Point" ? Points.getCenterOfList(Points.selected) : Lines.getCenterOfList(Lines.selected); }
         else { coords = obj; }
         var bodyCoords = app.canvas.canvasToClient(coords);
         $("#axis").css({ "left": bodyCoords.x, "top": bodyCoords.y });

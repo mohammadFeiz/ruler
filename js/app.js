@@ -49,6 +49,7 @@
         for (var i = 0; i < s.lines.length; i++) {
             var line = s.lines[i];
             if (!line.layer.show) { continue; }
+            line.color = line.layer.color;
             this.drawLine(line);
         }
     },
@@ -57,7 +58,7 @@
         if (!s.showPoints) { return; }
         for (var i = 0; i < s.points.length; i++) {
             var point = s.points[i];
-            if (point.show === false) { continue; }
+            if (!point.layer.show) { continue; }
             var linesCount = point.connectedLines.length;
             if (linesCount === 1) { this.drawOpenPoint(point) }
             else { this.drawPoint(point); }
@@ -87,13 +88,19 @@
         for (var i = 1; i < area; i += 2) {
             for (var j = 0; j < points.length; j++) {
                 var point = points[j];
-                var isFiltered = false;
-                for (var prop in is) { if (point[prop] !== is[prop]) { isFiltered = true; break; } }
-                if (isFiltered) { continue; }
-                for (var prop in isnt) { if (point[prop] === isnt[prop]) { isFiltered = true; break; } }
-                if (isFiltered) { continue; }
                 if (Math.abs(point.x - coords.x) > i) { continue; }
                 if (Math.abs(point.y - coords.y) > i) { continue; }
+                var isFiltered = false;
+                for (var prop in is) {
+                    if (!Array.isArray(is[prop])) { is[prop] = [is[prop]];}
+                    for (var k = 0; k < is[prop].length; k++) {if (point[prop] !== is[prop][k]) { isFiltered = true; break; }}
+                }
+                if (isFiltered) { continue; }
+                for (var prop in isnt) {
+                    if (!Array.isArray(isnt[prop])) { isnt[prop] = [isnt[prop]]; }
+                    for (var k = 0; k < isnt[prop].length; k++) { if (point[prop] === isnt[prop][k]) { isFiltered = true; break; } }
+                }
+                if (isFiltered) { continue; }
                 return point;
             }
         }
@@ -106,13 +113,13 @@
             for (var j = 0; j < lines.length; j++) {
                 var line = lines[j], s = line.start, e = line.end, dip = c.get.line.dip(line), isFiltered = false,
                     minX = Math.min(s.x, e.x), maxX = Math.max(s.x, e.x), minY = Math.min(s.y, e.y), maxY = Math.max(s.y, e.y);
+                if (dip === "infinity") { if (Math.abs(minX - coords.x) > i || coords.y < minY || coords.y > maxY) { continue; } }
+                else if (Math.abs(dip) <= 1) { if (coords.x < minX || coords.x > maxX || Math.abs(((dip * (coords.x - s.x)) + s.y) - coords.y) > i) { continue; } }
+                else { if (coords.y < minY || coords.y > maxY || Math.abs((((coords.y - s.y) / dip) + s.x) - coords.x) > i) { continue; } }
                 for (var prop in is) { if (line[prop] !== is[prop]) { isFiltered = true; break; } }
                 if (isFiltered) { continue; }
                 for (var prop in isnt) { if (line[prop] === isnt[prop]) { isFiltered = true; break; } }
                 if (isFiltered) { continue; }
-                if (dip === "infinity") { if (Math.abs(minX - coords.x) > i || coords.y < minY || coords.y > maxY) { continue; } }
-                else if (Math.abs(dip) <= 1) { if (coords.x < minX || coords.x > maxX || Math.abs(((dip * (coords.x - s.x)) + s.y) - coords.y) > i) { continue; } }
-                else { if (coords.y < minY || coords.y > maxY || Math.abs((((coords.y - s.y) / dip) + s.x) - coords.x) > i) { continue; } }
                 return line;
             }
         }
@@ -192,26 +199,6 @@
         }
     },
 
-
-    // init: function () {
-    //     app.drawControlWidth = Math.ceil(app.sizeA * 3.5);
-    //     app.setappmodeitems();
-    //     app.eventHandler("#snap", "mousedown", Snap.open);
-    //     app.eventHandler("#tools-setting", "mousedown", toolsSetting.open);
-    //     app.eventHandler("#layer", "mousedown", function () {
-    //         create.end();
-    //         edit.end(); layers.open();
-    //     });
-    //     app.eventHandler(".zoom", "mousedown", app.zoom);
-    //     app.eventHandler(".switch", "mousedown", app.switchButton);
-    //     app.eventHandler(".axis-icon,#axisBackground", "mousedown", edit.modify.buttonmousedown);
-    //     app.eventHandler("#undo-button", "mousedown", undo.load);
-    //     app.eventHandler("#side-menu-button", "mousedown", sideMenu.open);
-    //     app.eventHandler("#log", "mousedown", log.show);
-    //     app.eventHandler("#log-clear", "mousedown", log.clear);
-    //     app.eventHandler("#log-hide", "mousedown", log.hide);
-
-    // },
     mouseDown: function () {
         if (app.measuremode) {
             var line = canvas.findLineByCoords();
@@ -305,13 +292,13 @@ var components = {
         return components[obj.component](obj);
     },
     Button: function (obj) {
-        var text = obj.text || ""; text = typeof text === "function" ? text() : text;
+        var text = obj.text === undefined ? "" : obj.text; text = typeof text === "function" ? text() : text;
         var iconClass = obj.iconClass || ""; iconClass = typeof iconClass === "function" ? iconClass() : iconClass;
         var attrs = '';
         if (obj.attrs) {for (var prop in obj.attrs) {attrs+=' ' + prop + '="' + obj.attrs[prop] + '"'}}
-        var str = '<div class="' + (obj.className || '') + '" id="' + obj.id + '"'+attrs+'style="'+obj.style+'">';
+        var str = '<div class="' + (obj.className || '') + '" id="' + obj.id + '"'+attrs+'style="'+(obj.style||'')+'">';
         str += iconClass ? '<div class="button-icon ' + iconClass + '"></div>' : '';
-        str += text ? '<div class="button-text">' + text + '</div>' : '';
+        str += text!==undefined ? '<div class="button-text">' + text + '</div>' : '';
         str += '</div>';
         if (obj.callback) {
             $('body').off('mousedown', '#' + obj.id);
@@ -376,6 +363,20 @@ var components = {
         }
         return str;
     },
+    DIV:function(obj){
+        var attrs = '';
+        if (obj.attrs) { for (var prop in obj.attrs) { attrs += ' ' + prop + '="' + obj.attrs[prop] + '"' } }
+        var str = '<div class="' + (obj.className || '') + '" id="' + obj.id + '"' + attrs + 'style="' + (obj.style || '') + '"></div>';
+        if (obj.callback) {
+            $('body').off('mousedown', '#' + obj.id);
+            $('body').on('mousedown', '#' + obj.id, function (e) {
+                var element = $(e.currentTarget);
+                var item = components.findItem(element.attr("id"));
+                item.callback(e);
+            });
+        }
+        return str;
+    },
     Slider: function (obj) {
         obj.style = obj.style || { button_width: 24, button_height: 24, line_width: 4 };
         return new slider(obj).getHTML();
@@ -383,11 +384,7 @@ var components = {
     update: function (id, obj) {
         var item = components.findItem(id);
         for (var prop in obj) { item[prop] = obj[prop]; }
-        var container = $("#" + item.containerId);
-        var element = container.find("#" + id);
-        var updatedElement = components.getTemplate[item.component](item);
-        element.replaceWith(updatedElement);
-        components.setEvents(item);
+        $("#" + id).replaceWith(components[item.component](item));
     },
 }
 
@@ -450,7 +447,7 @@ var display = {
             callback: function (value) { edit.modify.selectMode = value; edit.modify.reset(); display.render(); },
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
         },
-        { id: "layer", component: "Button", iconClass: "mdi mdi-buffer", className: "icon", container: "#top-menu" },
+        { id: "layer", component: "Button", iconClass: "mdi mdi-buffer", className: "icon", container: "#top-menu", callback:function() { create.end(); edit.end(); layers.open() }},
         {
             id: "settings", component: "Button", iconClass: "mdi mdi-settings", className: "icon", container: "#top-menu",
             callback: function () { window[app.state.appmode].setting(); }

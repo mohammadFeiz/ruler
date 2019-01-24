@@ -1,6 +1,6 @@
 var undo = {
     size: 30,
-    model: [],
+    model: [{ u_points: [], u_lines: [], u_point_id: "1p", u_line_id: "1l", u_layer_model: { id: "1layer", title: "layer 1", color: "#fff", show: true, active: true } }],
     getCopy:function (model) {
         return JSON.parse(JSON.stringify(model));
     },
@@ -15,7 +15,7 @@ var undo = {
         //console.log("save");
     },
     load: function () {
-        if (create.currentSpline) { create.currentSpline.end(); }
+        create.end();
         edit.end();
         if (undo.model.length < 2) { return; }
         undo.model.pop();
@@ -25,7 +25,7 @@ var undo = {
         Points.id = model.u_points_id;
         Lines.id = model.u_lines_id;
         layers.model = this.getCopy(model.u_layers_model);
-        layers.init();
+        layers.update();
         app.redraw();
         //console.log("load");
     }

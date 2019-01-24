@@ -27,7 +27,6 @@
         var layer = layers.getActive();
         obj.id = this.id;
         obj.layer = layer;
-        obj.color = layer.color;
         app.state.lines.push(obj);
         this.idGenerator();
         return Lines.getLast(1);
@@ -96,36 +95,6 @@
         return app.state.lines[app.state.lines.length - n];
     },
     getNextID: function (n) {return (parseInt(this.id) + n - 1) + "l";},
-    //findByCoords: function (x, y) {
-    //    if (x === undefined) {
-    //        var pos = canvas.getCanvasXY();
-    //        x = pos.x;
-    //        y = pos.y;
-    //    }
-    //    var layer = layers.getActiveLayer();
-    //    var lines = canvas.lines;
-    //    var length = lines.length;
-    //    for (var t = 1; t < 18; t += 2) {
-    //        for (var i = 0; i < length; i++) { // به ازای تمامی خطوط
-    //            var line = lines[i];
-    //            if (line.layer != layer.id) {continue;}
-    //            if (line.start.x - line.end.x === 0) { // اگر آن خط عمودی بود
-    //                if (x > line.start.x + t || line.start.x - t > x) {continue;} 
-    //                if (y < Math.max(line.start.y, line.end.y) && Math.min(line.start.y, line.end.y) < y) {return line;}
-    //            } else {
-    //                var dip = this.getDip(line);
-    //                if (1 <= Math.abs(dip)) { 
-    //                    if (x > (((y - line.start.y) / dip) + line.start.x) + t || (((y - line.start.y) /dip) + line.start.x) - t > x) {continue;} 
-    //                    if (y < Math.max(line.start.y, line.end.y) && Math.min(line.start.y, line.end.y) <y) {return line;}
-    //                } else { 
-    //                    if (y < ((dip * (x - line.start.x)) + line.start.y) - t || ((dip * (x - line.start.x)) + line.start.y) + t < y) {continue;} 
-    //                    if (x < Math.max(line.start.x, line.end.x) && Math.min(line.start.x, line.end.x) <x) { return line;}
-    //                }
-    //            }
-    //        }
-    //    }
-    //    return false;
-    //},
     getRadian: function (obj) {
         var x1 = obj.start.x,y1 = obj.start.y,x2 = obj.end.x,y2 = obj.end.y;
         var radian = (Math.atan((y2 - y1) / (x1 - x2)) / Math.PI * 180);
@@ -142,8 +111,7 @@
             else {radian = 0;}
         }
         return radian;
-    },
-    
+    },  
     getLength: function (line) { return Math.sqrt(Math.pow(line.start.x - line.end.x, 2) + Math.pow(line.start.y - line.end.y, 2)); },
     getMeet: function (f, s) {
         var fDip = Lines.getDip(f), sDip = Lines.getDip(s);
@@ -284,8 +252,7 @@
     getDistance: function (line, point) {
         var line = Lines.getPrependicularLine(line, point);
         return Lines.getLength(line);
-    },
-    
+    },  
     getRadianWidth: function (f, s) {return Math.abs(Lines.getRadian(s) - Lines.getRadian(f));},
     getPoints: function (line) {return {start: Points.getObjectByID(line.start.id),end: Points.getObjectByID(line.end.id)};},
     getPointBySide: function (line, side) { return Points.getObjectByID(line[side].id); },
@@ -307,31 +274,28 @@
         }
         return {start: start,end: end,startSide: startSide,endSide: endSide,};
     },
-    getPointsOfSelected: function () {
-        var list = [],ids = [];
-        var length = Lines.selected.length;
+    getPointsOfList: function (list) {
+        var points = [],ids = [];
+        var length = list.length;
         for (var i = 0; i < length; i++) {
-            var line = Lines.selected[i],start = line.start.id,end = line.end.id;
+            var line = list[i],start = line.start.id,end = line.end.id;
             if (ids.indexOf(start) === -1) {
-                list.push(Points.getObjectByID(start));
+                points.push(Points.getObjectByID(start));
                 ids.push(start);
             }
             if (ids.indexOf(end) === -1) {
-                list.push(Points.getObjectByID(end));
+                points.push(Points.getObjectByID(end));
                 ids.push(end);
             }
         }
-        return list;
+        return points;
     },
-    getCenterOfSelected: function () {
-        var length = Lines.selected.length;
+    getCenterOfList: function (list) {
+        var length = list.length;
         if (length === 0) {return false;}
-        var minX = Lines.selected[0].start.x,
-            maxX = Lines.selected[0].start.x,
-            minY = Lines.selected[0].start.y,
-            maxY = Lines.selected[0].start.y;
+        var minX = list[0].start.x,maxX = list[0].start.x,minY = list[0].start.y,maxY = list[0].start.y;
         for (var i = 0; i < length; i++) {
-            var line = Lines.selected[i];
+            var line = list[i];
             minX = Math.min(minX, line.start.x, line.end.x);
             minY = Math.min(minY, line.start.y, line.end.y);
             maxX = Math.max(maxX, line.start.x, line.end.x);
