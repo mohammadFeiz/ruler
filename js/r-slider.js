@@ -8,9 +8,6 @@ function slider(config) {
         },
         update: function (obj) { this.updateState(obj); this.render(); },
         getState: function () { return this.state; },
-        getContainer: function () {
-            return typeof this.state.container === "string" ? $(this.state.container) : this.state.container;
-        },
         getPercentByValue: function (value) {
             if (value === undefined) { return undefined; }
             return 100 * (value - this.state.start) / (this.state.range) || 0;
@@ -40,57 +37,6 @@ function slider(config) {
                 s.value[i] = parseFloat(s.value[i].toFixed(2));
             }
         },
-        getSpaceStyle: function (index) {
-            var s = this.state, sn = s.styleName;
-            var percent = this.getPercentByValue(s.value[index]);
-            if (percent === undefined) { percent = 100; } //for end space
-            var beforePercent = (index === 0) ? 0 : this.getPercentByValue(s.value[index - 1]);
-            var str = 'position:absolute;z-index:100;overflow: hidden;cursor:pointer;';
-            str += sn.Thickness + ':' + (percent - beforePercent) + '%;';
-            str += sn.StartSide + ':' + beforePercent + '%;';
-            str += sn.OtherSide + ':0;';
-            str += sn.Thickness_r + ':100%;';
-            return str;
-        },
-        getTextStyle: function (index) {
-            var s = this.state, sn = s.styleName;
-            var size = s.style['button_' + sn.Thickness];
-            var str = 'position:absolute;text-align:center;';
-            if (index === 0) {
-                str += sn.Thickness + ':calc(100% - ' + size / 2 + 'px);';
-                str += sn.StartSide + ':0;';
-                str += sn.OtherSide + ':0;';
-            } else if (index === s.value.length) {
-                str += sn.Thickness + ':calc(100% - ' + size / 2 + 'px);';
-                str += sn.EndSide + ':0;';
-                str += sn.OtherSide + ':0;';
-            } else {
-                str += sn.Thickness + ':100%;';
-            }
-            str += 'line-height:' + s.style.button_height + 'px;';
-            return str;
-        },
-        getFillStyle: function () {
-            var s = this.state, sn = s.styleName;
-            var str = 'position: absolute;z-index: 10;cursor: pointer;';
-            str += sn.Thickness + ':100%;';
-            str += sn.StartSide + ':0;';
-            str += sn.OtherSide + ':calc(50% - ' + (s.style.line_width / 2) + 'px);';
-            str += sn.Thickness_r + ':' + s.style.line_width + 'px;'
-            return str;
-        },
-        getButtonStyle: function (index) {
-            var s = this.state, sn = s.styleName;
-            var percent = this.getPercentByValue(s.value[index]);
-            var size = s.style['button_' + sn.Thickness];
-            var str = '';
-            str += 'border:none;position:absolute;z-index: 1000;cursor:pointer;';
-            str += 'height:' + s.style.button_height + 'px;';
-            str += 'width:' + s.style.button_width + 'px;';
-            str += sn.StartSide + ':calc(' + percent + '% - ' + (size / 2) + 'px);';
-            str += sn.OtherSide + ':0;';
-            return str;
-        },
         updateState: function (obj) {
             for (var prop in obj) { this.state[prop] = obj[prop]; }
             var s = this.state;
@@ -103,12 +49,6 @@ function slider(config) {
             this.state.style = $.extend({}, this.style, this.state.style);
             this.state.text = s.text || [];
         },
-        getValue: function (value) {
-            var min = this.state.min, max = this.state.max;
-            for (var i = 0; i < value.length; i++) { if (value[i] > max) { value[i] = max; } else if (value[i] < min) { value[i] = min; } }
-            return value;
-        },
-
         getStyleName: function () {
             var d = this.state.direction;
             if (d === "right") { return { Thickness: "width", Thickness_r: "height", OtherSide: "top", OtherSide_r: "bottom", Axis: "x", Sign: 1, StartSide: "left", EndSide: "right", } }
@@ -117,20 +57,6 @@ function slider(config) {
             else if (d === "up") { return { Thickness: "height", Thickness_r: "width", OtherSide: "left", OtherSide_r: "right", Axis: "y", Sign: -1, StartSide: "bottom", EndSide: "top", } }
         },
         getClient: function (e) { return { x: e.clientX === undefined ? e.changedTouches[0].clientX : e.clientX, y: e.clientY === undefined ? e.changedTouches[0].clientY : e.clientY }; },
-        getValueByClick: function (e) {
-            var calc = new RSliderCalculator(this.state), d = this.state.direction, x = this.getClient(e, "X"), y = this.getClient(e, "Y");
-            var inner = this.getContainer().find(".r-slider-container");
-            if (d === "right") { var distance = x + pageXOffset - inner.offset().left; }
-            else if (d === "left") { var distance = inner.offset().left + this.width - x - pageXOffset; }
-            else if (d === "down") { var distance = y + pageYOffset - inner.offset().top; }
-            else if (d === "up") { var distance = inner.offset().top + this.height - y - pageYOffset; }
-            return calc.getCorrectValue(calc.getValueByPixel(distance));
-        },
-        move: function (dir) {
-            var s = this.state, buttons = this.getContainer().find(".r-slider-button");
-            for (var i = 0; i < s.value.length; i++) { this.moveButtonTo(buttons.eq(i), s.step * dir, true); }
-            if (s.ondrag !== undefined) { s.ondrag(s); }
-        },
         spacemousedown: function (e) {
             e.preventDefault();
             var s = this.state;
@@ -185,10 +111,10 @@ function slider(config) {
             this.moveButtonTo(container.find(".r-slider-button"), value, false);
         },
         buttonmousemove: function (e) {
-            var s = this.state, so = this.startOffset, axis = s.styleName.Axis, change;
+            var s = this.state, so = this.startOffset, axis = s.styleName.Axis;
             s.value[so.index] = this.getValueByPixel((this.getClient(e)[axis] - so[axis]) * s.styleName.Sign) + so.value;
             this.updateValue(so.index);
-            change = this.moveButtonTo(so.element, s.value[so.index], false);
+            var change = this.moveButtonTo(so.element, s.value[so.index], false);
             if (s.ondrag !== undefined && change) { s.ondrag(s); }
         },
         spacemousemove: function (e) {
@@ -209,17 +135,17 @@ function slider(config) {
             if (s.onchange !== undefined) { s.onchange(s); }
         },
         moveButtonTo: function (button, value, offset) {
-            var s = this.state, calc = new RSliderCalculator(s);
+            var s = this.state;
             if (offset === true) {
                 if (value === 0) { return false; }
-                value += parseFloat(button.attr("data-value"));
+               // value += s.value[button.attr("data-index")];
             }
             if (parseFloat(button.attr("data-value")) === value) { return false; }
             var index = button.data("index");
             var sn = s.styleName;
-            var percent = calc.getPercentByValue(value);
-            var percent_b = calc.getPercentByValue(s.value[index - 1]) || 0;
-            var percent_a = calc.getPercentByValue(s.value[index + 1]) || 100;
+            var percent = this.getPercentByValue(value);
+            var percent_b = this.getPercentByValue(s.value[index - 1]) || 0;
+            var percent_a = this.getPercentByValue(s.value[index + 1]) || 100;
             var container = $("#" + this.state.id);
             var space = container.find(".r-slider-space[data-index=" + (index) + "]");
             var space_a = container.find(".r-slider-space[data-index=" + (index + 1) + "]");
@@ -267,23 +193,66 @@ function slider(config) {
         getHTML: function () {
             return this.html;
         },
-        render: function () {
-            var s = this.state, calc = new RSliderCalculator({ start: s.start, range: s.range });
+        getSpaceStyle: function (index) {
+            var s = this.state, sn = s.styleName;
+            var percent = this.getPercentByValue(s.value[index]);
+            if (percent === undefined) { percent = 100; } //for end space
+            var beforePercent = (index === 0) ? 0 : this.getPercentByValue(s.value[index - 1]);
             var str = '';
-            str += '<div id="' + s.id + '" class="r-slider-container" style="' + this.getcontainerstyle() + '">';
-            str += RSPins({ start: s.start, end: s.end, styleName: s.styleName, calc: calc, pinStep: s.pinStep });
-            str += RSLabels({ start: s.start, end: s.end, calc: calc, styleName: s.styleName, labelStep: s.labelStep });
-            str += RSLine({ style: s.style, styleName: s.styleName });
-            var length = s.value.length;
-            for (var i = 0; i < length; i++) {
-                str += RSSpace({ fill: true, index: i, text: s.text[i], fillStyle: this.getFillStyle(i), spaceStyle: this.getSpaceStyle(i), textStyle: this.getTextStyle(i), });
-                if (s.showButton !== false) {
-                    str += RSButton({ index: i, value: s.value[i], style: this.getButtonStyle(i), fixValue: s.fixValue, showValue: s.showValue });
-                }
+            str += sn.Thickness + ':' + (percent - beforePercent) + '%;';
+            str += sn.StartSide + ':' + beforePercent + '%;';
+            return str;
+        },
+        getTextStyle: function (index) {
+            var s = this.state, sn = s.styleName;
+            var size = s.style['button_' + sn.Thickness];
+            var str = '';
+            if (index === 0) {
+                str += sn.Thickness + ':calc(100% - ' + size / 2 + 'px);';
+                str += sn.StartSide + ':0;';
+                str += sn.OtherSide + ':0;';
+            } else if (index === s.value.length) {
+                str += sn.Thickness + ':calc(100% - ' + size / 2 + 'px);';
+                str += sn.EndSide + ':0;';
+                str += sn.OtherSide + ':0;';
+            } else {
+                str += sn.Thickness + ':100%;';
             }
-            str += RSSpace({ fill: false, index: length, text: s.text[length], fillStyle: this.getFillStyle(i), spaceStyle: this.getSpaceStyle(i), textStyle: this.getTextStyle(i) });
-            str += '</div>';
-            this.html = str;
+            str += 'line-height:' + s.style.button_height + 'px;';
+            return str;
+        },
+        getFillStyle: function () {
+            var s = this.state, sn = s.styleName;
+            var str = '';
+            str += sn.StartSide + ':0;';
+            str += sn.OtherSide + ':calc(50% - ' + (s.style.line_width / 2) + 'px);';
+            str += sn.Thickness_r + ':' + s.style.line_width + 'px;'
+            return str;
+        },
+        getButtonStyle: function (index) {
+            var s = this.state, sn = s.styleName;
+            var percent = this.getPercentByValue(s.value[index]);
+            var size = s.style['button_' + sn.Thickness];
+            var str = '';
+            str += '';
+            str += 'height:' + s.style.button_height + 'px;';
+            str += 'width:' + s.style.button_width + 'px;';
+            str += sn.StartSide + ':calc(' + percent + '% - ' + (size / 2) + 'px);';
+            return str;
+        },
+        getLineStyle:function () {
+            var s = this.state, sn = s.styleName;
+            var str = '';
+            str += sn.StartSide + ':0;';
+            str += sn.OtherSide + ':calc(50% - ' + (s.style.line_width / 2) + 'px);';
+            str += sn.Thickness_r + ':' + s.style.line_width + 'px;'
+            return str;
+        },
+        getPinStyle:function (value) {
+            return this.state.styleName.StartSide + ':' + this.getPercentByValue(value) + '%;';
+        },
+        setEvents:function(){
+            var s = this.state;
             if (s.changable !== false) {
                 $('body').off('mousedown', "#" + s.id + " .r-slider-button");
                 $('body').on('mousedown', "#" + s.id + " .r-slider-button", this.buttonmousedown.bind(this));
@@ -293,122 +262,49 @@ function slider(config) {
                 $('body').on('mousedown', "#" + s.id + " .r-slider-label", this.labelmousedown.bind(this));
             }
         },
+        render: function () {
+            var s = this.state;
+            var oriention = s.direction==="left" || s.direction === "right" ? "horizontal" : "vertical";
+            var str = '';
+            str += '<div id="' + s.id + '" class="r-slider-container ' + oriention + '" style="' + this.getcontainerstyle() + '">';
+            if(s.pinStep){
+                var pinValue = s.start;
+                while (pinValue <= s.end) {
+                    str += '<div class="r-slider-pin" style="' + this.getPinStyle(pinValue) + '"></div>';
+                    pinValue += s.pinStep;
+                }
+            }
+            if(s.labelStep){
+                var labelValue = s.start;
+                while (labelValue <= s.end) {
+                    str += '<div class="r-slider-label" style="' + s.styleName.StartSide + ':' + this.getPercentByValue(labelValue) + '%;"><div>' + labelValue + '</div></div>'
+                    labelValue += s.labelStep;
+                }
+            }
+            str += '<div class="r-slider-line" style="' + this.getLineStyle() + '"></div>';
+            var length = s.value.length;
+            for (var i = 0; i <= length; i++) {
+                str += '<div data-index="' + i + '" class="r-slider-space" style="' + this.getSpaceStyle(i) + '">';
+                if ((length === 1 || i !== 0) && i !== length) { str += '<div class="r-slider-fill" style="' + this.getFillStyle(i) + '"></div>'; }
+                if (s.text) { str += '<div class="r-slider-text" style="' + this.getTextStyle(i) + '">'+(s.text[i] || "")+'</div>'; }
+                str += '</div>';
+                if(i === length){break;}
+                if (s.showButton !== false) {
+                    str += '<div data-index="' + i + '" data-value="' + s.value[i] + '" class="r-slider-button" style="' + this.getButtonStyle(i) + '">';
+                    if (s.showValue) {str += '<div style="z-index:1000;' + (s.fixValue !== true ? 'display:none;' : '') + '" class="r-slider-number">' + s.value[i] + '</div>';}
+                    str += '</div>';
+                }
+            }
+            str += '</div>';
+            this.html = str;
+            this.setEvents();
+        },
     }
     a.update(config);
     return { update: a.update.bind(a), getState: a.getState.bind(a), getHTML: a.getHTML.bind(a)};
 }
 
-function RSliderCalculator(obj) {
-    var a = {
-        state: {},
-        init: function (obj) { for (prop in obj) { this.state[prop] = obj[prop]; } },
-        getPercentByValue: function (value) {
-            if (value === undefined) { return undefined; }
-            return 100 * (value - this.state.start) / (this.state.range) || 0;
-        },
-        getPercentByPixel: function (px) { return Math.round(px * 100 / this.state[this.state.styleName.Thickness]); },
-        getValueByPercent: function (percent) { return ((this.state.range / 100) * percent) + this.state.start; },
-        getValueByPixel: function (px) { return (px * this.state.range) / this.state[this.state.styleName.Thickness]; },
-        getCorrectValue: function (value) {
-            value = (Math.round((value - this.state.start) / this.state.step) * this.state.step) + this.state.start;
-            if (value < this.state.min) { value = this.state.min; }
-            else if (value > this.state.max) { value = this.state.max; }
-            value = parseFloat(value.toFixed(2));
-            return value;
-        },
-    }
-    a.init(obj);
-    return a;
-}
-function RSPins(obj) {//calc-pinStep-start-end-styleName
-    if (!obj.pinStep) { return ""; }
-    var value = obj.start;
-    var str = '';
-    while (value <= obj.end) {
-        var percent = obj.calc.getPercentByValue(value);
-        value += obj.pinStep;
-        str += RSPin({ styleName: obj.styleName, percent: percent });
-    }
-    return str;
-}
-function RSPin(obj) {//styleName-percent
-    var sn = obj.styleName;
-    function getStyle() {
-        var str = '';
-        str += 'position:absolute;';
-        str += sn.OtherSide + ':0;';
-        str += sn.Thickness_r + ':100%;';
-        str += sn.Thickness + ':1px;';
-        str += sn.StartSide + ':' + obj.percent + '%;';
-        return str;
-    }
-    return '<div class="r-slider-pin" style="' + getStyle() + '"></div>';
-}
-function RSLabels(obj) {//start-end-labelStep-styleName-calc
-    if (!obj.labelStep) { return ""; }
-    var value = obj.start;
-    var str = '';
-    while (value <= obj.end) {
-        var percent = obj.calc.getPercentByValue(value);
-        str += RSLabel({
-            styleName: obj.styleName,
-            percent: percent,
-            value: value
-        });
-        value += obj.labelStep;
-    }
-    return str;
-}
-function RSLabel(obj) {//percent-styleName-value
-    var sn = obj.styleName;
-    function getStyle() {
-        var str = 'position: absolute;line-height: 2px;text-align: center;';
-        str += sn.Thickness + ': 40px;';
-        str += sn.Thickness_r + ':2px;';
-        str += sn.StartSide + ':calc(' + obj.percent + '% - 20px);';
-        return str;
-    }
-    var str = '';
-    str += '<div class="r-slider-label" style="' + getStyle() + '"><span>';
-    str += obj.value;
-    str += '</span></div>';
-    return str;
-}
-function RSFill(obj) {//style-index-value-styleName
-    return '<div class="r-slider-fill" style="' + obj.style + '"></div>';
-}
-function RSSpace(obj) {//calc-styleName-index-value-direction-text-style-showFill
-    var str = '';
-    str += '<div data-index="' + obj.index + '" class="r-slider-space" style="' + obj.spaceStyle + '">';
-    if (obj.fill) { str += RSFill({ style: obj.fillStyle }); }
-    if (obj.text) { str += RSText({ style: obj.textStyle, text: obj.text }); }
-    str += '</div>';
-    return str;
-}
-function RSText(obj) {//style-styleName-length-index-text
-    var str = '';
-    str += '<div class="r-slider-text" style="' + obj.style + '">';
-    str += obj.text || "";
-    str += '</div>';
-    return str;
-}
-function RSLine(obj) {//style-styleName
-    var sn = obj.styleName;
-    function getStyle() {
-        var str = 'position:absolute;z-index:1;';
-        str += sn.Thickness + ':100%;';
-        str += sn.StartSide + ':0;';
-        str += sn.OtherSide + ':calc(50% - ' + (obj.style.line_width / 2) + 'px);';
-        str += sn.Thickness_r + ':' + obj.style.line_width + 'px;'
-        return str;
-    }
-    return '<div class="r-slider-line" style="' + getStyle() + '"></div>';
-}
-function RSButton(obj) {
-    var str = '<div data-index="' + obj.index + '" data-value="' + obj.value + '" class="r-slider-button" style="' + obj.style + '">';
-    if (obj.showValue) {
-        str += '<div style="z-index:1000;' + (obj.fixValue !== true ? 'display:none;' : '') + '" class="r-slider-number">' + obj.value + '</div>';
-    }
-    str += '</div>';
-    return str;
-}
+
+
+
+

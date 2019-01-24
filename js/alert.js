@@ -17,13 +17,13 @@ function AlertPopup(props) {
     var s = props.style;
     var str = '<div id="alert">';
     str += '<div class="back-drop"></div>';
-    str += '<div class="alert-header" style="float:left;position:relative;">';
+    str += '<div class="alert-header header" style="float:left;position:relative;">';
     str += components.render({ id: "alert-close", iconClass: "mdi mdi-close", className: "icon alert-close", component: "Button", callback: Alert.close });
     str += components.render({ id: "alert-title", text: props.title, className: "text", component: "Button" });    
     str += '</div>';
     str += '<div class="alert-body" style="float:left;position:relative;">';
     if (typeof props.template === "string") { str += props.template; }
-    else if (typeof props.template === "object") {
+    else if (!Array.isArray(props.template)) {
         if (props.template.type === "color pallete") {
             var colors = ["#ff0000", "#ff4e00", "#ffa800", "#fcff00", "#f5eeb2", "#12ff00", "#2e4f0b", "#00f0ff", "#008aff", "#2400ff", "#1c4663",
             "#41366f", "#7c6c92", "#8400ff", "#ff6868", "#ff00ba", "#72441c", "#482a0b", "#8a8a8a", "#ffffff"];

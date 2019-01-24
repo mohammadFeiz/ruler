@@ -240,7 +240,7 @@ var create = {
             });
         }
         Alert.open({
-            buttons: [{ text: "ok", callback: Alert.close }],
+            buttons: [{ text: "ok", callback: Alert.close },{ text: "ok", callback: Alert.close },{ text: "ok", callback: Alert.close }],
             template: template,
             title: app.state.createmode + " setting.",
         });

@@ -9,7 +9,7 @@ var keyboard = {
         var s = this.state,str = '';
         str += '<div id="keyboard">';
         str += '<div class="back-drop"></div>';
-        str += '<div id="keyboard-header">';
+        str += '<div id="keyboard-header" class="header">';
         str += components.render({ id: "keyboard-close", component: "Button", iconClass: "mdi mdi-close", className: "icon", callback: this.close.bind(this) });
         str += components.render({ id: "keyboard-title", component: "Button", text: s.title, className: "text" });
         str += '</div>';

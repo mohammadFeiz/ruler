@@ -11,16 +11,42 @@ var layers = {
         $("#layer-popup").removeClass("active");
         setTimeout(function () { $("#layer-popup").remove(); }, 300);
     },
+    
     render: function (mode) {
         $("#layer-popup").remove();
         var className = mode === "init" ? '' : 'active';
+        var bodyHeight = Math.floor(window.innerHeight - 120);
+        var itemsHeight = this.model.length * 42;
         var str = '';
+        this.startScroll = this.startScroll ||0;
         str += '<div id="layer-popup" class="' + className + '">';
         /**/str += components.render({ component: "DIV", id: "layer-back-drop", className: "back-drop", callback: layers.close });
-        /**/str += '<div id="layer-header">';
+        if(itemsHeight > bodyHeight){ 
+            str+='<div id="layer-scroll">';
+            str+=components.render({id:"layer-scroll-up",iconClass:"mdi mdi-menu-up",component:"Button",className:"icon layer-scroll-arrow",style:"top:0;",callback:function(){}});
+            str+='<div id="layer-scroll-slider-container"</div>';
+            str+= components.render({
+                component:"Slider",
+                id:"layer-scroll-slider",
+                start:0,
+                step:1,
+                end:itemsHeight,
+                value:[this.startScroll,bodyHeight + this.startScroll],
+                direction:"down",
+                ondrag:function(obj){layers.startScroll = obj.value[0]; $("#layer-items-container").css("top",layers.startScroll*-1);},
+                style:{
+                    button_height:0,button_width:16,line_width:24
+                }
+            });
+            str+='</div>';
+            str+=components.render({id:"layer-scroll-down",iconClass:"mdi mdi-menu-down",component:"Button",className:"icon layer-scroll-arrow",style:"bottom:0;",callback:function(){}});
+            str+='</div>';
+        }
+        /**/str += '<div id="layer-header" class="header">';
         /*****/for (var i = 0; i < this.headerItems.length; i++) { str += components.render(this.headerItems[i]); }
         /**/str += '</div>';
         str += '<div id="layer-body">';
+        str += '<div id="layer-items-container" style="top:'+(this.startScroll * -1)+'px;">';
         for (var i = 0; i < this.model.length; i++) {
             var model = this.model[i];
             str += '<div data-index="' + i + '" class="layer-item' + (model.active ? ' active' : '') + '" style="border-left:4px solid ' + model.color + ';" id="' + model.id + '">';
@@ -35,7 +61,8 @@ var layers = {
             str += '</div>';
         }
         str += '</div>';
-        str += '<div id="layer-footer">';
+        str += '</div>';
+        str += '<div id="layer-footer" class="header">';
         for (var i = 0; i < this.footerItems.length; i++) { str += components.render(this.footerItems[i]); }
         str += '</div>';
         str += '</div>';
@@ -53,8 +80,7 @@ var layers = {
         layers.render();
     },
     remove: function (id) {
-        if (layers.model.length < 2) { return false; }
-        var id = layers.getActive().id;
+        if (this.model.length < 2) { return false; }
         for (var i = 0; i < app.state.lines.length; i++) {
             var line = app.state.lines[i];
             if (!line) { continue; }
@@ -65,13 +91,12 @@ var layers = {
             if (!point) { continue; }
             if (point.layer.id === id) { app.state.points.splice(j, 1); j--; }
         }
-        for (var k = 0; k < layers.model.length; k++) {
-            var layer = layers.model[k];
-            if (layer.id === id) { layers.model.splice(k, 1); break; }
+        for (var k = 0; k < this.model.length; k++) {
+            var layer = this.model[k];
+            if (layer.id === id) { this.model.splice(k, 1); break; }
         }
-        layers.active(layers.model[layers.model.length - 1].id);
-        layers.render();
-        app.redraw();
+        
+        
     },
     moveUp: function () {
         if (!this.activeIndex) { return; }
@@ -89,7 +114,13 @@ var layers = {
         this.activeIndex++;
         this.render();
     },
-    getVisibles: function () { return this.model.map(function (item) { if (item.show) { return item; } }); },
+    getVisibles: function () {
+        var list = [];
+        for (var i = 0; i < this.model.length; i++) {
+            if (this.model[i].show) { list.push(this.model[i]); }
+        }
+        return list;
+    },
     getHiddens: function () { return this.model.map(function (item) { if (!item.show) { return item; } }); },
     setVisibility: function (id) {
         if (id === "all") { this.showAll = !this.showAll; for (var i = 0; i < this.model.length; i++) { this.model[i].show = this.showAll; } }
@@ -103,21 +134,19 @@ var layers = {
         for (var i = 0; i < app.state.lines.length; i++) {
             var line = app.state.lines[i];
             var success = false;
-            for (var i = 1; i < list.length; i++) { if (line.layer.id === list[i].id) { success = true; break; } }
+            for (var j = 1; j < list.length; j++) { if (line.layer.id === list[j].id) { success = true; break; } }
             if (!success) { continue; }
             line.layer = mergedLayer;
         }
         for (var i = 0; i < app.state.points.length; i++) {
             var point = app.state.points[i];
             var success = false;
-            for (var i = 1; i < list.length; i++) { if (point.layer.id === list[i].id) { success = true; break; } }
+            for (var j = 1; j < list.length; j++) { if (point.layer.id === list[j].id) { success = true; break; } }
             if (!success) { continue; }
             point.layer = mergedLayer;
         }
-        for (var i = 1; i < list.length; i++) { this.remove(list[i]); }
-        this.active(id);
-        this.render();
-        app.redraw();
+        for (var i = 1; i < list.length; i++) { this.remove(list[i].id); }
+        this.active(mergedLayer.id);
     },
     active: function (id) { this.deactiveAll(); var index = this.getIndexByID(id); this.model[index].active = true; this.activeIndex = index; this.render(); },
     deactiveAll: function () { for (var i = 0; i < this.model.length; i++) { this.model[i].active = false; } this.activeIndex = null; },
@@ -233,7 +262,7 @@ var layers = {
                 }
                 Alert.open({
                     buttons: [
-                        { text: "yes", callback: function () { layers.remove(layers.getActive().id); Alert.close(); } },
+                        { text: "yes", callback: function () { layers.remove(layers.getActive().id); layers.active(layers.model[layers.model.length - 1].id); Alert.close(); layers.render(); app.redraw(); } },
                         { text: "cansel", callback: Alert.close }
                     ],
                     template: "Do You Want To Delete Selected Layer?",
@@ -255,7 +284,7 @@ var layers = {
                 }
                 Alert.open({
                     buttons: [
-                        { text: "Yes", callback: function () { layers.mergeVisibles(); Alert.close(); } },
+                        {text: "Yes", callback: function () {layers.mergeVisibles(); Alert.close(); layers.render(); app.redraw();}},
                         { text: "Cansel", callback: Alert.close }
                     ],
                     template: "Do You Want To Merge All Visible Layers?",
@@ -266,29 +295,4 @@ var layers = {
         { id: "layer-merge-all", iconClass: "mdi mdi-arrow-collapse-vertical", component: "Button", className: "icon" },
     ],
 
-}
-
-function ColorPalette(props) {
-    var str = '';
-    str += '<div id="color-palette">';
-    str += '<div class="back-drop"></div>';
-    str += '<div id="color-palette-header">';
-    str += '<div id="color-palette-title">Select Color</div>';
-    str += '<div id="color-palette-close">';
-    str += '<span class="mdi mdi-close"></span>';
-    str += '</div>';
-    str += '</div>';
-    str += '<div id="color-palette-body">';
-    for (var i = 0; i < props.colors.length; i++) {
-        str += PaletteItem({ color: props.colors[i] });
-    }
-    str += '</div>';
-    str += '</div>';
-    return str;
-}
-
-function PaletteItem(props) {
-    var str = '';
-    str += '<div data-color="' + props.color + '" class="color-palette-item" style="background:' + props.color + '"></div>';
-    return str;
 }
