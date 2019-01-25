@@ -117,21 +117,18 @@ var layers = {
         this.activeIndex = length;
         this.render();
     },
-    rename: function (title) {
-        layers.getActive().title = title;
-        layers.render();
-    },
+    rename: function (name) {layers.getActive().title = name;layers.render();},
     remove: function (id) {
         if (this.model.length < 2) { return false; }
         for (var i = 0; i < app.state.lines.length; i++) {
             var line = app.state.lines[i];
             if (!line) { continue; }
-            if (line.layer.id === id) { app.state.lines.splice(i, 1); i--; }
+            if (line.layerId === id) { app.state.lines.splice(i, 1); i--; }
         }
         for (var j = 0; j < app.state.points.length; j++) {
             var point = app.state.points[j];
             if (!point) { continue; }
-            if (point.layer.id === id) { app.state.points.splice(j, 1); j--; }
+            if (point.layerId === id) { app.state.points.splice(j, 1); j--; }
         }
         for (var k = 0; k < this.model.length; k++) {
             var layer = this.model[k];
@@ -211,11 +208,11 @@ var layers = {
     },
     headerItems: [
             {
-                component: "Button",
-                id: "layer-visibility",
-                className: "icon",
-                iconClass: function () { return layers.showAll ? 'mdi mdi-eye' : 'mdi mdi-eye-off' },
-                callback: function () { layers.setVisibility("all"); }
+                component: "Button",id: "layer-visibility",className: "icon",
+                iconClass: function () { 
+                    return layers.showAll ? 'mdi mdi-eye' : 'mdi mdi-eye-off' 
+                },
+                callback: function () { layers.setVisibility("all"); undo.save();}
             },
             {
                 component: "Button",
@@ -225,7 +222,12 @@ var layers = {
                 callback: function () {
                     Alert.open({
                         buttons: [
-                            { text: "yes", callback: function () { layers.add(); Alert.close(); } },
+                            { 
+                                text: "yes", 
+                                callback: function () { 
+                                    layers.add(); Alert.close(); undo.save(); 
+                                } 
+                            },
                             { text: "cansel", callback: Alert.close }
                         ],
                         template: "Do you want to add new layer?",
@@ -234,29 +236,25 @@ var layers = {
                 }
             },
             {
-                component: "Button",
-                id: "layer-duplicate",
-                className: "icon",
+                component: "Button",id: "layer-duplicate",className: "icon",
                 iconClass: "mdi mdi-image-filter-none"
             },
             {
-                component: "Button",
-                id: "layer-move-down",
-                className: "icon",
+                component: "Button",id: "layer-move-down",className: "icon",
                 iconClass: "mdi mdi-arrow-down-bold",
-                callback: function () { layers.moveDown(); }
+                callback: function () { layers.moveDown(); undo.save();}
             },
             {
-                component: "Button",
-                id: "layer-move-up",
-                className: "icon",
+                component: "Button",id: "layer-move-up",className: "icon",
                 iconClass: "mdi mdi-arrow-up-bold",
-                callback: function () { layers.moveUp(); }
+                callback: function () { layers.moveUp();  undo.save();}
             },
     ],
     footerItems: [
         {
-            id: "layer-pallete", iconClass: "mdi mdi-palette", component: "Button", className: "icon", callback: function () {
+            id: "layer-pallete", iconClass: "mdi mdi-palette", component: "Button", 
+            className: "icon", 
+            callback: function () {
                 Alert.open({
                     buttons: [{ text: "Close", callback: function () { Alert.close(); } }],
                     template: {
@@ -267,6 +265,7 @@ var layers = {
                             layers.render();
                             app.redraw();
                             Alert.close();
+                            undo.save();
                         }
                     },
                     title: "Select layer color."
@@ -274,7 +273,9 @@ var layers = {
             },
         },
         {
-            id: "layer-rename", iconClass: "mdi mdi-square-edit-outline", component: "Button", className: "icon", callback: function () {
+            id: "layer-rename", iconClass: "mdi mdi-square-edit-outline", component: "Button", 
+            className: "icon", 
+            callback: function () {
                 var title = layers.getActive().title;
                 Alert.open({
                     buttons: [
@@ -283,7 +284,7 @@ var layers = {
                                 full_keyboard.open({
                                     text: title,
                                     title: "Inter New Name For Selected Layer:",
-                                    callback: layers.rename
+                                    callback: function(name){layers.rename(name); undo.save();}
                                 });
                                 Alert.close();
                             }
@@ -296,8 +297,8 @@ var layers = {
             }
         },
         {
-            id: "layer-remove", iconClass: "mdi mdi-delete", component: "Button", className: "icon", callback: function () {
-                var id = layers.getActive().id;
+            id: "layer-remove", iconClass: "mdi mdi-delete", component: "Button", className: "icon", 
+            callback: function () {
                 if (layers.model.length < 2) {
                     Alert.open({
                         buttons: [{ text: "close", callback: Alert.close }],
@@ -308,17 +309,28 @@ var layers = {
                 }
                 Alert.open({
                     buttons: [
-                        { text: "yes", callback: function () { layers.remove(layers.getActive().id); layers.active(layers.model[layers.model.length - 1].id); Alert.close(); layers.render(); app.redraw(); } },
+                        { 
+                            text: "yes", 
+                            callback: function () { 
+                                layers.remove(layers.getActive().id); 
+                                layers.active(layers.model[layers.model.length - 1].id); 
+                                layers.render(); 
+                                Alert.close(); 
+                                app.redraw();  
+                                undo.save(); 
+                            } 
+                        },
                         { text: "cansel", callback: Alert.close }
                     ],
                     template: "Do You Want To Delete Selected Layer?",
                     title: "Delete Layer."
                 });
-
             }
         },
         {
-            id: "layer-merge-visible", iconClass: "mdi mdi-eye-plus", component: "Button", className: "icon", callback: function () {
+            id: "layer-merge-visible", iconClass: "mdi mdi-eye-plus", 
+            component: "Button", className: "icon", 
+            callback: function () {
                 var list = layers.getVisibles();
                 if (list.length < 2) {
                     Alert.open({
@@ -330,7 +342,16 @@ var layers = {
                 }
                 Alert.open({
                     buttons: [
-                        {text: "Yes", callback: function () {layers.mergeVisibles(); Alert.close(); layers.render(); app.redraw();}},
+                        {
+                            text: "Yes", 
+                            callback: function () {
+                                layers.mergeVisibles(); 
+                                layers.render(); 
+                                Alert.close(); 
+                                app.redraw();
+                                undo.save();
+                            }
+                        },
                         { text: "Cansel", callback: Alert.close }
                     ],
                     template: "Do You Want To Merge All Visible Layers?",
@@ -338,7 +359,10 @@ var layers = {
                 });
             }
         },
-        { id: "layer-merge-all", iconClass: "mdi mdi-arrow-collapse-vertical", component: "Button", className: "icon" },
+        { 
+            id: "layers-setting", iconClass: "mdi mdi-settings", 
+            component: "Button", className: "icon" 
+        },
     ],
 
 }

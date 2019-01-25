@@ -1,6 +1,6 @@
 var undo = {
     size: 30,
-    model: [{ u_points: [], u_lines: [], u_point_id: "1p", u_line_id: "1l", u_layer_model: { id: "1layer", title: "layer 1", color: "#fff", show: true, active: true } }],
+    model: [],
     getCopy:function (model) {
         return JSON.parse(JSON.stringify(model));
     },
@@ -10,14 +10,18 @@ var undo = {
         var u_points_id = Points.id;
         var u_lines_id = Lines.id;
         var u_layers_model = this.getCopy(layers.model);
-        undo.model.push({ u_points: u_points, u_lines: u_lines, u_points_id: u_points_id, u_lines_id: u_lines_id, u_layers_model: u_layers_model });
+        undo.model.push({ 
+            u_points: u_points, u_lines: u_lines, 
+            u_points_id: u_points_id, u_lines_id: u_lines_id, 
+            u_layers_model: u_layers_model 
+        });
         if (undo.model.length > undo.size) { undo.model.splice(0, 1); }
-        //console.log("save");
+        console.log("save");
     },
     load: function () {
         create.end();
         edit.end();
-        if (undo.model.length < 2) { return; }
+        if (undo.model.length < 2) { return false; }
         undo.model.pop();
         var model = undo.model[undo.model.length - 1];
         app.state.points = this.getCopy(model.u_points);
@@ -25,8 +29,8 @@ var undo = {
         Points.id = model.u_points_id;
         Lines.id = model.u_lines_id;
         layers.model = this.getCopy(model.u_layers_model);
-        layers.update();
         app.redraw();
+        return true;
         //console.log("load");
     }
 }

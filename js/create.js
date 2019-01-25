@@ -79,6 +79,7 @@ var create = {
         createControl.close();
         this.save();
         app.redraw();
+        undo.save();
     },
     preview: function () {
         app.redraw();

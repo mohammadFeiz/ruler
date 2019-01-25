@@ -24,9 +24,8 @@
         for (var i = 0; i < list.length; i++) {this.select(Lines.getObjectByID(list[i]));}
     },
     add: function (obj) {
-        var layer = layers.getActive();
         obj.id = this.id;
-        obj.layer = layer;
+        obj.layerId = layers.getActive().id;
         app.state.lines.push(obj);
         this.idGenerator();
         return Lines.getLast(1);

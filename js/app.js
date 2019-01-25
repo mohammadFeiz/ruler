@@ -46,19 +46,29 @@
     },
     drawLines: function () {
         var s = this.state;
+        if(s.lines.length === 0){return;}
+        var layer = layers.getObjectByID(s.lines[0].layerId);
         for (var i = 0; i < s.lines.length; i++) {
             var line = s.lines[i];
-            if (!line.layer.show) { continue; }
-            line.color = line.layer.color;
+            if(layer.id !== line.layerId){
+                layer = layers.getObjectByID(line.layerId);
+            }
+            if (!layer.show) { continue; }
+            line.color = layer.color;
             this.drawLine(line);
         }
     },
     drawPoints: function () {
         var s = this.state;
         if (!s.showPoints) { return; }
+        if(s.points.length === 0){return;}
+        var layer = layers.getObjectByID(s.points[0].layerId);
         for (var i = 0; i < s.points.length; i++) {
             var point = s.points[i];
-            if (!point.layer.show) { continue; }
+            if(layer.id !== point.layerId){
+                layer = layers.getObjectByID(point.layerId);
+            }
+            if (!layer.show) { continue; }
             var linesCount = point.connectedLines.length;
             if (linesCount === 1) { this.drawOpenPoint(point) }
             else { this.drawPoint(point); }
