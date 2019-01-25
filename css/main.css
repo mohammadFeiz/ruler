@@ -311,9 +311,9 @@ body {
 }
 #layer-scroll{
     position:absolute;
-    width:24px;
+    width:18px;
     height: calc(100% - 0px);
-    left:-24px;
+    left:-18px;
     top:0px;
     z-index:1000;
     background:#414a51;
@@ -335,7 +335,8 @@ body {
 }
 
 #layer-scroll .r-slider-fill{
-    background:#888;
+    background:#bbb;
+    border-radius:12px;
 }
 #layer-scroll .r-slider-container{
     background:#414a51;

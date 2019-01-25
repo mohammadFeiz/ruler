@@ -17,13 +17,24 @@ var layers = {
         var className = mode === "init" ? '' : 'active';
         var bodyHeight = Math.floor(window.innerHeight - 120);
         var itemsHeight = this.model.length * 42;
-        var str = '';
         this.startScroll = this.startScroll ||0;
+        if(this.startScroll > itemsHeight - bodyHeight){
+            this.startScroll = itemsHeight - bodyHeight;
+        }
+        if(this.startScroll < 0 ){this.startScroll = 0;}
+        var str = '';
         str += '<div id="layer-popup" class="' + className + '">';
-        /**/str += components.render({ component: "DIV", id: "layer-back-drop", className: "back-drop", callback: layers.close });
+        str += components.render({ 
+            component: "DIV", id: "layer-back-drop", 
+            className: "back-drop", callback: layers.close 
+        });
         if(itemsHeight > bodyHeight){ 
             str+='<div id="layer-scroll">';
-            str+=components.render({id:"layer-scroll-up",iconClass:"mdi mdi-menu-up",component:"Button",className:"icon layer-scroll-arrow",style:"top:0;",callback:function(){}});
+            str+=components.render({
+                id:"layer-scroll-up",iconClass:"mdi mdi-menu-up",component:"Button",
+                className:"icon layer-scroll-arrow",style:"top:0;",
+                callback:function(){layers.startScroll -= 42; layers.render();}
+            });
             str+='<div id="layer-scroll-slider-container"</div>';
             str+= components.render({
                 component:"Slider",
@@ -31,32 +42,50 @@ var layers = {
                 start:0,
                 step:1,
                 end:itemsHeight,
-                value:[this.startScroll,bodyHeight + this.startScroll],
+                value:[this.startScroll,this.startScroll + bodyHeight],
                 direction:"down",
-                ondrag:function(obj){layers.startScroll = obj.value[0]; $("#layer-items-container").css("top",layers.startScroll*-1);},
-                style:{
-                    button_height:0,button_width:16,line_width:24
-                }
+                ondrag:function(obj){
+                    layers.startScroll = obj.value[0]; 
+                    $("#layer-items-container").css("top",layers.startScroll*-1);
+                },
+                style:{button_height:0,button_width:8,line_width:8}
             });
             str+='</div>';
-            str+=components.render({id:"layer-scroll-down",iconClass:"mdi mdi-menu-down",component:"Button",className:"icon layer-scroll-arrow",style:"bottom:0;",callback:function(){}});
+            str+=components.render({
+                id:"layer-scroll-down",iconClass:"mdi mdi-menu-down",component:"Button",
+                className:"icon layer-scroll-arrow",style:"bottom:0;",
+                callback:function(){layers.startScroll += 42; layers.render();}
+            });
             str+='</div>';
         }
-        /**/str += '<div id="layer-header" class="header">';
-        /*****/for (var i = 0; i < this.headerItems.length; i++) { str += components.render(this.headerItems[i]); }
-        /**/str += '</div>';
+        str += '<div id="layer-header" class="header">';
+        for (var i = 0; i < this.headerItems.length; i++) { 
+            str += components.render(this.headerItems[i]); 
+        }
+        str += '</div>';
         str += '<div id="layer-body">';
-        str += '<div id="layer-items-container" style="top:'+(this.startScroll * -1)+'px;">';
+        str += '<div id="layer-items-container" '+
+               'style="top:'+(this.startScroll * -1)+'px;">';
         for (var i = 0; i < this.model.length; i++) {
             var model = this.model[i];
-            str += '<div data-index="' + i + '" class="layer-item' + (model.active ? ' active' : '') + '" style="border-left:4px solid ' + model.color + ';" id="' + model.id + '">';
+            str += '<div data-index="' + i + '" '+
+                   'class="layer-item' + (model.active ? ' active' : '') + '" '+
+                   'style="border-left:4px solid ' + model.color + ';" '+
+                   'id="' + model.id + '">';
             str += components.render({
                 component: "Button", id: "layer-item-icon" + i, className: "icon", iconClass: model.show ? "mdi mdi-eye" : "mdi mdi-eye-off",
                 callback: function (e) { layers.setVisibility($(e.currentTarget).parent().attr("id")); }
             });
             str += components.render({
-                component: "Button", id: "layer-item-text" + i, className: "text", text: model.title,
-                callback: function (e) { layers.active($(e.currentTarget).parent().attr("id")); }
+                component: "Button", id: "layer-item-text" + i, className: "text", 
+                text: model.title,
+                callback: function (e) {
+                    var id = $(e.currentTarget).parent().attr("id");
+                    var client = app.getClient(e);
+                    layers.clickedItem = {id:id,y:client.y,startScroll:layers.startScroll};
+                    app.eventHandler('window','mouseup',$.proxy(layers.itemMouseUp,layers));
+                    app.eventHandler('window','mousemove',$.proxy(layers.itemMouseMove,layers));
+                }
             });
             str += '</div>';
         }
@@ -67,6 +96,19 @@ var layers = {
         str += '</div>';
         str += '</div>';
         $("body").append(str);
+    },
+    itemMouseUp:function(e){
+        console.log("ok");
+        app.eventRemover('window','mouseup',layers.itemMouseUp);
+        app.eventRemover('window','mousemove',layers.itemMouseMove);
+        if(this.clickedItem.id){layers.active(this.clickedItem.id);} 
+    },
+    itemMouseMove:function(e){
+        var offset = this.clickedItem.y - app.getClient(e).y;
+        if(Math.abs(offset) < 5){return;}
+        this.clickedItem.id = false; 
+        this.startScroll = this.clickedItem.startScroll + offset;
+        this.render();
     },
     add: function () {
         this.deactiveAll(); var id = this.getId();
@@ -95,8 +137,6 @@ var layers = {
             var layer = this.model[k];
             if (layer.id === id) { this.model.splice(k, 1); break; }
         }
-        
-        
     },
     moveUp: function () {
         if (!this.activeIndex) { return; }
@@ -148,7 +188,13 @@ var layers = {
         for (var i = 1; i < list.length; i++) { this.remove(list[i].id); }
         this.active(mergedLayer.id);
     },
-    active: function (id) { this.deactiveAll(); var index = this.getIndexByID(id); this.model[index].active = true; this.activeIndex = index; this.render(); },
+    active: function (id) { 
+        this.deactiveAll(); 
+        var index = this.getIndexByID(id); 
+        this.model[index].active = true; 
+        this.activeIndex = index; 
+        this.render(); 
+    },
     deactiveAll: function () { for (var i = 0; i < this.model.length; i++) { this.model[i].active = false; } this.activeIndex = null; },
     getActive: function () { return this.model[layers.activeIndex]; },
     getObjectByID: function (id) {

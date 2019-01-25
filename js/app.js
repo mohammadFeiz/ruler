@@ -292,7 +292,7 @@ var components = {
         return components[obj.component](obj);
     },
     Button: function (obj) {
-        var text = obj.text === undefined ? "" : obj.text; text = typeof text === "function" ? text() : text;
+        var text = obj.text; text = typeof text === "function" ? text() : text;
         var iconClass = obj.iconClass || ""; iconClass = typeof iconClass === "function" ? iconClass() : iconClass;
         var attrs = '';
         if (obj.attrs) {for (var prop in obj.attrs) {attrs+=' ' + prop + '="' + obj.attrs[prop] + '"'}}
