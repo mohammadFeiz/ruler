@@ -80,6 +80,7 @@ function CreateControlItem(props) {
         str += 'color:' + props.style.font_color + ';';
         str += 'left:' + (props.style.distance * -1) + 'px;top:' + (props.style.item_size / -2) + 'px;';
         str += 'transform:rotate(' + (props.counter * props.style.angle + props.style.start_angle) + 'deg);';
+        str += 'opacity:.5';
         return str;
     }
     function getItemStyle() {

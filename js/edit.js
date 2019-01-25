@@ -38,7 +38,7 @@
             var points = app.state.points, length = points.length;
             for (var i = 0; i < length; i++) {
                 var point = points[i];
-                if (point.layer.id !== layer.id) { continue; }
+                if (point.layerId !== layer.id) { continue; }
                 if (point.x <= eX && point.x >= sX && point.y <= eY && point.y >= sY) { Points.select(point); success = true;}
             }
         } else {
@@ -49,7 +49,7 @@
             var bottom = { start: { x: sX, y: eY }, end: { x: eX, y: eY } };
             for (var i = 0; i < length; i++) {
                 var line = lines[i];
-                if (line.layer.id !== layer.id) { continue; }
+                if (line.layerId !== layer.id) { continue; }
                 if (Lines.haveInnerMeet(left, line) || Lines.haveInnerMeet(right, line) ||
                     Lines.haveInnerMeet(top, line) || Lines.haveInnerMeet(bottom, line)) {
                     (mode === "Line") ? Lines.select(line) : Lines.selectSpline(line);
@@ -84,7 +84,7 @@
         //line: null,
         mousedown: function (e) {
             Lines.deselectAll();
-            var line = edit.extendLine.line = app.getLine({ filter: { layer: layers.getActive().id } });
+            var line = edit.extendLine.line = app.getLine({ filter: { layerId: layers.getActive().id } });
             if (!line) { return; }
             Lines.select(line);
             var coords = app.canvas.getMousePosition();
@@ -209,7 +209,7 @@
         offsetedLine: null,
         mousedown: function (e) {
             Lines.deselectAll();
-            var line = app.getLine({ filter: { layer: layers.getActive().id } });
+            var line = app.getLine({ is: { layerId: layers.getActive().id } });
             if (!line) { return; }
             Lines.select(line);
             var coords = app.canvas.getMousePosition();
@@ -333,7 +333,7 @@
             if (edit.modify.selectMode === "point") {
                 for (var i = 0; i < app.state.points.length; i++) {
                     var point = app.state.points[i];
-                    if (layer.id === point.layer) {
+                    if (layer.id === point.layerId) {
                         Points.select(point);
                     }
                 }
@@ -341,7 +341,7 @@
             else {
                 for (var i = 0; i < app.state.lines.length; i++) {
                     var line = app.state.lines[i];
-                    if (layer.id === line.layer) {
+                    if (layer.id === line.layerId) {
                         Lines.select(line);
                     }
                 }
@@ -394,18 +394,6 @@
             }
             app.redraw();
             //undo.save();
-        },
-        moveToNewLayer: function () {
-            if (this.selectMode !== "spline") { return; }
-            if (Lines.selected.length === 0) { return; }
-            var A = new Alert({
-                buttons: [
-                { title: "yes", subscribe: edit.modify.exportToNewLayer },
-                { title: "cansel" }
-                ],
-                template: "Do You Want To Export Selected Lines To New Layer?",
-                title: "New Layer."
-            });
         },
         weldPointApprove: function () {
             for (var i = 0; i < Points.selected.length; i++) {
@@ -680,21 +668,6 @@
                 axis.setPosition({x:point.x, y:point.y});
             }
         },
-        exportToNewLayer: function () {
-            var id = layers.getId();
-            for (var i = 0 ; i < Lines.selected.length; i++) {
-                var line = Lines.selected[i];
-                line.layer = id;
-                line.color = "#fff";
-                var sidePoints = Lines.getPoints(line);
-                sidePoints.start.layer = id;
-                sidePoints.start.color = "#fff";
-                sidePoints.end.layer = id;
-                sidePoints.end.color = "#fff";
-
-            }
-            layers.add();
-        },
         move: function (offset) {
             if (offset.x === 0 && offset.y === 0) { return; }
             var so = edit.modify.startOffset;
@@ -953,7 +926,7 @@
         step: 10,
         mousedown: function (e) {
             Lines.deselectAll();
-            var line = app.getLine({ filter: { layer: layers.getActive().id } });
+            var line = app.getLine({ is: { layerId: layers.getActive().id } });
             if (!line) { return; }
             Lines.select(line);
             edit.plumbLine.line = line;
@@ -1095,7 +1068,7 @@
             var line = ap.line = app.getLine(
                 {
                     coords: coords,
-                    //filter: { layer: layers.getActive().id } }
+                    is: { layerId: layers.getActive().id } 
                 }
             );
             if (!line) { return; }

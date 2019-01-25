@@ -28,8 +28,7 @@ var Points = {
         var length = Points.selected.length;
         for (var i = 0; i < length; i++) {
             var point = Points.selected[i];
-            var layer = layers.getObjectByID(point.layer.id);
-            point.color = layer.color;
+            var layer = layers.getObjectByID(point.layerId);
             point.selected = false;
         }
         Points.selected = [];
@@ -277,7 +276,7 @@ var Points = {
         if (Points.isConnect(f, s)) {
             return false;
         }
-        if (f.connectedLines.length < 2 && f.layer === s.layer) {
+        if (f.connectedLines.length < 2 && f.layerId === s.layerId) {
             f.connectedLines.push({
                 id: Lines.getNextID(1),
                 side: "start"
@@ -294,7 +293,7 @@ var Points = {
                 }]
             });
         }
-        if (s.connectedLines.length < 2 && f.layer === s.layer) {
+        if (s.connectedLines.length < 2 && f.layerId === s.layerId) {
             s.connectedLines.push({
                 id: Lines.getNextID(1),
                 side: "end"
