@@ -20,9 +20,7 @@
     setting: function () {
         edit[app.state.editmode].setting();
     },
-
     drawSelectRect: function () {
-        edit.selectRect.end = app.canvas.getMousePosition();
         var sr = edit.selectRect;
         var width = sr.end.x - sr.start.x;
         var height = sr.end.y - sr.start.y;
@@ -68,12 +66,9 @@
     },
     drawPoint: function (x, y) {
         var size = 3 / app.canvas.getZoom();
-        app.canvas.drawArc({ x: x, y: y, radius: size, color: "orange", mode: "fill" });
-        app.canvas.drawArc({ x: x, y: y, radius: size * 2, color: "orange", mode: "stroke" });
+        app.canvas.drawArc({ x: x, y: y, radius: size, fill: "orange" });
+        app.canvas.drawArc({ x: x, y: y, radius: size * 2, stroke: "orange" });
     },
-
-
-
     extendLine: {
         side: null,
         startOffset: null,
@@ -521,19 +516,18 @@
         mousedown: function (e) {
             var This = edit.modify;
             var coords = app.canvas.getMousePosition();
-            var axisPos = axis.getPosition();
-            if (axis.mode === "none") { edit.selectRect = { start: { x: coords.x, y: coords.y }, end: { x: coords.x, y: coords.y } }; }
-            else {
-                var client = app.getClient(e);
-                This.updateModel();
-                This.startOffset = { x: client.x, y: client.y, axisX: axisPos.x, axisY: axisPos.y };
-            }
+            var axisPos = axis.getPosition() || {x:undefined,y:undefined};
+            edit.selectRect = { start: { x: coords.x, y: coords.y }, end: { x: coords.x, y: coords.y }};
+            var client = app.getClient(e);
+            This.updateModel();
+            This.startOffset = { x: client.x, y: client.y, axisX: axisPos.x, axisY: axisPos.y };
         },
         mousemove: function (e) {
             app.redraw();
             var This = edit.modify;
             var so = This.startOffset;
             var client = app.getClient(e);
+            edit.selectRect.end = app.canvas.getMousePosition();
             if (axis.mode === "none") { edit.drawSelectRect(); }
             else {
                 if (["axis-move", "axis-move-horizontal", "axis-move-vertical"].indexOf(axis.mode) !== -1) {
@@ -545,17 +539,12 @@
                     var offset = Math.floor((client.x - so.x) / 4);
                     This.rotate(offset);
                 }
-                else if (axis.mode === "axis") {
-                    app.eventHandler("window", "mousemove", edit.modify.windowMouseMove.background);
-                    app.eventHandler("window", "mouseup", edit.modify.windowMouseUp.background);
-                }
-
             }
         },
         mouseup: function (e) {
             var sr = edit.selectRect, This = edit.modify;
             if (axis.mode === "none") {
-                if (Lines.getLength(sr) >= 3) {
+                if (Lines.getLength(sr) >= 5) {
                     if (edit.selectBySelectRect(This.selectMode)) {axis.setPosition("center");}
                 }
                 else {
@@ -575,6 +564,9 @@
                 }
             }
             else {
+                if (Lines.getLength(sr) < 5) {
+                    return;
+                }
                 if (edit.modify.copyMode && edit.modify.selectMode !== "Point") {
                     Lines.deselectAll();
                     for (var i = 0; i < edit.modify.lines.length; i++) {
@@ -644,7 +636,6 @@
                     callback: edit.modify.transformTo, float: false, negative: true, title: "Transform To:"
                 });
             }
-            
         },
         backgroundmousedown:function(e){
             app.eventHandler("window", "mousemove", edit.modify.backgroundmousemove);
@@ -657,7 +648,6 @@
             var so = edit.startOffset;
             var client = app.getClient(e);
             var offset = { x: (client.x - so.x) / app.canvas.getZoom(), y: (client.y - so.y) / app.canvas.getZoom() };
-
             axis.setPosition(app.canvas.getSnapedCoords({x:so.axisX + offset.x,y:so.axisY + offset.y}));
         },
         backgroundmouseup: function (e) {
@@ -668,7 +658,7 @@
                 axis.setPosition({x:point.x, y:point.y});
             }
         },
-        move: function (offset) {
+        move: function (offset) {        
             if (offset.x === 0 && offset.y === 0) { return; }
             var so = edit.modify.startOffset;
             axis.setPosition({ x: so.axisX + offset.x, y: so.axisY + offset.y }); // Move Axis
@@ -1111,15 +1101,16 @@
             app.redraw();
         },
         setting: function () {
-            var A = new Alert({
+            Alert.open({
                 title: "Add Point Setting",
                 buttons: [{
-                    title: "OK"
+                    text: "OK"
                 }],
                 template: [{
-                    title: "Min Distance",
+                    type:"numberbox",
+                    title: "Distance",
                     value: edit.addPoint.min,
-                    onchange: edit.addPoint.setMin
+                    onchange: edit.addPoint.setMin,
                 }]
             });
         },
@@ -1128,9 +1119,6 @@
         },
     },
 }
-
-
-
 var axis = {
     mode: "none",
     opened:false,
@@ -1153,7 +1141,7 @@ var axis = {
         str += '<div id="axis-background">';
         str += '<div id="axis-x"><div class="title">X:</div><div class="value"></div></div>';
         str += '<div id="axis-y"><div class="title">Y:</div><div class="value"></div></div>';
-        str += '<div id="axis-angle"><div class="title">Angle:</div><div class="value"></div></div>';
+        str += '<div id="axis-angle"><div class="title">Angle:</div><div class="value">0</div></div>';
         str += '</div>';
         for (var i = 0; i < this.buttons.length; i++) {
             var button = this.buttons[i];
@@ -1177,16 +1165,17 @@ var axis = {
     setPosition: function (obj) {
         if (axis.opened === false) { axis.open(obj); return;}
         var coords;
-        if (obj === "center") { coords = edit.modify.selectMode === "Point" ? Points.getCenterOfList(Points.selected) : Lines.getCenterOfList(Lines.selected); }
+        if (obj === "center") { coords = edit.modify.selectMode === "Point" ? 
+        Points.getCenterOfList(Points.selected) : Lines.getCenterOfList(Lines.selected); }
         else { coords = obj; }
+        this.axisPos = {x:coords.x, y:coords.y};
         var bodyCoords = app.canvas.canvasToClient(coords);
         $("#axis").css({ "left": bodyCoords.x, "top": bodyCoords.y });
         $("#axis-x").html("X:" + coords.x.toFixed(1));
         $("#axis-y").html("Y:" + (coords.y * -1).toFixed(1));
     },
     getPosition: function () {
-        var axis = $("#axis");
-        return app.canvas.clientToCanvas({ x: parseInt(axis.css("left")), y: parseInt(axis.css("top")) });
+        return this.axisPos;
     }
 
 }

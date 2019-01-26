@@ -325,6 +325,15 @@ var components = {
         str += '<div class="' + (obj.className || '') + '" id="' + obj.id + '" data-step="' + obj.step + '">';
         str += obj.value === undefined ? '' : obj.value;
         str += '</div>';
+        $('body').off('mousedown', '#' + obj.id);
+        $('body').on('mousedown', '#' + obj.id, function (e) {
+            var element = $(e.currentTarget);
+            var id = element.attr("id");
+            var item = components.findItem(id);
+            if(item.callback){
+                item.callback(item);
+            }
+        });
         return str;
     },
     Dropdown: function (obj) {

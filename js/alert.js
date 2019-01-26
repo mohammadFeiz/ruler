@@ -93,6 +93,27 @@ var AlertControl = {
             Alert.state.template[index].callback(value === 0 ? false : true);
         }
         return '<div class="alert-switch-container">' + components.render(template); +'</div>';
+    },
+    numberbox:function(template,index){
+        template.id = "alert-template" + index;
+        template.index = index;
+        template.component = "Numberbox";
+        template.className="numberbox keyboard-numberbox";
+        template.callback = function (obj) {
+            var value = obj.value;
+            var index = obj.index;
+            keyboard.open({
+                fields:[{prop:"value",title:"value",value:obj.value}],
+                title:"Inter Number", 
+                close:true,
+                negative:obj.negative===undefined?true:obj.negative,
+                callback:function(obj){
+                    obj = obj;
+                },   
+            });
+            Alert.state.template[index].onchange(value === 0 ? false : true);
+        };
+        return components.render(template);
     }
 };
 
