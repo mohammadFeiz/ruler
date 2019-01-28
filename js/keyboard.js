@@ -116,7 +116,7 @@ var keyboard = {
             parameters[field.prop] = parseFloat(value);
 
         }
-        this.state.callback(parameters);
+        this.state.callback(parameters,this.state);
         if (this.state.close) { this.close(); }
     },
     eventHandler: function (selector, e, action) {

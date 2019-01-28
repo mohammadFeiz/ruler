@@ -331,8 +331,16 @@ var components = {
             var id = element.attr("id");
             var item = components.findItem(id);
             if(item.callback){
-                item.callback(item);
+                keyboard.open({
+                    fields:[{prop:"value",title:"value",value:item.value}],
+                    title:"Inter Number", 
+                    close:true,
+                    id:id,
+                    negative:obj.negative===undefined?true:obj.negative,
+                    callback:item.callback,   
+                });
             }
+            
         });
         return str;
     },

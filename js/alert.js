@@ -98,31 +98,12 @@ var AlertControl = {
         template.id = "alert-template" + index;
         template.index = index;
         template.component = "Numberbox";
-        template.className="numberbox keyboard-numberbox";
-        template.callback = function (obj) {
-            var value = obj.value;
-            var index = obj.index;
-            keyboard.open({
-                fields:[{prop:"value",title:"value",value:obj.value}],
-                title:"Inter Number", 
-                close:true,
-                negative:obj.negative===undefined?true:obj.negative,
-                callback:function(obj){
-                    obj = obj;
-                },   
-            });
-            Alert.state.template[index].onchange(value === 0 ? false : true);
+        template.className="numberbox";
+        template.callback = function (obj,state) {
+            $("#"+state.id).html(obj.value);
+            var index = parseInt(state.id.replace("alert-template",""));
+           // Alert.state.template[index].callback(obj.value);
         };
         return components.render(template);
     }
 };
-
-
-
-
-
-
-
-
-
-

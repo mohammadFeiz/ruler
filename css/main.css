@@ -288,7 +288,7 @@ body {
  background:rgba(255,255,255,0.1);
 }
 
-.keyboard-numberbox {
+.numberbox {
  border-bottom:1px solid;
  width:54px;
  float:right;
