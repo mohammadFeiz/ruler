@@ -332,10 +332,9 @@ var components = {
             var item = components.findItem(id);
             if(item.callback){
                 keyboard.open({
-                    fields:[{prop:"value",title:"value",value:item.value}],
-                    title:"Inter Number", 
+                    fields:[{min:item.min,prop:"value",title:"value",value:item.value,dataTarget:item.dataTarget}],
+                    title:"Inter Number",   
                     close:true,
-                    id:id,
                     negative:obj.negative===undefined?true:obj.negative,
                     callback:item.callback,   
                 });

@@ -96,14 +96,9 @@ var AlertControl = {
     },
     numberbox:function(template,index){
         template.id = "alert-template" + index;
-        template.index = index;
+        template.dataTarget = "#alert-template" + index;
         template.component = "Numberbox";
         template.className="numberbox";
-        template.callback = function (obj,state) {
-            $("#"+state.id).html(obj.value);
-            var index = parseInt(state.id.replace("alert-template",""));
-           // Alert.state.template[index].callback(obj.value);
-        };
         return components.render(template);
     }
 };

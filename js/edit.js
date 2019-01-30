@@ -1104,18 +1104,20 @@
             Alert.open({
                 title: "Add Point Setting",
                 buttons: [{
-                    text: "OK"
+                    text: "OK",callback:Alert.close
                 }],
                 template: [{
                     type:"numberbox",
+                    negative:false,
                     title: "Distance",
+                    min:5,
                     value: edit.addPoint.min,
-                    onchange: edit.addPoint.setMin,
+                    callback: edit.addPoint.setMin,
                 }]
             });
         },
-        setMin: function (min) {
-            edit.addPoint.min = min;
+        setMin: function (obj) {
+            edit.addPoint.min = obj.value;
         },
     },
 }

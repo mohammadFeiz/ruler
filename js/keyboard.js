@@ -111,12 +111,14 @@ var keyboard = {
         var length = this.state.fields.length;
         for (var i = 0; i < length; i++) {
             var field = this.state.fields[i];
-            var value = $(".keyboard-numberbox").eq(i).html();
+            var value = parseFloat($(".keyboard-numberbox").eq(i).html());
+            if(field.max !== undefined && value > field.max){value = field.max}
+            if(field.min !== undefined && value < field.min){value = field.min}
             if (value === "" || value === "-") { value = 0; }
-            parameters[field.prop] = parseFloat(value);
-
+            parameters[field.prop] = value;
+            $(field.dataTarget).html(value); 
         }
-        this.state.callback(parameters,this.state);
+        this.state.callback(parameters);
         if (this.state.close) { this.close(); }
     },
     eventHandler: function (selector, e, action) {
