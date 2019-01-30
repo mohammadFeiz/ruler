@@ -58,7 +58,7 @@ var create = {
         }
         this.preview();
     },
-    mousemove: function (e) {
+    mousemove: function () {
         var coords = app.canvas.getSnapedCoords(), lastPoint = this.object.getLastPoint();
         lastPoint.x = coords.x; lastPoint.y = coords.y;
         this.preview();
@@ -80,6 +80,7 @@ var create = {
         this.save();
         app.redraw();
         undo.save();
+        this.drawing = false;
     },
     preview: function () {
         app.redraw();
@@ -108,7 +109,14 @@ var create = {
         control.coords = { x: lastPoint.x, y: lastPoint.y };
         createControl.open(control);
     },
-    drawcontrolremove: function () { this.object.state.points.pop(); screenCorrection.run(app.canvas.canvasToClient(this.object.getLastPoint()), function () { create.preview(); }); },
+    drawcontrolremove: function () { 
+        this.object.state.points.pop(); 
+        var lastPoint = this.object.getLastPoint();
+        if(!lastPoint){this.end(); return;}
+        screenCorrection.run(app.canvas.canvasToClient(lastPoint), function () { 
+            create.preview(); 
+        }); 
+    },
     drawcontrolclose: function () { this.object.close(); this.end(); },
     drawcontroljoin: function () { this.object.join(); this.end(); },
     drawcontrolmove: function (e) {

@@ -24,14 +24,24 @@
             gridLineColor: s.gridLineColor,
             onmousedown: this.canvasmousedown.bind(this),
         });
-        components.init({ style: app.style });
+        app.eventHandler("window","mousedown",app.windowMouseDown);
+        app.eventHandler("window","mousemove",app.windowMouseMove);
+        app.eventHandler("window","mouseup",app.windowMouseUp);
         display.render();
     },
 
     canvasmousedown: function (e) {
         window[this.state.appmode].mousedown(e);
     },
-    getClient: function (e) { return { x: e.clientX === undefined ? e.changedTouches[0].clientX : e.clientX, y: e.clientY === undefined ? e.changedTouches[0].clientY : e.clientY }; },
+    getMousePosition:function(e){
+        return { 
+            x: e.clientX === undefined ? e.changedTouches[0].clientX : e.clientX, 
+            y: e.clientY === undefined ? e.changedTouches[0].clientY : e.clientY 
+        };
+    },
+    getClient: function (e) { 
+         return this.getMousePosition(e);
+    },
     eventHandler: function (selector, e, action) {
         var mobileEvents = { down: "touchstart", move: "tocuhmove", up: "tocuhend" };
         var element = typeof selector === "string" ? (selector === "window" ? $(window) : $(selector)) : selector;
@@ -239,22 +249,19 @@
     },
 
     windowMouseDown: function (e) {
-        app.x = app.getClient(e, "X");
-        app.y = app.getClient(e, "Y");
-        app.eventHandler("window", "mousemove", app.windowMouseMove);
-        app.eventHandler("window", "mouseup", app.windowMouseUp);
-
-
+        var mousePosition = app.getMousePosition(e);
+        app.x = mousePosition.x;
+        app.y = mousePosition.y;
     },
     windowMouseMove: function (e) {
-        app.x = app.getClient(e, "X");
-        app.y = app.getClient(e, "Y");
+        var mousePosition = app.getMousePosition(e);
+        app.x = mousePosition.x;
+        app.y = mousePosition.y;
     },
     windowMouseUp: function (e) {
-        clearInterval(create.autoPanInterval);
-        app.eventRemover("window", "mousemove", app.windowMouseMove);
-        app.eventRemover("window", "mouseup", app.windowMouseUp);
-
+        var mousePosition = app.getMousePosition(e);
+        app.x = mousePosition.x;
+        app.y = mousePosition.y;
     },
     zoom: function (zoom) {
 
@@ -289,8 +296,6 @@
 }
 
 var components = {
-    state: {},
-    init: function (obj) { for (var prop in obj) { this.state[prop] = obj[prop]; } },
     items: [],
     findItem: function (id) { for (var i = 0; i < this.items.length; i++) { if (this.items[i].id === id) { return this.items[i]; } } },
     add: function (item) {
