@@ -19,7 +19,7 @@ var undo = {
         console.log("save");
     },
     load: function () {
-        create.end();
+        if(create.drawing){create.drawcontrolremove(); return;}
         edit.end();
         if (undo.model.length < 2) { return false; }
         undo.model.pop();

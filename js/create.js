@@ -25,7 +25,13 @@
             var points = this.state.points, lines = this.getLines(), firstLine = lines[0], lastLine = lines[lines.length - 1], meet = Lines.getMeet(lastLine, firstLine);
             points[0].x = points[points.length - 1].x = meet.x; points[0].y = points[points.length - 1].y = meet.y;
         },
-        getLastPoint: function () { return this.state.points[this.state.points.length - 1]; },
+        getLastPoint: function () { 
+            return this.state.points[this.state.points.length - 1]; 
+        },
+        setLastPoint: function (coords) { 
+            var lastPoint = this.getLastPoint();
+            lastPoint.x = coords.x; lastPoint.y = coords.y;
+        },
         to: function (obj) { this.addPoint(obj); }
     };
     a.init(config);
@@ -40,8 +46,8 @@ var create = {
     autoWeldArea: 15,
     getAutoWeldCoords:function(coords){
         var point = app.getPoint({ coords: coords, area: this.autoWeldArea });
-        if (point) { coords = { x: point.x, y: point.y }; }
-        return coords;
+        if (point) { return { x: point.x, y: point.y }; }
+        else { return app.canvas.getSnapedCoords(coords); }
     },
     mousedown: function (e) {
         app.eventHandler("window", "mousemove", $.proxy(this.mousemove, this));
@@ -56,13 +62,18 @@ var create = {
             this.object.addPoint(coords);
             if (close) { this.firstPoint = true; createControl.close(); }
         }
+        var lastPoint = this.object.getLastPoint();
+        this.startOffset = { deltaX: lastPoint.x - coords.x, deltaY: lastPoint.y - coords.y};
         this.preview();
     },
     mousemove: function () {
-        var coords = app.canvas.getSnapedCoords(), lastPoint = this.object.getLastPoint();
-        lastPoint.x = coords.x; lastPoint.y = coords.y;
+        var client = app.getClient(), so = this.startOffset;
+        var coords = app.canvas.clientToCanvas(client);
+        coords = {x:coords.x + so.deltaX,y:coords.y + so.deltaY};
+        coords = app.canvas.getSnapedCoords(coords);
+        this.object.setLastPoint(coords);
         this.preview();
-        autoPan.run(app.canvas.canvasToClient(lastPoint), this.mousemove.bind(this));
+        autoPan.run(client, this.mousemove.bind(this));
     },
     mouseup: function (e) {
         app.eventRemover("window", "mousemove", this.mousemove);
@@ -70,7 +81,7 @@ var create = {
         if (this.firstPoint) { this.end(); }
         var lastPoint = this.object.getLastPoint();
         var coords = this.getAutoWeldCoords(lastPoint);
-        lastPoint.x = coords.x; lastPoint.y = coords.y;
+        this.object.setLastPoint(coords);
         screenCorrection.run(app.canvas.canvasToClient(lastPoint), function () { create.preview(); });
     },
     end: function () {
@@ -86,26 +97,27 @@ var create = {
         app.redraw();
         if (this.drawing) {
             var points = this.object.getPoints(), lines = this.object.getLines();
-            for (var i = 0; i < points.length; i++) { app.drawPoint(points[i]); }
+            for (var i = 0; i < points.length; i++) {  app.drawPoint(points[i]); }
             for (var i = 0; i < lines.length; i++) { app.drawLine($.extend({}, lines[i], { showDimension: i === lines.length - 1 })); }
             this.drawLastPoint();
             this.drawController();
         }
     },
     drawLastPoint: function () {
-        var point = this.object.state.points[this.object.state.points.length - 1];
-        app.canvas.drawArc({ x: point.x, y: point.y, radius: 3, fill: "orange" });
-        app.canvas.drawArc({ x: point.x, y: point.y, radius: 6, stroke: "orange" });
+        var lastPoint = this.object.getLastPoint();
+        app.canvas.drawArc({ x: lastPoint.x, y: lastPoint.y, radius: 3, fill: "orange" });
+        app.canvas.drawArc({ x: lastPoint.x, y: lastPoint.y, radius: 6, stroke: "orange" });
     },
     drawController: function () {
         if (this.firstPoint === true) { return;}
-        var o = this.object, points = o.getPoints(), lines = o.getLines(), lastPoint = points[points.length - 1];
+        var o = this.object, points = o.getPoints(), lines = o.getLines();
         var control = { end: true, keyboard: true, move: true, pan: true };
         if (o.getMode() === "polyline") {
             control.close = points.length > 2;
             control.join = lines.length > 2 && Lines.getMeet(lines[0], lines[lines.length - 1]) !== false;
             control.remove = points.length > 1;
         }
+        var lastPoint = o.getLastPoint()
         control.coords = { x: lastPoint.x, y: lastPoint.y };
         createControl.open(control);
     },
@@ -120,26 +132,16 @@ var create = {
     drawcontrolclose: function () { this.object.close(); this.end(); },
     drawcontroljoin: function () { this.object.join(); this.end(); },
     drawcontrolmove: function (e) {
-        app.eventHandler("window", "mousemove", this.movemousemove.bind(this));
-        app.eventHandler("window", "mouseup", this.movemouseup);
-        var lastPoint = this.object.getLastPoint(), client = app.getClient(e);
-        this.startOffset = { x: client.x, y: client.y, endX: lastPoint.x, endY: lastPoint.y };
-    },
-    movemousemove: function (e) {
-        var lastPoint = this.object.getLastPoint(), client = app.getClient(e), so = this.startOffset, zoom = app.canvas.getZoom();
-        var coords = app.canvas.getSnapedCoords({ x: (client.x - so.x) / zoom + so.endX, y: (client.y - so.y) / zoom + so.endY });
-        if (lastPoint) { lastPoint.x = coords.x; lastPoint.y = coords.y; }
-        this.preview();
-    },
-    movemouseup: function () {
-        app.eventRemover("window", "mousemove", this.movemousemove);
-        app.eventRemover("window", "mouseup", this.movemouseup);
-        screenCorrection.run(app.canvas.canvasToClient(create.object.getLastPoint()), function () { create.preview(); });
+        app.eventHandler("window", "mousemove", $.proxy(this.mousemove,this));
+        app.eventHandler("window", "mouseup", $.proxy(this.mouseup,this));
+        var lastPoint = this.object.getLastPoint();
+        var coords = app.canvas.clientToCanvas(app.getClient());
+        this.startOffset = { deltaX: lastPoint.x - coords.x, deltaY: lastPoint.y - coords.y};
     },
     drawcontrolend: function () { this.end(); },
     drawcontrolpan: function (e) {
-        app.eventHandler("window", "mousemove", this.panmousemove.bind(this));
-        app.eventHandler("window", "mouseup", this.panmouseup);
+        app.eventHandler("window", "mousemove", $.proxy(this.panmousemove,this));
+        app.eventHandler("window", "mouseup", $.proxy(this.panmouseup,this));
         var screenPosition = app.canvas.getScreenPosition();
         var client = app.getClient(e);
         this.startOffset = { x: client.x, y: client.y, endX: screenPosition.x, endY: screenPosition.y };
@@ -226,7 +228,6 @@ var create = {
             return points;
         }
     },
-    settingInstance: null,
     setting: function () {
         var template = [
             {
@@ -258,9 +259,8 @@ var create = {
 
 var autoPan = {
     moving: false,
-    margin: { left: 40, top: 40, right: 40, bottom: 40 },
+    margin: { left: 40, top: 80, right: 40, bottom: 40 },
     run: function (coords, callback) {
-
         var c = app.canvas;
         if (this.moving || !c.getIsDown()) { return; }
         var speed = 2, x = coords.x, y = coords.y, m = this.margin;
@@ -281,7 +281,7 @@ var autoPan = {
 
 var screenCorrection = {
     margin: { left: 80 + 0, top: 80 + 36, right: 80 + 0, bottom: 80 + 0 },//80 is createControl.style.distance
-    run: function (coords, callback) {
+    run: function (coords, callback,endCallback) {
         var c = app.canvas;
         var speed = 2, x = coords.x, y = coords.y, m = this.margin, width = c.getWidth(), height = c.getHeight();
         if (x > width - m.right) { var deltaX = x - width + m.right; }

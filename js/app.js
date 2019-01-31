@@ -34,13 +34,14 @@
         window[this.state.appmode].mousedown(e);
     },
     getMousePosition:function(e){
-        return { 
+        var obj = { 
             x: e.clientX === undefined ? e.changedTouches[0].clientX : e.clientX, 
             y: e.clientY === undefined ? e.changedTouches[0].clientY : e.clientY 
         };
+        return obj; 
     },
     getClient: function (e) { 
-         return this.getMousePosition(e);
+         return {x:app.x,y:app.y};
     },
     eventHandler: function (selector, e, action) {
         var mobileEvents = { down: "touchstart", move: "tocuhmove", up: "tocuhend" };
