@@ -1,5 +1,40 @@
 ﻿var edit = {
     selectRect: { start: null, end: null },
+    pan:false,
+    dblclick: function (e) {
+        $("body").append(
+            '<div class="pan-background"><p>Pan mode is active!!!<br>Drag to pan screen<br>double tap for deactive pan mode</p></div>'
+        );
+        app.eventHandler(".pan-background", "dblclick", $.proxy(this.panremove,this));
+        app.eventHandler(".pan-background", "mousedown", $.proxy(this.panmousedown,this));
+        
+    },
+    panremove:function(){
+        $(".pan-background").remove();
+    },
+    panmousedown:function(){
+        app.eventHandler("window", "mousemove", $.proxy(this.panmousemove,this));
+        app.eventHandler("window", "mouseup", $.proxy(this.panmouseup,this));
+        var screenPosition = app.canvas.getScreenPosition();
+        var client = app.getClient();
+        this.startOffset = { 
+            x: client.x, y: client.y, 
+            endX: screenPosition.x, endY: screenPosition.y 
+        };
+    },
+    panmousemove: function (e) {
+        var so = this.startOffset, zoom = app.canvas.getZoom(), coords = app.getClient();
+        var x = (so.x - coords.x) / zoom + so.endX, y = (coords.y - so.y) / zoom + so.endY;
+        app.canvas.setScreenTo({ x: x, y: y, callback: function(){
+            app.redraw();
+            var axisPosition = axis.getPosition();
+            if(axisPosition){axis.setPosition(axisPosition);}
+        } });
+    },
+    panmouseup: function () {
+        app.eventRemover("window", "mousemove", this.panmousemove);
+        app.eventRemover("window", "mouseup", this.panmouseup);
+    },
     mousedown: function (e) {
         app.eventHandler("window", "mousemove", $.proxy(this.mousemove, this));
         app.eventHandler("window", "mouseup", $.proxy(this.mouseup, this));
@@ -590,6 +625,10 @@
                 }
                 edit.modify.rotateNumber = parseInt($("#axis-angle").html());
                 This.isTransformed = false;
+                screenCorrection.run(app.canvas.canvasToClient(axis.getPosition()), function () { 
+                 app.redraw();
+                 axis.setPosition(axis.getPosition());
+            }); 
             }
         },
         axisButton:function(e){
@@ -637,6 +676,11 @@
             if (point) {
                 axis.setPosition({x:point.x, y:point.y});
             }
+            var axisPosition = axis.getPosition();
+            screenCorrection.run(app.canvas.canvasToClient(axisPosition), function () { 
+                 app.redraw();
+                 axis.setPosition(axis.getPosition());
+            }); 
         },
         move: function (offset) {        
             if (Lines.getLength({start:{x:0,y:0},end:{x:offset.x,y:offset.y}}) < 5) { return false; }
@@ -692,10 +736,12 @@
             This.isTransformed = true;
         },
         transformTo: function (obj) {
+            var axisPosition = axis.getPosition();
             edit.modify.startOffset = {
-                axisX: edit.modify.axisPos.x,
-                axisY: edit.modify.axisPos.y,
+                axisX: axisPosition.x,
+                axisY: axisPosition.y,
             };
+            edit.modify.updateModel();
             edit.modify.move({ x: obj.x, y: obj.y });
             edit.modify.updateModel();
             edit.modify.rotate(obj.angle);

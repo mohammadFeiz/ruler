@@ -22,6 +22,7 @@ function Canvas(config) {
                 });
             }
             this.eventHandler(container, "mousedown", this.mousedown.bind(this));
+            this.eventHandler(container, "dblclick", this.dblclick.bind(this));
             this.eventHandler("window", "mousedown", this.windowmosedown.bind(this));
             this.setScreen(s.screenPosition);
         },
@@ -230,6 +231,9 @@ function Canvas(config) {
         },
         windowmosedown:function(){
             this.isDown = true;
+        },
+        dblclick:function(e){
+            if (this.state.ondblclick) { this.state.ondblclick(e); }
         },
         mousedown: function (e) {
             this.eventHandler("window", "mousemove", this.mousemove);

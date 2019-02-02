@@ -49,6 +49,9 @@ var create = {
         if (point) { return { x: point.x, y: point.y }; }
         else { return app.canvas.getSnapedCoords(coords); }
     },
+    dblclick:function(){
+
+    },
     mousedown: function () {
         app.eventHandler("window", "mousemove", $.proxy(this.mousemove, this));
         app.eventHandler("window", "mouseup", $.proxy(this.mouseup, this));
@@ -65,7 +68,7 @@ var create = {
         }
         var lastPoint = this.object.getLastPoint();
         this.startOffset = { deltaX: lastPoint.x - coords.x, deltaY: lastPoint.y - coords.y};
-        this.preview();
+        setTimeout(function(){create.preview()},300);
     },
     mousemove: function () {
         var client = app.getClient(), so = this.startOffset;
@@ -76,14 +79,16 @@ var create = {
         this.preview();
         autoPan.run(client, this.mousemove.bind(this));
     },
-    mouseup: function (e) {
+    mouseup: function () {
         app.eventRemover("window", "mousemove", this.mousemove);
         app.eventRemover("window", "mouseup", this.mouseup);
         var lastPoint = this.object.getLastPoint();
         var coords = this.getAutoWeldCoords(lastPoint);
         this.object.setLastPoint(coords);
         if (this.firstPoint) { this.end(); } // in close mode objects
+        setTimeout(function(){
         screenCorrection.run(app.canvas.canvasToClient(lastPoint), function () { create.preview(); });
+        },300);
     },
     end: function () {
         if (this.drawing === false) { return;} // drawing = false is mean that current drawing is saved
@@ -109,7 +114,7 @@ var create = {
     },
     drawController: function () {
         var o = this.object, points = o.getPoints(), lines = o.getLines();
-        var control = { end: true, keyboard: true, move: true, pan: true };
+        var control = { end: true, keyboard: true, move: true };
         if (o.getMode() === "polyline") {
             control.close = points.length > 2;
             control.join = lines.length > 2 && Lines.getMeet(lines[0], lines[lines.length - 1]) !== false;
@@ -137,13 +142,42 @@ var create = {
         this.startOffset = { deltaX: lastPoint.x - coords.x, deltaY: lastPoint.y - coords.y};
     },
     drawcontrolend: function () { this.end(); },
-    drawcontrolpan: function (e) {
+    dblclick: function (e) {
+        this.drawcontrolremove();
+        this.drawcontrolremove();
+        $("body").append(
+            '<div class="pan-background"><p>Pan mode is active!!!<br>Drag to pan screen<br>double tap for deactive pan mode</p></div>'
+        );
+        app.eventHandler(".pan-background", "dblclick", $.proxy(this.panremove,this));
+        app.eventHandler(".pan-background", "mousedown", $.proxy(this.panmousedown,this));
+        
+    },
+    panremove:function(){
+        $(".pan-background").remove();
+    },
+    panmousedown:function(){
         app.eventHandler("window", "mousemove", $.proxy(this.panmousemove,this));
         app.eventHandler("window", "mouseup", $.proxy(this.panmouseup,this));
         var screenPosition = app.canvas.getScreenPosition();
-        var client = app.getClient(e);
-        this.startOffset = { x: client.x, y: client.y, endX: screenPosition.x, endY: screenPosition.y };
+        var client = app.getClient();
+        this.startOffset = { 
+            x: client.x, y: client.y, 
+            endX: screenPosition.x, endY: screenPosition.y 
+        };
     },
+    panmousemove: function (e) {
+        var so = this.startOffset, zoom = app.canvas.getZoom(), coords = app.getClient();
+        var x = (so.x - coords.x) / zoom + so.endX, y = (coords.y - so.y) / zoom + so.endY;
+        app.canvas.setScreenTo({ x: x, y: y, callback: function(){
+            app.redraw();
+            
+        } });
+    },
+    panmouseup: function () {
+        app.eventRemover("window", "mousemove", this.panmousemove);
+        app.eventRemover("window", "mouseup", this.panmouseup);
+    },
+    
     panmousemove: function (e) {
         var so = this.startOffset, zoom = app.canvas.getZoom(), coords = app.getClient(e);
         var x = (so.x - coords.x) / zoom + so.endX, y = (coords.y - so.y) / zoom + so.endY;
@@ -278,15 +312,16 @@ var autoPan = {
 
 
 var screenCorrection = {
-    margin: { left: 80 + 0, top: 80 + 36, right: 80 + 0, bottom: 80 + 0 },//80 is createControl.style.distance
+    margin: { left: 80 + 0, top: 80, right: 80 + 0, bottom: 80 + 0 },//80 is createControl.style.distance
     run: function (coords, callback,endCallback) {
         var c = app.canvas;
         var speed = 2, x = coords.x, y = coords.y, m = this.margin, width = c.getWidth(), height = c.getHeight();
+        var top = m.top + (app.state.appmode === "create"?36:72);
         if (x > width - m.right) { var deltaX = x - width + m.right; }
         else if (x < m.left) { var deltaX = x - m.left; }
         else { var deltaX = 0; }
         if (y > height - m.bottom) { var deltaY = y - height + m.bottom; }
-        else if (y < m.top) { var deltaY = y - m.top; }
+        else if (y < top) { var deltaY = y - top; }
         else { var deltaY = 0; }
         c.setScreenBy({ x: deltaX, y: deltaY * -1, animate: true, callback: callback });
     }

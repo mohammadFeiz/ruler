@@ -23,6 +23,7 @@
             background: s.background,
             gridLineColor: s.gridLineColor,
             onmousedown: this.canvasmousedown.bind(this),
+            ondblclick:this.canvasdblclick.bind(this),
         });
         app.eventHandler("window","mousedown",app.windowMouseDown);
         app.eventHandler("window","mousemove",app.windowMouseMove);
@@ -32,6 +33,9 @@
 
     canvasmousedown: function (e) {
         window[this.state.appmode].mousedown(e);
+    },
+    canvasdblclick: function (e) {
+        window[this.state.appmode].dblclick(e);
     },
     getMousePosition:function(e){
         var obj = { 

@@ -238,8 +238,7 @@ body {
  width:216px;
  left:calc(50% - 108px);
  top:50px;
- opacity:0.9;
- background:#3e4146;
+ 
  box-shadow:4px 4px 10px 0px rgba(0,0,0,0.6);
 }
 
@@ -250,6 +249,8 @@ body {
  position:relative;
  width:100%;
  float:left;
+ opacity:0.2;
+ background:#3e4146;
 }
 .keyboard-field {
  position: relative;
@@ -266,6 +267,8 @@ body {
     margin:12px 0 0 0;
 }
 #keyboard-footer {
+    opacity:0.2;
+ background:#3e4146;
  z-index:10;
  position: relative;
  width:100%;
@@ -450,4 +453,29 @@ body {
 }
 .full-keyboard-key.full-keyboard-space {
  width:calc(15% - 25px);
+}
+.pan-background{
+    position: fixed;
+    background:black;
+    width:100%;
+    height:100%;
+    left:0;
+    top:0;
+    z-index: 100000000;
+    opacity:.5;
+    color:#fff;
+    font-size: 11px;
+}
+.pan-background p{
+    opacity:1;
+    text-align: center;
+    background:#111;
+    width:200px;
+    height:100px;
+    position: absolute;
+    left:calc(50% - 100px);
+    top:calc(80% - 50px);
+    padding:16px;
+    box-sizing:border-box;
+    line-height:20px
 }
