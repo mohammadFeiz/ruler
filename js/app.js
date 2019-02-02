@@ -449,7 +449,7 @@ var display = {
                     case 'ngon': return 'NGon';
                 }
             },
-            callback: function (value) { create.end(); app.state.createmode = value; display.render(); },
+            callback: function (value) { app.state.createmode = value; create.end();  display.render(); },
             show: function () { return app.state.appmode === "create"; },
         },
         {
@@ -469,14 +469,16 @@ var display = {
                     case 'divideLine': return 'Divide Line';
                 }
             },
-            callback: function (value) { app.state.editmode = value; display.render(); },
+            callback: function (value) { app.state.editmode = value; edit.end();},
             show: function () { return app.state.appmode === "edit"; },
         },
         {
             component: "Dropdown", id: "select-mode", className: "dropdown", container: "#top-menu",
             text: function () { return edit.modify.selectMode },
             options: [{ text: "Point", value: "Point" }, { text: "Line", value: "Line" }, { text: "Spline", value: "Spline" }],
-            callback: function (value) { edit.modify.selectMode = value; edit.modify.reset(); display.render(); },
+            callback: function (value) { 
+                edit.modify.selectMode = value; edit.end(); 
+            },
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
         },
         { id: "layer", component: "Button", iconClass: "mdi mdi-buffer", className: "icon", container: "#top-menu", callback:function() { create.end(); edit.end(); layers.open() }},
@@ -488,10 +490,12 @@ var display = {
         {
             id: "delete-item", component: "Button", iconClass: "mdi mdi-delete", className: "icon", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
+            callback:function(){edit.modify.remove();}
         },
         {
             id: "select-all", component: "Button", iconClass: "mdi mdi-select-all", className: "icon", container: "#sub-menu",
             show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
+            callback:function(){edit.modify.selectAll();}
         },
         {
             id: "mirror-x", component: "Button", iconClass: "mdi mdi-unfold-more-horizontal", className: "icon", container: "#sub-menu",
@@ -541,7 +545,6 @@ var display = {
 
     ],
     render: function () {
-        console.log("ok");
         var str = '';
         for (var i = 0; i < this.containers.length; i++) {
             var container = this.containers[i];

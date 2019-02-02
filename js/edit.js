@@ -16,6 +16,7 @@
         Lines.deselectAll();
         if (edit[app.state.editmode].reset !== undefined) { edit[app.state.editmode].reset(); }
         app.redraw();
+        display.render();
     },
     setting: function () {
         edit[app.state.editmode].setting();
@@ -27,17 +28,20 @@
         app.canvas.drawRectangle({ x: sr.start.x, y: sr.start.y, width: width, height: height, fill: "rgba(136,144,148,0.5)" });
     },
     selectBySelectRect: function (mode) {
-        var success = false;
         var s = this.selectRect, sX = s.start.x, sY = s.start.y, eX = s.end.x, eY = s.end.y;
+        if (Lines.getLength(s) < 5) {return false;}
         if (sX > eX) { var help = sX; sX = eX; eX = help; }
         if (sY > eY) { var help = sY; sY = eY; eY = help; }
         var layer = layers.getActive();
+        var selectedList = [];
         if (mode === "Point") {
             var points = app.state.points, length = points.length;
             for (var i = 0; i < length; i++) {
                 var point = points[i];
                 if (point.layerId !== layer.id) { continue; }
-                if (point.x <= eX && point.x >= sX && point.y <= eY && point.y >= sY) { Points.select(point); success = true;}
+                if (point.x <= eX && point.x >= sX && point.y <= eY && point.y >= sY) { 
+                    Points.select(point); selectedList.push(point);
+                }
             }
         } else {
             var lines = app.state.lines, length = lines.length;
@@ -51,18 +55,35 @@
                 if (Lines.haveInnerMeet(left, line) || Lines.haveInnerMeet(right, line) ||
                     Lines.haveInnerMeet(top, line) || Lines.haveInnerMeet(bottom, line)) {
                     (mode === "Line") ? Lines.select(line) : Lines.selectSpline(line);
-                    success = true;
+                    selectedList.push(line);
                     continue;
                 }
                 if (line.start.x >= sX && line.start.x <= eX && line.end.x >= sX && line.end.x <= eX &&
                     line.start.y >= sY && line.start.y <= eY && line.end.y >= sY && line.end.y <= eY) {
                     (mode === "Line") ? Lines.select(line) : Lines.selectSpline(line);
-                    success = true;
+                    selectedList.push(line);
                     continue;
                 }
             }
         }
-        return success;
+        if(selectedList.length === 0){ return false;}
+        else if(mode === "Point"){return Points.getCenterOfList(selectedList)}
+        else{return Lines.getCenterOfList(selectedList)}
+    },
+    selectByClick:function(mode){
+        if (mode === "Point") {
+            var point = app.getPoint();
+            if (point) { Points.select(point); return point; }
+        }
+        else {
+            var line = app.getLine();
+            if (line) {
+                if (mode === "Line") { Lines.select(line); } 
+                else { Lines.selectSpline(line); }
+                return Lines.getCenterOfList([line]);
+            }
+        }
+        return false;
     },
     drawPoint: function (x, y) {
         var size = 3 / app.canvas.getZoom();
@@ -320,12 +341,10 @@
         lines: [],
         copyModel: [],
         autoWeldArea: 15,
-        axisSnapArea: 10,
+        axisSnapArea: 15,
         selectAll: function () {
-            Lines.deselectAll();
-            Points.deselectAll();
             var layer = layers.getActive();
-            if (edit.modify.selectMode === "point") {
+            if (edit.modify.selectMode === "Point") {
                 for (var i = 0; i < app.state.points.length; i++) {
                     var point = app.state.points[i];
                     if (layer.id === point.layerId) {
@@ -342,25 +361,22 @@
                 }
             }
             app.redraw();
+            display.render();
         },
         remove: function () {
-            if (edit.modify.selectMode === "point") {
+            if (edit.modify.selectMode === "Point") {
                 for (var i = 0; i < Points.selected.length; i++) {
                     var point = Points.selected[i];
                     Points.remove(point, true);
                 }
-                Points.deselectAll();
             }
             else {
                 for (var i = 0; i < Lines.selected.length; i++) {
                     var line = Lines.selected[i];
                     Lines.remove(line, true);
                 }
-                Lines.deselectAll();
             }
-            axis.close();
-            //undo.save();
-            app.redraw();
+            edit.end();
         },
         mirrorX: function () { edit.modify.mirror("x"); },
         mirrorY: function () { edit.modify.mirror("y"); },
@@ -388,7 +404,6 @@
                 }
             }
             app.redraw();
-            //undo.save();
         },
         weldPointApprove: function () {
             for (var i = 0; i < Points.selected.length; i++) {
@@ -428,11 +443,7 @@
                     return;
                 }
             }
-            if (Points.selected[0]) { axis.setPosition(Points.selected[0]); }
-            else { axis.close(); }
-            undo.save();
-            app.redraw();
-            display.render();
+            edit.end();
         },
         breakPointApprove: function () {
             for (var i = 0; i < Points.selected.length; i++) {
@@ -455,11 +466,7 @@
                 }
                 Points.deselect(selected.id);
             }
-            Points.deselectAll();
-            axis.close();
-            undo.save();
-            app.redraw();
-            display.render();
+            edit.end();
         },
         connectPointsApprove: function () {
             if (Points.selected.length !== 2) { return false; }
@@ -468,33 +475,27 @@
         },
         connectPoints: function () {
             Points.connect(Points.selected[0], Points.selected[1]);
-            Points.deselectAll();
-            undo.save();
-            app.redraw();
-            display.render();
+            edit.end();
         },
         divide: function (obj) {
+            if(obj.value < 2){return;}
             Lines.divide(Lines.selected[0], obj.value);
-            Lines.deselectAll();
-            undo.save();
-            app.redraw();
-            display.render();
+            edit.end();
         },
         joinLines: function () {
             Lines.join(Lines.selected[0], Lines.selected[1]);
             Lines.deselectAll();
-            undo.save();
-            app.redraw();
-            display.render();
+            edit.end();
         },
         updateModel: function () {
+            var axisPos = axis.getPosition();
+            if(!axisPos){return;}
             if (edit.modify.selectMode === "Point") {
                 this.points = Points.selected;
             } else {
                 this.points = Lines.getPointsOfList(Lines.selected);
             }
             this.pointsState = [];
-            var axisPos = axis.getPosition();
             var length = this.points.length;
             for (var i = 0; i < length; i++) {
                 var point = this.points[i];
@@ -510,15 +511,14 @@
                 });
             }
         },
-        reset: function () {
-            axis.close();
-        },
         mousedown: function (e) {
             var This = edit.modify;
             var coords = app.canvas.getMousePosition();
             var axisPos = axis.getPosition() || {x:undefined,y:undefined};
-            edit.selectRect = { start: { x: coords.x, y: coords.y }, end: { x: coords.x, y: coords.y }};
-            var client = app.getClient(e);
+            edit.selectRect = { 
+                start: { x: coords.x, y: coords.y }, end: { x: coords.x, y: coords.y }
+            };
+            var client = app.getClient();
             This.updateModel();
             This.startOffset = { x: client.x, y: client.y, axisX: axisPos.x, axisY: axisPos.y };
         },
@@ -542,32 +542,15 @@
             }
         },
         mouseup: function (e) {
-            var sr = edit.selectRect, This = edit.modify;
+            var This = edit.modify;
             if (axis.mode === "none") {
-                if (Lines.getLength(sr) >= 5) {
-                    if (edit.selectBySelectRect(This.selectMode)) {axis.setPosition("center");}
-                }
-                else {
-                    if (This.selectMode === "Point") {
-                        var point = app.getPoint();
-                        if (point) { Points.select(point); axis.setPosition(point); }
-                        else { Points.deselectAll(); axis.close(); }
-                    }
-                    else {
-                        var line = app.getLine();
-                        if (line) {
-                            if (This.selectMode === "Line") { Lines.select(line); } else { Lines.selectSpline(line); }
-                            axis.setPosition(app.canvas.get.line.center(line));
-                        }
-                        else { Lines.deselectAll(); axis.close(); }
-                    }
-                }
+                var position = edit.selectBySelectRect(This.selectMode) || edit.selectByClick(This.selectMode);
+                if(position){axis.setPosition(position); app.redraw(); display.render();}
+                else{edit.end();}
+                return;
             }
-            else {
-                if (Lines.getLength(sr) < 5) {
-                    return;
-                }
-                if (edit.modify.copyMode && edit.modify.selectMode !== "Point") {
+            if(This.isTransformed){
+                if(This.copyMode){
                     Lines.deselectAll();
                     for (var i = 0; i < edit.modify.lines.length; i++) {
                         var line = edit.modify.lines[i];
@@ -587,12 +570,9 @@
                         });
                         Lines.select(addedLine);
                     }
+                    app.redraw();
                 }
-                else {
-                    if (edit.modify.isTransformed) {
-                        edit.modify.isTransformed = false;
-                        edit.modify.rotateNumber = parseInt($("#axis-angle").html());
-                    }
+                else{
                     if (Points.selected.length === 1) {
                         var selected = Points.selected[0];
                         var connectedPoints = Points.getConnectedPoints(selected);
@@ -600,17 +580,17 @@
                         for (var i = 0; i < connectedPoints.length; i++) {
                             forbidenIds.push(connectedPoints[i].id);
                         }
-                        var point = app.getPoint({ area: edit.modify.autoWeldArea, coords: Points.selected[0], isnt: { id: forbidenIds } });
+                        var point = app.getPoint({ area: edit.modify.autoWeldArea, coords: selected, isnt: { id: forbidenIds } });
                         if (point) {
-                            Points.moveTo(Points.selected[0], point.x, point.y);
+                            Points.moveTo(selected, point.x, point.y);
                             axis.setPosition(point);
                         }
+                        app.redraw();
                     }
                 }
-                undo.save();
+                edit.modify.rotateNumber = parseInt($("#axis-angle").html());
+                This.isTransformed = false;
             }
-            app.redraw();
-            display.render();
         },
         axisButton:function(e){
             var This = edit.modify;
@@ -659,54 +639,57 @@
             }
         },
         move: function (offset) {        
-            if (offset.x === 0 && offset.y === 0) { return; }
-            var so = edit.modify.startOffset;
+            if (Lines.getLength({start:{x:0,y:0},end:{x:offset.x,y:offset.y}}) < 5) { return false; }
+            var This = edit.modify;
+            var so = This.startOffset;
             axis.setPosition({ x: so.axisX + offset.x, y: so.axisY + offset.y }); // Move Axis
-            if (this.copyMode && edit.modify.selectMode !== "point") {
+            if (this.copyMode && This.selectMode !== "Point") {
                 app.redraw();
                 this.lines = [];
-                var length = edit.modify.linesState.length;
+                var length = This.linesState.length;
                 for (var k = 0; k < length; k++) {
-                    var lineState = edit.modify.linesState[k];
+                    var lineState = This.linesState[k];
                     var movedStart = { x: lineState.start.x + offset.x, y: lineState.start.y + offset.y };
                     var movedEnd = { x: lineState.end.x + offset.x, y: lineState.end.y + offset.y };
                     this.lines.push({ start: movedStart, end: movedEnd });
                     app.drawLine({ start: movedStart, end: movedEnd, color: "yellow", showDimension: true });
                 }
             } else {
-                var length = edit.modify.points.length;
+                var length = This.points.length;
                 for (var k = 0; k < length; k++) {
-                    var point = edit.modify.points[k];
-                    Points.moveTo(point, edit.modify.pointsState[k].x + offset.x, edit.modify.pointsState[k].y + offset.y);
+                    var point = This.points[k];
+                    Points.moveTo(point, This.pointsState[k].x + offset.x, This.pointsState[k].y + offset.y);
                 }
                 app.redraw();
             }
-            edit.modify.isTransformed = true;
+            This.isTransformed = true;
         },
         rotate: function (offset) {
-            $("#axis-angle").html((edit.modify.rotateNumber + offset) + "&deg;");
+            if(!offset){return false;}
+            var This = edit.modify;
+            $("#axis-angle").html((This.rotateNumber + offset) + "&deg;");
             var axisPos = axis.getPosition();
-            if (this.copyMode && edit.modify.selectMode !== "Point") {
+            if (this.copyMode && This.selectMode !== "Point") {
                 app.redraw();
                 this.lines = [];
-                var length = edit.modify.linesState.length;
+                var length = This.linesState.length;
                 for (var k = 0; k < length; k++) {
-                    var lineState = edit.modify.linesState[k];
+                    var lineState = This.linesState[k];
                     var rotatedStart = Points.getCoordsByRotate({ x: lineState.start.x, y: lineState.start.y }, offset + lineState.start.radian, axisPos);
                     var rotatedEnd = Points.getCoordsByRotate({ x: lineState.end.x, y: lineState.end.y }, offset + lineState.end.radian, axisPos);
                     this.lines.push({ start: rotatedStart, end: rotatedEnd });
                     app.drawLine({ start: rotatedStart, end: rotatedEnd, color: "yellow", showDimension: true });
                 }
             } else {
-                var length = edit.modify.points.length;
+                var length = This.points.length;
                 for (var k = 0; k < length; k++) {
-                    var point = edit.modify.points[k];
-                    var pointsState = edit.modify.pointsState[k];
+                    var point = This.points[k];
+                    var pointsState = This.pointsState[k];
                     Points.rotateTo(point, pointsState.radian + offset, axisPos);
                 }
                 app.redraw();
             }
-            edit.modify.isTransformed = true;
+            This.isTransformed = true;
         },
         transformTo: function (obj) {
             edit.modify.startOffset = {
@@ -720,54 +703,24 @@
             //undo.save();
         },
         setting: function () {
-            var A = new Alert({
+            Alert.open({
                 title: "Modify Options",
                 buttons: [{
-                    title: "OK"
+                    text: "OK"
                 }],
                 template: [
                     {
-                        title: "Selection",
-                        value: edit.modify.selectMode,
-                        buttons: [
-                            {
-                                active: (edit.modify.selectMode === "point"),
-                                iconClass: "icon icon-vertex",
-                                value: "Point",
-                                id: "select-mode-point",
-                                subscribe: edit.modify.setSelectMode
-                            },
-                            {
-                                active: (edit.modify.selectMode === "line"),
-                                iconClass: "icon icon-dl",
-                                value: "Line",
-                                id: "select-mode-line",
-                                subscribe: edit.modify.setSelectMode
-                            },
-                            {
-                                active: (edit.modify.selectMode === "spline"),
-                                iconClass: "icon icon-spline",
-                                value: "Spline",
-                                id: "select-mode-spline",
-                                subscribe: edit.modify.setSelectMode
-                            },
-                        ],
-                    },
-                    {
-                        onchange: edit.modify.setAutoWeld,
-                        text: ["ON", "OFF"],
-                        value: edit.modify.autoWeld,
-                        title: "Auto Weld",
+                        type:"slider",
+                        callback: function(value){edit.modify.autoWeldArea = value;},
+                        start:1,end:30,step:1,value: edit.modify.autoWeldArea,title: "Auto Weld",
                     },
 
                 ]
             });
         },
         reset: function () {
-            Points.deselectAll();
-            Lines.deselectAll();
+            this.copyMode = this.selectMode === "Point" ? false : this.copyMode;
             axis.close();
-            app.redraw();
         }
     },
     chamfer: {
@@ -1130,7 +1083,7 @@ var axis = {
         { id: "axis-hide", iconClass: "mdi mdi-cancel", className: "axis-icon-container" },
         { id: "axis-center", iconClass: "mdi mdi-image-filter-center-focus", className: "axis-icon-container" },
         { id: "axis-keyboard", iconClass: "mdi mdi-keyboard", className: "axis-icon-container" },
-        { id: "axis-copy", iconClass: "mdi mdi-content-copy", className: "axis-icon-container toggle", active: function () { return edit.modify.copyMode ? ' active' : '' } },
+        { id: "axis-copy", iconClass: "mdi mdi-content-copy", className: "axis-icon-container toggle", active: function () { return edit.modify.copyMode && edit.modify.selectMode !== "Point" ? ' active' : '' } },
         { id: "axis-move-vertical", iconClass: "mdi mdi-arrow-up-bold", className: "axis-icon-container radio", active: function () { return edit.modify.axisMode === "axis-move-vertical" ? ' active' : '' } },
         { id: "axis-move", iconClass: "mdi mdi-arrow-all", className: "axis-icon-container radio", active: function () { return edit.modify.axisMode === "axis-move" ? ' active' : '' } },
     ],
@@ -1165,6 +1118,7 @@ var axis = {
         axis.mode = "none";
     },
     setPosition: function (obj) {
+        if(!obj){return;}
         if (axis.opened === false) { axis.open(obj); return;}
         var coords;
         if (obj === "center") { coords = edit.modify.selectMode === "Point" ? 

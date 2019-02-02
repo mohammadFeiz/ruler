@@ -42,17 +42,18 @@ var create = {
     drawing: false,
     firstPoint: true,
     ngonSides: 6,
-    ortho: true,
+    ortho: false,
     autoWeldArea: 15,
     getAutoWeldCoords:function(coords){
         var point = app.getPoint({ coords: coords, area: this.autoWeldArea });
         if (point) { return { x: point.x, y: point.y }; }
         else { return app.canvas.getSnapedCoords(coords); }
     },
-    mousedown: function (e) {
+    mousedown: function () {
         app.eventHandler("window", "mousemove", $.proxy(this.mousemove, this));
         app.eventHandler("window", "mouseup", $.proxy(this.mouseup, this));
-        var mode = app.state.createmode, close = ["rectangle", "ngon"].indexOf(mode) !== -1;
+        var mode = app.state.createmode, 
+        close = ["rectangle", "ngon"].indexOf(mode) !== -1;
         var coords = this.getAutoWeldCoords(app.canvas.getSnapedCoords());
         if (this.firstPoint) {
             this.object = new spline({ start: coords, color: layers.getActive().color, mode: mode, sides: this.ngonSides, ortho: this.ortho, close: close }, this.getPoints[mode]);
@@ -78,30 +79,28 @@ var create = {
     mouseup: function (e) {
         app.eventRemover("window", "mousemove", this.mousemove);
         app.eventRemover("window", "mouseup", this.mouseup);
-        if (this.firstPoint) { this.end(); }
         var lastPoint = this.object.getLastPoint();
         var coords = this.getAutoWeldCoords(lastPoint);
         this.object.setLastPoint(coords);
+        if (this.firstPoint) { this.end(); } // in close mode objects
         screenCorrection.run(app.canvas.canvasToClient(lastPoint), function () { create.preview(); });
     },
     end: function () {
         if (this.drawing === false) { return;} // drawing = false is mean that current drawing is saved
+        if (this.save()){undo.save();}
+        this.drawing = false;
         this.firstPoint = true;
         createControl.close();
-        this.save();
         app.redraw();
-        undo.save();
-        this.drawing = false;
     },
     preview: function () {
         app.redraw();
-        if (this.drawing) {
-            var points = this.object.getPoints(), lines = this.object.getLines();
-            for (var i = 0; i < points.length; i++) {  app.drawPoint(points[i]); }
-            for (var i = 0; i < lines.length; i++) { app.drawLine($.extend({}, lines[i], { showDimension: i === lines.length - 1 })); }
-            this.drawLastPoint();
-            this.drawController();
-        }
+        if (!this.drawing) {return;}
+        var points = this.object.getPoints(), lines = this.object.getLines();
+        for (var i = 0; i < points.length; i++) {  app.drawPoint(points[i]); }
+        for (var i = 0; i < lines.length; i++) { app.drawLine($.extend({}, lines[i], { showDimension: i === lines.length - 1 })); }
+        this.drawLastPoint();
+        if(!this.firstPoint){this.drawController();}
     },
     drawLastPoint: function () {
         var lastPoint = this.object.getLastPoint();
@@ -109,7 +108,6 @@ var create = {
         app.canvas.drawArc({ x: lastPoint.x, y: lastPoint.y, radius: 6, stroke: "orange" });
     },
     drawController: function () {
-        if (this.firstPoint === true) { return;}
         var o = this.object, points = o.getPoints(), lines = o.getLines();
         var control = { end: true, keyboard: true, move: true, pan: true };
         if (o.getMode() === "polyline") {
@@ -174,7 +172,7 @@ var create = {
     },
     save: function () {
         var points = this.object.getPoints(), lines = this.object.getLines();
-        if (lines.length === 0) { return; }
+        if (lines.length === 0) { return false; }
         var addedPoints = [], addedLines = [];
         for (var i = 0; i < points.length; i++) {
             var addedPoint = Points.add(points[i]); addedPoints.push(addedPoint);
@@ -192,7 +190,7 @@ var create = {
                 }
             }
         }
-        this.drawing = false;
+        return true;
     },
     getPoints: {
         polyline: function () {
@@ -250,7 +248,7 @@ var create = {
             });
         }
         Alert.open({
-            buttons: [{ text: "ok", callback: Alert.close },{ text: "ok", callback: Alert.close },{ text: "ok", callback: Alert.close }],
+            buttons: [{ text: "ok", callback: Alert.close }],
             template: template,
             title: app.state.createmode + " setting.",
         });
