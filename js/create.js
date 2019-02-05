@@ -49,9 +49,6 @@ var create = {
         if (point) { return { x: point.x, y: point.y }; }
         else { return app.canvas.getSnapedCoords(coords); }
     },
-    dblclick:function(){
-
-    },
     mousedown: function () {
         app.eventHandler("window", "mousemove", $.proxy(this.mousemove, this));
         app.eventHandler("window", "mouseup", $.proxy(this.mouseup, this));
@@ -59,10 +56,21 @@ var create = {
         close = ["rectangle", "ngon"].indexOf(mode) !== -1;
         var coords = this.getAutoWeldCoords(app.canvas.getSnapedCoords());
         if (this.firstPoint) {
-            this.object = new spline({ start: coords, color: layers.getActive().color, mode: mode, sides: this.ngonSides, ortho: this.ortho, close: close }, this.getPoints[mode]);
+            this.object = new spline(
+                { 
+                    start: coords, color: layers.getActive().color, 
+                    mode: mode, 
+                    sides: this.ngonSides, 
+                    ortho: this.ortho, 
+                    close: close 
+                }, 
+                this.getPoints[mode]
+            );
             this.firstPoint = false;
             this.drawing = true;
         } else {
+            var lastPoint = this.object.getLastPoint();
+            if(Lines.getLength({start:lastPoint,end:coords})<5){return;}
             this.object.addPoint(coords);
             if (close) { this.firstPoint = true; createControl.close(); }
         }
@@ -101,7 +109,7 @@ var create = {
         if (!this.drawing) {return;}
         var points = this.object.getPoints(), lines = this.object.getLines();
         for (var i = 0; i < points.length; i++) {  app.drawPoint(points[i]); }
-        for (var i = 0; i < lines.length; i++) { app.drawLine($.extend({}, lines[i], { showDimension: i === lines.length - 1 })); }
+        for (var i = 0; i < lines.length; i++) { app.drawLine($.extend({}, lines[i], { showDimension: true })); }
         this.drawLastPoint();
         if(!this.firstPoint){this.drawController();}
     },
@@ -142,7 +150,6 @@ var create = {
     drawcontrolend: function () { this.end(); },
     dblclick: function (e) {
         this.drawcontrolremove();
-        this.drawcontrolremove();
         $("body").append(
             '<div class="pan-background"><p>Pan mode is active!!!<br>Drag to pan screen<br>double tap for deactive pan mode</p></div>'
         );
@@ -163,14 +170,7 @@ var create = {
             endX: screenPosition.x, endY: screenPosition.y 
         };
     },
-    panmousemove: function (e) {
-        var so = this.startOffset, zoom = app.canvas.getZoom(), coords = app.getClient();
-        var x = (so.x - coords.x) / zoom + so.endX, y = (coords.y - so.y) / zoom + so.endY;
-        app.canvas.setScreenTo({ x: x, y: y, callback: function(){
-            app.redraw();
-            
-        } });
-    },
+
     panmouseup: function () {
         app.eventRemover("window", "mousemove", this.panmousemove);
         app.eventRemover("window", "mouseup", this.panmouseup);
@@ -180,12 +180,8 @@ var create = {
         var so = this.startOffset, zoom = app.canvas.getZoom(), coords = app.getClient(e);
         var x = (so.x - coords.x) / zoom + so.endX, y = (coords.y - so.y) / zoom + so.endY;
         app.canvas.setScreenTo({ x: x, y: y, callback: this.preview.bind(this) });
-        this.preview();
     },
-    panmouseup: function () {
-        app.eventRemover("window", "mousemove", this.panmousemove);
-        app.eventRemover("window", "mouseup", this.panmouseup);
-    },
+
     drawcontrolkeyboard: function () {
         var o = this.object, mode = o.getMode();
         keyboard.open({
@@ -203,8 +199,10 @@ var create = {
         });
     },
     save: function () {
-        var points = this.object.getPoints(), lines = this.object.getLines();
+        var lines = this.object.getLines();
         if (lines.length === 0) { return false; }
+        var points = this.object.getPoints();
+        
         var addedPoints = [], addedLines = [];
         for (var i = 0; i < points.length; i++) {
             var addedPoint = Points.add(points[i]); addedPoints.push(addedPoint);
@@ -231,6 +229,7 @@ var create = {
         rectangle: function () {
             var s = this.state, points = [];
             var start = s.points[0], end = s.points[1]
+            if (!start) { return false; }
             points.push({ x: start.x, y: start.y });
             if (!end) { return points; }
             points.push({ x: start.x, y: end.y });
@@ -260,6 +259,13 @@ var create = {
     },
     setting: function () {
         var template = [
+            {
+                type: "slider", title: "Snap Area", value: app.canvas.getSnap(),
+                callback: function (value) {
+                    app.canvas.setSnap(value);
+                },
+                min:1,start: 0, step: 10, end: 100,
+            },
             {
                 type: "slider", title: "Auto Weld", value: create.autoWeldArea,
                 callback: function (value) {
@@ -321,6 +327,7 @@ var screenCorrection = {
         if (y > height - m.bottom) { var deltaY = y - height + m.bottom; }
         else if (y < top) { var deltaY = y - top; }
         else { var deltaY = 0; }
+        if(!deltaX&&!deltaY){callback(); return;}
         c.setScreenBy({ x: deltaX, y: deltaY * -1, animate: true, callback: callback });
     }
 }

@@ -954,6 +954,7 @@
             }
             else {
                 this.save();
+                edit.end();
             }
             app.redraw();
         },

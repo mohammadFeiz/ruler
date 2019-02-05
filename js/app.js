@@ -29,6 +29,7 @@
         app.eventHandler("window","mousemove",app.windowMouseMove);
         app.eventHandler("window","mouseup",app.windowMouseUp);
         display.render();
+        bottomMenu.render();
     },
 
     canvasmousedown: function (e) {
@@ -425,7 +426,32 @@ var components = {
 }
 
 
-
+var bottomMenu = {
+    render:function(){
+        var str = '';
+        str+='<div id="bottom-menu">';
+        str+=components.render({
+            id:"measure",component:"Button",iconClass:"mdi mdi-ruler",className:"icon left",
+            callback:function(){}});
+        str+=components.render({
+            id:"magnify-plus",component:"Button",iconClass:"mdi mdi-magnify-plus-outline",className:"icon right",
+        });
+        str+=components.render({
+            id:"magnify-minus",component:"Button",iconClass:"mdi mdi-magnify-minus-outline",className:"icon right",
+        });
+        str+=components.render({
+            id:"pan-mode",component:"Button",iconClass:"mdi mdi-gesture-tap",className:"icon left",
+        });
+        str+=components.render({
+            id:"undo",component:"Button",iconClass:"mdi mdi-undo",className:"icon right",
+        });
+        str+=components.render({
+            id:"app-hint",component:"Button",text:"app hint is here",className:"text left",
+        });
+        str+='</div>';
+        $("body").append(str);
+    }
+}
 
 
 
