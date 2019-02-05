@@ -3,7 +3,7 @@ function Canvas(config) {
         isDown:false,
         state: {
             zoom: 1,
-            snap: 10,
+            snap: 1,
             screenPosition: { x: 0, y: 0 },
         },
         update: function (config) {

@@ -44,7 +44,8 @@
         };
         return obj; 
     },
-    getClient: function (e) { 
+    getClient: function (e) {
+        
          return {x:app.x,y:app.y};
     },
     eventHandler: function (selector, e, action) {
@@ -113,8 +114,7 @@
         for (var i = 1; i < area; i += 2) {
             for (var j = 0; j < points.length; j++) {
                 var point = points[j];
-                if (Math.abs(point.x - coords.x) > i) { continue; }
-                if (Math.abs(point.y - coords.y) > i) { continue; }
+                if (Lines.getLength({start:point,end:coords}) > i) { continue; }
                 var isFiltered = false;
                 for (var prop in is) {
                     if (!Array.isArray(is[prop])) { is[prop] = [is[prop]];}
@@ -439,6 +439,7 @@ var display = {
             text: function () { return app.state.appmode === "create" ? "Create" : "Edit"; },
             callback: function (item) {
                 create.end();
+                edit.end();
                 if (app.state.appmode === "create") { app.state.appmode = "edit"; } else { app.state.appmode = "create"; }
                 display.render();
             },
@@ -458,8 +459,16 @@ var display = {
         },
         {
             component: "Dropdown", id: "edit-modes", className: "dropdown", container: "#top-menu",
-            options: [{ text: "Modify", value: "modify" }, { text: "Add Point", value: "addPoint" }, { text: "Chamfer", value: "chamfer" },
-            { text: "Offset Line", value: "offsetLine" }, { text: "Extend Line", value: "extendLine" }, { text: "Plumb Line", value: "plumbLine" }],
+            options: [
+                { text: "Modify", value: "modify" }, 
+                { text: "Add Point", value: "addPoint" }, 
+                { text: "Align Point", value: "alignPoint" }, 
+                { text: "Chamfer", value: "chamfer" },
+                { text: "Offset Line", value: "offsetLine" }, 
+                { text: "Extend Line", value: "extendLine" }, 
+                { text: "Plumb Line", value: "plumbLine" },
+                { text: "Measure", value: "measure" },
+            ],
             text: function () {
                 switch (app.state.editmode) {
                     case 'modify': return 'Modify';
@@ -469,8 +478,10 @@ var display = {
                     case 'joinLines': return 'Join Lines';
                     case 'offsetLine': return 'Offset Line';
                     case 'extendLine': return 'Extend Line';
-                    case 'plumLine': return 'Plumb Line';
+                    case 'plumbLine': return 'Plumb Line';
                     case 'divideLine': return 'Divide Line';
+                    case 'alignPoint': return 'Align Point';
+                    case 'measure': return 'Measure';
                 }
             },
             callback: function (value) { app.state.editmode = value; edit.end();},
@@ -544,6 +555,16 @@ var display = {
             id: "join", component: "Button", iconClass: "", className: "button", text: "Join", container: "#sub-menu",
             show: function () { return Lines.selected.length === 2 && Lines.getMeet(Lines.selected[0], Lines.selected[1]) && !Lines.isConnect(Lines.selected[0], Lines.selected[1]); },
             callback: function () { edit.modify.joinLines(); }
+        },
+        {
+            id: "remove-measures", component: "Button", iconClass: "", className: "button", text: "Remove All", container: "#sub-menu",
+            show: function () { return app.state.appmode === "edit" && app.state.editmode === "measure"; },
+            callback: function () { edit.measure.removeAll(); }
+        },
+        {
+            id: "all-measure", component: "Button", iconClass: "", className: "button", text: "Add To All", container: "#sub-menu",
+            show: function () { return app.state.appmode === "edit" && app.state.editmode === "measure"; },
+            callback: function () { edit.measure.measureAll(); }
         },
 
 

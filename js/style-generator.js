@@ -183,7 +183,7 @@ function createStyle() {
     str += 'height:' + (axis_size * (1/3)) + 'px;';
     str += 'line-height:' + (axis_size * (1/3)) + 'px;';
     str += 'color:#fff;';
-    str += 'top:calc(50% + 0px + ' + (axis_size * (1/12)) + 'px);';
+    str += 'top:10px;';
     str += '}';
 
     str += '#axis-angle .title{';
@@ -244,10 +244,10 @@ function createStyle() {
     str += 'position:absolute;';
     str += 'width:6px;';
     str += 'height:6px;';
-    str += 'border:1px solid red;';
+    str += 'box-shadow:inset 0 0 0 1px red;';
     str += 'border-radius:100%;';
-    str += 'left:calc(50% - 4px);';
-    str += 'top:calc(50% - 4px);';
+    str += 'left:calc(50% - 3px);';
+    str += 'top:calc(50% - 3px);';
     str += '}';
 
     str += '.axis-icon-container{';

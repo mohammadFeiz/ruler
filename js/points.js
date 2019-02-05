@@ -28,7 +28,6 @@ var Points = {
         var length = Points.selected.length;
         for (var i = 0; i < length; i++) {
             var point = Points.selected[i];
-            var layer = layers.getObjectByID(point.layerId);
             point.selected = false;
         }
         Points.selected = [];

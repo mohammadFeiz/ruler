@@ -83,9 +83,9 @@ function slider(config) {
                 before: { index: index - 1, element: before, value: s.value[index - 1] },
                 after: {index:index, element: after, value: s.value[index]}
             };
-            this.eventHandler("window", "mousemove", this.spacemousemove);
+            this.eventHandler("window", "mousemove", $.proxy(this.spacemousemove,this));
             container.find(".r-slider-number").show();
-            this.eventHandler("window", "mouseup", this.mouseup);
+            this.eventHandler("window", "mouseup", $.proxy(this.mouseup,this));
         },
         buttonmousedown: function (e) {
             e.preventDefault();
@@ -97,9 +97,9 @@ function slider(config) {
             element.css({ "zIndex": 10000 });
             var client = this.getClient(e);
             this.startOffset = { x: client.x, y: client.y, index: index, element: element,value:s.value[index] };
-            this.eventHandler("window", "mousemove", this.buttonmousemove.bind(this));
+            this.eventHandler("window", "mousemove", $.proxy(this.buttonmousemove,this));
             container.find(".r-slider-number").show();
-            this.eventHandler("window", "mouseup", this.mouseup.bind(this));
+            this.eventHandler("window", "mouseup", $.proxy(this.mouseup,this));
             if (s.onbuttonmousedown) { s.onbuttonmousedown(s); }
         },
         labelmousedown: function (e) {
@@ -130,7 +130,8 @@ function slider(config) {
         mouseup: function () {
             var s = this.state;
             if (s.fixValue !== true) { $(".r-slider-container#"+s.id+" .r-slider-number").fadeOut(100); }
-            this.eventRemover("window", "mousemove", this.mousemove);
+            this.eventRemover("window", "mousemove", this.buttonmousemove);
+            this.eventRemover("window", "mousemove", this.spacemousemove);
             this.eventRemover("window", "mouseup", this.mouseup);
             if (s.onchange !== undefined) { s.onchange(s); }
         },

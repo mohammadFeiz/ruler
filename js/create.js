@@ -68,7 +68,7 @@ var create = {
         }
         var lastPoint = this.object.getLastPoint();
         this.startOffset = { deltaX: lastPoint.x - coords.x, deltaY: lastPoint.y - coords.y};
-        setTimeout(function(){create.preview()},300);
+        create.preview();
     },
     mousemove: function () {
         var client = app.getClient(), so = this.startOffset;
@@ -86,9 +86,7 @@ var create = {
         var coords = this.getAutoWeldCoords(lastPoint);
         this.object.setLastPoint(coords);
         if (this.firstPoint) { this.end(); } // in close mode objects
-        setTimeout(function(){
         screenCorrection.run(app.canvas.canvasToClient(lastPoint), function () { create.preview(); });
-        },300);
     },
     end: function () {
         if (this.drawing === false) { return;} // drawing = false is mean that current drawing is saved
