@@ -533,7 +533,16 @@ var display = {
         {
             id: "settings", component: "Button", iconClass: "mdi mdi-settings", className: "icon", container: "#top-menu",
             callback: function () { window[app.state.appmode].setting(); },
-            show:function(){app.state.measuremode !== true;}
+            show:function(){return app.state.measuremode !== true;}
+        },
+        {
+            id: "back-button", component: "Button", iconClass: "mdi mdi-arrow-left", className: "icon left", container: "#top-menu",
+            show:function(){return app.state.measuremode === true;}
+        },
+        {
+            id: "top-menu-title", component: "Button", className: "text left", container: "#top-menu",
+            show:function(){return app.state.measuremode === true;},
+            text:function(){ return app.state.topMenuTitle;}
         },
 
         {
@@ -613,6 +622,7 @@ var display = {
                     $("#measure").addClass("active");
                 }
                 else{app.state.measuremode = false; $("#measure").removeClass("active");}
+                display.render();
             }
         },
         {
@@ -635,6 +645,7 @@ var display = {
             id:"undo",component:"Button",iconClass:"mdi mdi-undo",className:"icon right",container:"#bottom-menu",
             show:function(){return app.state.measuremode !== true;}
         },
+
     ],
     render: function () {
         var str = '';
