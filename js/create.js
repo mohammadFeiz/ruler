@@ -148,40 +148,6 @@ var create = {
         this.startOffset = { deltaX: lastPoint.x - coords.x, deltaY: lastPoint.y - coords.y};
     },
     drawcontrolend: function () { this.end(); },
-    dblclick: function (e) {
-        this.drawcontrolremove();
-        $("body").append(
-            '<div class="pan-background"><p>Pan mode is active!!!<br>Drag to pan screen<br>double tap for deactive pan mode</p></div>'
-        );
-        app.eventHandler(".pan-background", "dblclick", $.proxy(this.panremove,this));
-        app.eventHandler(".pan-background", "mousedown", $.proxy(this.panmousedown,this));
-        
-    },
-    panremove:function(){
-        $(".pan-background").remove();
-    },
-    panmousedown:function(){
-        app.eventHandler("window", "mousemove", $.proxy(this.panmousemove,this));
-        app.eventHandler("window", "mouseup", $.proxy(this.panmouseup,this));
-        var screenPosition = app.canvas.getScreenPosition();
-        var client = app.getClient();
-        this.startOffset = { 
-            x: client.x, y: client.y, 
-            endX: screenPosition.x, endY: screenPosition.y 
-        };
-    },
-
-    panmouseup: function () {
-        app.eventRemover("window", "mousemove", this.panmousemove);
-        app.eventRemover("window", "mouseup", this.panmouseup);
-    },
-    
-    panmousemove: function (e) {
-        var so = this.startOffset, zoom = app.canvas.getZoom(), coords = app.getClient(e);
-        var x = (so.x - coords.x) / zoom + so.endX, y = (coords.y - so.y) / zoom + so.endY;
-        app.canvas.setScreenTo({ x: x, y: y, callback: this.preview.bind(this) });
-    },
-
     drawcontrolkeyboard: function () {
         var o = this.object, mode = o.getMode();
         keyboard.open({

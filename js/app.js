@@ -23,20 +23,22 @@
             background: s.background,
             gridLineColor: s.gridLineColor,
             onmousedown: this.canvasmousedown.bind(this),
-            ondblclick:this.canvasdblclick.bind(this),
         });
         app.eventHandler("window","mousedown",app.windowMouseDown);
         app.eventHandler("window","mousemove",app.windowMouseMove);
         app.eventHandler("window","mouseup",app.windowMouseUp);
         display.render();
-        bottomMenu.render();
     },
 
     canvasmousedown: function (e) {
-        window[this.state.appmode].mousedown(e);
-    },
-    canvasdblclick: function (e) {
-        window[this.state.appmode].dblclick(e);
+        if(this.state.measuremode){
+            var line = this.getLine();
+            line.showDimension = !line.showDimension;
+            app.redraw();
+        }
+        else{
+            window[this.state.appmode].mousedown(e);
+        }
     },
     getMousePosition:function(e){
         var obj = { 
@@ -154,9 +156,7 @@
     },
     mouseDown: function () {
         if (app.measuremode) {
-            var line = canvas.findLineByCoords();
-            line.showDimention = !line.showDimention;
-            canvas.redraw();
+            
         }
         else {
             $("#float-toolbar").hide();
@@ -164,17 +164,13 @@
         }
     },
     mouseMove: function (e) {
-        if (app.measuremode) {
-
-        }
+        if (app.measuremode) {}
         else {
             window[app.appmode].mousemove(e);
         }
     },
     mouseUp: function () {
-        if (app.measuremode) {
-
-        }
+        if (app.measuremode) {}
         else {
             $("#float-toolbar").show();
             window[app.appmode].mouseup();
@@ -226,7 +222,7 @@
     },
 
     mouseDown: function () {
-        if (app.measuremode) {
+        if (app.state.measuremode) {
             var line = canvas.findLineByCoords();
             line.showDimention = !line.showDimention;
             canvas.redraw();
@@ -237,7 +233,7 @@
         }
     },
     mouseMove: function (e) {
-        if (app.measuremode) {
+        if (app.state.measuremode) {
 
         }
         else {
@@ -245,7 +241,7 @@
         }
     },
     mouseUp: function () {
-        if (app.measuremode) {
+        if (app.state.measuremode) {
 
         }
         else {
@@ -299,6 +295,36 @@
     },
     getMin: function (a, b) { if (a <= b) { return a; } else { return b; } },
     getMax: function (a, b) { if (a <= b) { return b; } else { return a; } },
+    panremove:function(){
+        $(".pan-background").remove();
+    },
+    panmousedown:function(){
+        app.eventHandler("window", "mousemove", $.proxy(this.panmousemove,this));
+        app.eventHandler("window", "mouseup", $.proxy(this.panmouseup,this));
+        var screenPosition = app.canvas.getScreenPosition();
+        var client = this.getClient();
+        this.startOffset = { 
+            x: client.x, y: client.y, 
+            endX: screenPosition.x, endY: screenPosition.y 
+        };
+    },
+    panmouseup: function () {
+        app.eventRemover("window", "mousemove", this.panmousemove);
+        app.eventRemover("window", "mouseup", this.panmouseup);
+    },
+    
+    panmousemove: function (e) {
+        var so = this.startOffset, zoom = this.canvas.getZoom(), coords = this.getClient(e);
+        var x = (so.x - coords.x) / zoom + so.endX, y = (coords.y - so.y) / zoom + so.endY;
+        this.canvas.setScreenTo({ x: x, y: y, callback: function(){
+            if(app.state.appmode === "create"){create.preview();}
+            else if(app.state.appmode === "edit"){
+                app.redraw();
+                var axisPosition = axis.getPosition();
+                if(axisPosition){axis.setPosition(axisPosition);}
+            }
+        } });
+    },
 }
 
 var components = {
@@ -426,40 +452,16 @@ var components = {
 }
 
 
-var bottomMenu = {
-    render:function(){
-        var str = '';
-        str+='<div id="bottom-menu">';
-        str+=components.render({
-            id:"measure",component:"Button",iconClass:"mdi mdi-ruler",className:"icon left",
-            callback:function(){}});
-        str+=components.render({
-            id:"magnify-plus",component:"Button",iconClass:"mdi mdi-magnify-plus-outline",className:"icon right",
-        });
-        str+=components.render({
-            id:"magnify-minus",component:"Button",iconClass:"mdi mdi-magnify-minus-outline",className:"icon right",
-        });
-        str+=components.render({
-            id:"pan-mode",component:"Button",iconClass:"mdi mdi-gesture-tap",className:"icon left",
-        });
-        str+=components.render({
-            id:"undo",component:"Button",iconClass:"mdi mdi-undo",className:"icon right",
-        });
-        str+=components.render({
-            id:"app-hint",component:"Button",text:"app hint is here",className:"text left",
-        });
-        str+='</div>';
-        $("body").append(str);
-    }
-}
 
 
 
 
 var display = {
-    containers: [{ id: "top-menu", }, { id: "sub-menu", }],
+    containers: [{ id: "top-menu", }, { id: "sub-menu", },{id:"bottom-menu"}],
     items: [
-        { component: "Button", id: "main-menu", iconClass: "mdi mdi-menu", className: "icon", container: "#top-menu" },
+        { component: "Button", id: "main-menu", iconClass: "mdi mdi-menu", className: "icon", container: "#top-menu" ,show:function(){
+            return app.state.measuremode !== true;
+        }},
         {
             component: "Button", id: "set-app-mode", className: "button", container: "#top-menu",
             text: function () { return app.state.appmode === "create" ? "Create" : "Edit"; },
@@ -469,6 +471,7 @@ var display = {
                 if (app.state.appmode === "create") { app.state.appmode = "edit"; } else { app.state.appmode = "create"; }
                 display.render();
             },
+            show:function(){return app.state.measuremode !== true;}
         },
         {
             component: "Dropdown", id: "create-modes", className: "dropdown", container: "#top-menu",
@@ -481,7 +484,7 @@ var display = {
                 }
             },
             callback: function (value) { app.state.createmode = value; create.end();  display.render(); },
-            show: function () { return app.state.appmode === "create"; },
+            show: function () { return app.state.appmode === "create" && app.state.measuremode !== true; },
         },
         {
             component: "Dropdown", id: "edit-modes", className: "dropdown", container: "#top-menu",
@@ -511,7 +514,7 @@ var display = {
                 }
             },
             callback: function (value) { app.state.editmode = value; edit.end();},
-            show: function () { return app.state.appmode === "edit"; },
+            show: function () { return app.state.appmode === "edit" && app.state.measuremode !== true; },
         },
         {
             component: "Dropdown", id: "select-mode", className: "dropdown", container: "#top-menu",
@@ -520,52 +523,57 @@ var display = {
             callback: function (value) { 
                 edit.modify.selectMode = value; edit.end(); 
             },
-            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
+            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
         },
-        { id: "layer", component: "Button", iconClass: "mdi mdi-buffer", className: "icon", container: "#top-menu", callback:function() { create.end(); edit.end(); layers.open() }},
+        { 
+            id: "layer", component: "Button", iconClass: "mdi mdi-buffer", className: "icon", container: "#top-menu", 
+            callback:function() { create.end(); edit.end(); layers.open(); },
+            show:function(){return app.state.measuremode !== true &&app.state.measuremode !== true;}
+        },
         {
             id: "settings", component: "Button", iconClass: "mdi mdi-settings", className: "icon", container: "#top-menu",
-            callback: function () { window[app.state.appmode].setting(); }
+            callback: function () { window[app.state.appmode].setting(); },
+            show:function(){app.state.measuremode !== true;}
         },
 
         {
             id: "delete-item", component: "Button", iconClass: "mdi mdi-delete", className: "icon", container: "#sub-menu",
-            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
+            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
             callback:function(){edit.modify.remove();}
         },
         {
             id: "select-all", component: "Button", iconClass: "mdi mdi-select-all", className: "icon", container: "#sub-menu",
-            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
+            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
             callback:function(){edit.modify.selectAll();}
         },
         {
             id: "mirror-x", component: "Button", iconClass: "mdi mdi-unfold-more-horizontal", className: "icon", container: "#sub-menu",
-            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
+            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
             callback:function(){edit.modify.mirrorX()}
         },
         {
             id: "mirror-y", component: "Button", iconClass: "mdi mdi-unfold-more-vertical", className: "icon", container: "#sub-menu",
-            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
+            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
             callback:function(){edit.modify.mirrorY()}
         },
         {
             id: "break-point", component: "Button", iconClass: "", className: "button", text: "Break", container: "#sub-menu",
-            show: function () { return edit.modify.breakPointApprove() },
+            show: function () { return edit.modify.breakPointApprove() && app.state.measuremode !== true },
             callback: function () { edit.modify.breakPoint(); }
         },
         {
             id: "weld", component: "Button", iconClass: "", className: "button", text: "Weld", container: "#sub-menu",
-            show: function () { return edit.modify.weldPointApprove() },
+            show: function () { return edit.modify.weldPointApprove() && app.state.measuremode !== true },
             callback: function () { edit.modify.weldPoint(); }
         },
         {
             id: "connect", component: "Button", iconClass: "", className: "button", text: "Connect", container: "#sub-menu",
-            show: function () { return edit.modify.connectPointsApprove() },
+            show: function () { return edit.modify.connectPointsApprove() && app.state.measuremode !== true },
             callback: function () { edit.modify.connectPoints(); }
         },
         {
             id: "divide", component: "Button", iconClass: "", className: "button", text: "Divide", container: "#sub-menu",
-            show: function () { return Lines.selected.length === 1; },
+            show: function () { return Lines.selected.length === 1 &&app.state.measuremode !== true; },
             callback: function () {
                 keyboard.open({
                     isMobile: app.state.isMobile,
@@ -579,21 +587,54 @@ var display = {
         },
         {
             id: "join", component: "Button", iconClass: "", className: "button", text: "Join", container: "#sub-menu",
-            show: function () { return Lines.selected.length === 2 && Lines.getMeet(Lines.selected[0], Lines.selected[1]) && !Lines.isConnect(Lines.selected[0], Lines.selected[1]); },
+            show: function () { 
+                return Lines.selected.length === 2 && 
+                Lines.getMeet(Lines.selected[0], Lines.selected[1]) && 
+                !Lines.isConnect(Lines.selected[0], Lines.selected[1]) &&
+                app.state.measuremode !== true; 
+            },
             callback: function () { edit.modify.joinLines(); }
         },
         {
             id: "remove-measures", component: "Button", iconClass: "", className: "button", text: "Remove All", container: "#sub-menu",
-            show: function () { return app.state.appmode === "edit" && app.state.editmode === "measure"; },
+            show: function () { return app.state.appmode === "edit" && app.state.editmode === "measure" && app.state.measuremode !== true; },
             callback: function () { edit.measure.removeAll(); }
         },
         {
             id: "all-measure", component: "Button", iconClass: "", className: "button", text: "Add To All", container: "#sub-menu",
-            show: function () { return app.state.appmode === "edit" && app.state.editmode === "measure"; },
+            show: function () { return app.state.appmode === "edit" && app.state.editmode === "measure" && app.state.measuremode !== true; },
             callback: function () { edit.measure.measureAll(); }
         },
-
-
+        {
+            id:"measure",component:"Button",iconClass:"mdi mdi-ruler",className:"icon left",container:"#bottom-menu",
+            callback:function(){
+                if(!app.state.measuremode){
+                    app.state.measuremode= true; 
+                    $("#measure").addClass("active");
+                }
+                else{app.state.measuremode = false; $("#measure").removeClass("active");}
+            }
+        },
+        {
+            id:"magnify-plus",component:"Button",iconClass:"mdi mdi-magnify-plus-outline",className:"icon right",container:"#bottom-menu",
+        },
+        {
+            id:"magnify-minus",component:"Button",iconClass:"mdi mdi-magnify-minus-outline",className:"icon right",container:"#bottom-menu",
+        },
+        {
+            id:"pan-mode",component:"Button",iconClass:"mdi mdi-gesture-tap",className:"icon left",container:"#bottom-menu",
+            callback:function(){
+            $("body").append(
+                '<div class="pan-background"><p>Pan mode is active!!!<br>Drag to pan screen<br>double tap for deactive pan mode</p></div>'
+            );
+                app.eventHandler(".pan-background", "dblclick", $.proxy(app.panremove,app));
+                app.eventHandler(".pan-background", "mousedown", $.proxy(app.panmousedown,app));
+            }
+        },
+        {
+            id:"undo",component:"Button",iconClass:"mdi mdi-undo",className:"icon right",container:"#bottom-menu",
+            show:function(){return app.state.measuremode !== true;}
+        },
     ],
     render: function () {
         var str = '';

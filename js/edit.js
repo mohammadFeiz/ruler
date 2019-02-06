@@ -9,32 +9,6 @@
         app.eventHandler(".pan-background", "mousedown", $.proxy(this.panmousedown,this));
         
     },
-    panremove:function(){
-        $(".pan-background").remove();
-    },
-    panmousedown:function(){
-        app.eventHandler("window", "mousemove", $.proxy(this.panmousemove,this));
-        app.eventHandler("window", "mouseup", $.proxy(this.panmouseup,this));
-        var screenPosition = app.canvas.getScreenPosition();
-        var client = app.getClient();
-        this.startOffset = { 
-            x: client.x, y: client.y, 
-            endX: screenPosition.x, endY: screenPosition.y 
-        };
-    },
-    panmousemove: function (e) {
-        var so = this.startOffset, zoom = app.canvas.getZoom(), coords = app.getClient();
-        var x = (so.x - coords.x) / zoom + so.endX, y = (coords.y - so.y) / zoom + so.endY;
-        app.canvas.setScreenTo({ x: x, y: y, callback: function(){
-            app.redraw();
-            var axisPosition = axis.getPosition();
-            if(axisPosition){axis.setPosition(axisPosition);}
-        } });
-    },
-    panmouseup: function () {
-        app.eventRemover("window", "mousemove", this.panmousemove);
-        app.eventRemover("window", "mouseup", this.panmouseup);
-    },
     mousedown: function (e) {
         app.eventHandler("window", "mousemove", $.proxy(this.mousemove, this));
         app.eventHandler("window", "mouseup", $.proxy(this.mouseup, this));
