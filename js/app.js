@@ -47,8 +47,7 @@
         };
         return obj; 
     },
-    getClient: function (e) {
-        
+    getClient: function (e) {    
          return {x:app.x,y:app.y};
     },
     eventHandler: function (selector, e, action) {
@@ -154,46 +153,7 @@
 
         return false;
     },
-    mouseDown: function () {
-        if (app.measuremode) {
-            
-        }
-        else {
-            $("#float-toolbar").hide();
-            window[app.appmode].mousedown();
-        }
-    },
-    mouseMove: function (e) {
-        if (app.measuremode) {}
-        else {
-            window[app.appmode].mousemove(e);
-        }
-    },
-    mouseUp: function () {
-        if (app.measuremode) {}
-        else {
-            $("#float-toolbar").show();
-            window[app.appmode].mouseup();
-        }
-    },
-    mousedown: function (e) {
-        var client = this.getClient(e);
-        this.x = client.x; this.y = client.y;
-        this.eventHandler("window", "mousemove", this.mousemove);
-        this.eventHandler("window", "mouseup", this.mouseup);
-    },
-    mousemove: function (e) {
-        var client = this.getClient(e);
-        this.x = client.x; this.y = client.y;
-    },
-    mouseup: function (e) {
-        clearInterval(create.autoPanInterval);
-        this.eventRemover("window", "mousemove", this.mousemove);
-        this.eventRemover("window", "mouseup", this.mouseup);
-
-    },
     zoom: function (zoom) {
-
         zoom = parseFloat(zoom.toFixed(2));
         canvas.setZoom(zoom);
         var str =
@@ -220,36 +180,6 @@
             });
         }
     },
-
-    mouseDown: function () {
-        if (app.state.measuremode) {
-            var line = canvas.findLineByCoords();
-            line.showDimention = !line.showDimention;
-            canvas.redraw();
-        }
-        else {
-            $("#float-toolbar").hide();
-            window[app.appmode].mousedown();
-        }
-    },
-    mouseMove: function (e) {
-        if (app.state.measuremode) {
-
-        }
-        else {
-            window[app.appmode].mousemove(e);
-        }
-    },
-    mouseUp: function () {
-        if (app.state.measuremode) {
-
-        }
-        else {
-            $("#float-toolbar").show();
-            window[app.appmode].mouseup();
-        }
-    },
-
     windowMouseDown: function (e) {
         var mousePosition = app.getMousePosition(e);
         app.x = mousePosition.x;
@@ -329,35 +259,64 @@
 
 var components = {
     items: [],
-    findItem: function (id) { for (var i = 0; i < this.items.length; i++) { if (this.items[i].id === id) { return this.items[i]; } } },
-    add: function (item) {
-        for (var i = 0; i < components.items.length; i++) { if (components.items[i].id === item.id) { components.items[i] = item; return; } }
-        components.items.push(item);
+    findItem: function (id,items) {
+        items = items || this.items;
+        for (var i = 0; i < items.length; i++) { 
+            var item = items[i];
+            if (item.id === id) { return item; }
+            if(item.html){
+                var found = this.findItem(id,item.html);
+                if(found){return found;}
+            }
+        } 
+        return false;
     },
-    render: function (obj) {
-        components.add(obj);
-        return components[obj.component](obj);
+    getHTML:function(html){
+        if(typeof html === "string" ||typeof html === "number"){html = html;}
+        else if(typeof html === "function"){html = html();}
+        else if(html.component === "Dropdown"){html = this.DIV(this.Dropdown(html));}
+        else if(html.component === "Button"){html = this.DIV(this.Button(html));}
+        else if(html.component){html = this[html.component](html);}
+        else if(!html.component){html = this.DIV(html);}
+        else {alert("error!!!")}
+        return html;
+    },
+    add: function (item) {
+        for (var i = 0; i < this.items.length; i++) { if (this.items[i].id === item.id) { this.items[i] = item; return; } }
+        this.items.push(item);
+    },
+    render: function (obj,container) {
+        this.add(obj);
+        $(container).append(this.getHTML(obj));
+    },
+    remove:function(id,items){
+        $("#" + id).remove();
+        items = items || this.items;
+        for (var i = 0; i < items.length; i++) { 
+            var item = items[i];
+            if (item.id === id) { items.splice(i,1); return; }
+            if(item.html){
+                this.remove(id,item.html);
+            }
+        } 
+    },
+    getValue:function(prop){
+        return typeof prop === "function" ? prop() : prop;
+    },
+    getAttrs:function(obj){
+        var attrs = ''; obj = obj || {};
+        for (var prop in obj) {attrs+=' ' + prop + '="' + obj[prop] + '"'}
+        return attrs;
     },
     Button: function (obj) {
-        var text = obj.text; text = typeof text === "function" ? text() : text;
-        var iconClass = obj.iconClass || ""; iconClass = typeof iconClass === "function" ? iconClass() : iconClass;
-        var attrs = '';
-        if (obj.attrs) {for (var prop in obj.attrs) {attrs+=' ' + prop + '="' + obj.attrs[prop] + '"'}}
-        var str = '<div class="' + (obj.className || '') + '" id="' + obj.id + '"'+attrs+'style="'+(obj.style||'')+'">';
-        str += iconClass ? '<div class="button-icon ' + iconClass + '"></div>' : '';
-        str += text!==undefined ? '<div class="button-text">' + text + '</div>' : '';
-        str += '</div>';
-        if (obj.callback) {
-            $('body').off('mousedown', '#' + obj.id);
-            $('body').on('mousedown', '#' + obj.id, function (e) {
-                var element = $(e.currentTarget);
-                var item = components.findItem(element.attr("id"));
-                item.callback(e);
-            });
-        }
-        return str;
+        obj.component = "DIV";
+        obj.html = [];
+        if(obj.iconClass){obj.html.push({className:obj.iconClass,attrs:{style:'display:inline-block;'}});}
+        if(obj.text){obj.html.push({className:"button-text",html:[obj.text],attrs:{style:'display:inline-block;'}});}
+        return obj;
     },
     Numberbox: function (obj) {
+        if(this.getValue(obj.show) === false){return "";}    
         var str = '';
         str += '<div class="' + (obj.className || '') + '" id="' + obj.id + '" data-step="' + obj.step + '">';
         str += obj.value === undefined ? '' : obj.value;
@@ -381,58 +340,63 @@ var components = {
         return str;
     },
     Dropdown: function (obj) {
-        var container = $(obj.container);
-        var text = obj.text || ""; text = typeof text === "function" ? text() : text;
-        var str = '';
-        str += '<div class="' + (obj.className || '') + '" id="' + obj.id + '">';
-        /**/str += '<div class="dropdown-text">' + text + '</div>';
-        str += '<div class="back-drop dropdown-back-drop"></div>';
-        str += '<div class="dropdown-popup">';
-        for (var i = 0; i < obj.options.length; i++) {
-            str += '<div class="dropdown-item" data-index="' + i + '">' + obj.options[i].text + '</div>';
-        }
-        str += '</div>';
-        str += '</div>';
-        var dropdownText = '#' + obj.id + " .dropdown-text";
-        $('body').off('mousedown', dropdownText);
-        $('body').on('mousedown', dropdownText, function (e) {
-            var dropdown = $(e.currentTarget).parent();
-            dropdown.find(".back-drop").show();
-            dropdown.find(".dropdown-popup").show();
-        });
-
-        var backDrop = '#' + obj.id + " .back-drop";
-        $('body').off('mousedown', backDrop);
-        $('body').on('mousedown', backDrop, function (e) {
-            var dropdown = $(e.currentTarget).parent();
-            dropdown.find(".back-drop").hide();
-            dropdown.find(".dropdown-popup").hide();
-        });
-        if (obj.callback) {
-            var item = '#' + obj.id + " .dropdown-item";
-            $('body').off('mousedown', item);
-            $('body').on('mousedown', item, function (e) {
-                var item = $(e.currentTarget);
-                var index = item.attr("data-index");
-                var dropdown = item.parent().parent();
-                var id = dropdown.attr("id");
-                var object = components.findItem(id);
-                var option = object.options[index];
-                dropdown.find(".dropdown-text").html(option.text);
-                object.callback(option.value);
-                dropdown.find(".back-drop").hide();
-                dropdown.find(".dropdown-popup").hide();
-            });
-        }
-        return str;
+        obj.component = "DIV";
+        obj.html = [
+            {
+                className:"dropdown-text",html:[obj.text],id:obj.id+"-dropdown-text",
+                callback:function (e) {
+                    var dropdown = $(e.currentTarget).parent();
+                    dropdown.find(".back-drop").show();
+                    dropdown.find(".dropdown-popup").show();
+                }
+            },
+            {
+                className:"back-drop dropdown-back-drop",id:obj.id+"-back-drop",
+                callback:function (e) {
+                    var dropdown = $(e.currentTarget).parent();
+                    dropdown.find(".back-drop").hide();
+                    dropdown.find(".dropdown-popup").hide();
+                }
+            },
+            {
+                className:"dropdown-popup",html:obj.options.map(function(option,i){
+                    return {
+                        className:"dropdown-item",
+                        attrs:{"data-index":i},html:[option.text],id:obj.id+"-dropdown-item" + i,
+                        callback:function (e) {
+                            var item = $(e.currentTarget);
+                            var index = item.attr("data-index");
+                            var dropdown = item.parent().parent();
+                            var id = dropdown.attr("id");
+                            var object = components.findItem(id);
+                            var option = object.options[index];
+                            dropdown.find(".dropdown-text").html(option.text);
+                            if(object.optionsCallback){object.optionsCallback(option.value);}
+                            dropdown.find(".back-drop").hide();
+                            dropdown.find(".dropdown-popup").hide();
+                        }
+                    }
+                })
+            }
+        ];
+        return obj;
     },
     DIV:function(obj){
-        var attrs = '';
-        if (obj.attrs) { for (var prop in obj.attrs) { attrs += ' ' + prop + '="' + obj.attrs[prop] + '"' } }
-        var str = '<div class="' + (obj.className || '') + '" id="' + obj.id + '"' + attrs + 'style="' + (obj.style || '') + '"></div>';
+        if(this.getValue(obj.show) === false){return "";}    
+        var id = this.getValue(obj.id) || "";
+        var className = this.getValue(obj.className) || "";
+        var attrs = this.getAttrs(obj.attrs);
+        var str = '<div ';
+        if(className){str += 'class="' + className + '" ';}
+        if(id){str += 'id="' + id + '" ';}
+        str += attrs;
+        str+='>';
+        if(obj.html){for(var i = 0; i < obj.html.length; i++){str += this.getHTML(obj.html[i]);}}
+        str += '</div>';
         if (obj.callback) {
-            $('body').off('mousedown', '#' + obj.id);
-            $('body').on('mousedown', '#' + obj.id, function (e) {
+            if(!id){alert("for set callback, id is required!!!")}
+            $('body').off('mousedown', '#' + id);
+            $('body').on('mousedown', '#' + id, function (e) {
                 var element = $(e.currentTarget);
                 var item = components.findItem(element.attr("id"));
                 item.callback(e);
@@ -441,6 +405,7 @@ var components = {
         return str;
     },
     Slider: function (obj) {
+        if(this.getValue(obj.show) === false){return "";}    
         obj.style = obj.style || { button_width: 24, button_height: 24, line_width: 4 };
         return new slider(obj).getHTML();
     },
@@ -450,220 +415,227 @@ var components = {
         $("#" + id).replaceWith(components[item.component](item));
     },
 }
-
-
-
-
-
-
 var display = {
-    containers: [{ id: "top-menu", }, { id: "sub-menu", },{id:"bottom-menu"}],
     items: [
-        { component: "Button", id: "main-menu", iconClass: "mdi mdi-menu", className: "icon", container: "#top-menu" ,show:function(){
-            return app.state.measuremode !== true;
-        }},
         {
-            component: "Button", id: "set-app-mode", className: "button", container: "#top-menu",
-            text: function () { return app.state.appmode === "create" ? "Create" : "Edit"; },
-            callback: function (item) {
-                create.end();
-                edit.end();
-                if (app.state.appmode === "create") { app.state.appmode = "edit"; } else { app.state.appmode = "create"; }
-                display.render();
-            },
-            show:function(){return app.state.measuremode !== true;}
-        },
-        {
-            component: "Dropdown", id: "create-modes", className: "dropdown", container: "#top-menu",
-            options: [{ text: "Polyline", value: "polyline" }, { text: "Rectangle", value: "rectangle" }, { text: "NGon", value: "ngon" }, ],
-            text: function () {
-                switch (app.state.createmode) {
-                    case 'polyline': return 'Polyline';
-                    case 'rectangle': return 'rectangle';
-                    case 'ngon': return 'NGon';
-                }
-            },
-            callback: function (value) { app.state.createmode = value; create.end();  display.render(); },
-            show: function () { return app.state.appmode === "create" && app.state.measuremode !== true; },
-        },
-        {
-            component: "Dropdown", id: "edit-modes", className: "dropdown", container: "#top-menu",
-            options: [
-                { text: "Modify", value: "modify" }, 
-                { text: "Add Point", value: "addPoint" }, 
-                { text: "Align Point", value: "alignPoint" }, 
-                { text: "Chamfer", value: "chamfer" },
-                { text: "Offset Line", value: "offsetLine" }, 
-                { text: "Extend Line", value: "extendLine" }, 
-                { text: "Plumb Line", value: "plumbLine" },
-                { text: "Measure", value: "measure" },
-            ],
-            text: function () {
-                switch (app.state.editmode) {
-                    case 'modify': return 'Modify';
-                    case 'addPoint': return 'Add Point';
-                    case 'connectPoints': return 'Connect';
-                    case 'chamfer': return 'Chamfer';
-                    case 'joinLines': return 'Join Lines';
-                    case 'offsetLine': return 'Offset Line';
-                    case 'extendLine': return 'Extend Line';
-                    case 'plumbLine': return 'Plumb Line';
-                    case 'divideLine': return 'Divide Line';
-                    case 'alignPoint': return 'Align Point';
-                    case 'measure': return 'Measure';
-                }
-            },
-            callback: function (value) { app.state.editmode = value; edit.end();},
-            show: function () { return app.state.appmode === "edit" && app.state.measuremode !== true; },
-        },
-        {
-            component: "Dropdown", id: "select-mode", className: "dropdown", container: "#top-menu",
-            text: function () { return edit.modify.selectMode },
-            options: [{ text: "Point", value: "Point" }, { text: "Line", value: "Line" }, { text: "Spline", value: "Spline" }],
-            callback: function (value) { 
-                edit.modify.selectMode = value; edit.end(); 
-            },
-            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
-        },
-        { 
-            id: "layer", component: "Button", iconClass: "mdi mdi-buffer", className: "icon", container: "#top-menu", 
-            callback:function() { create.end(); edit.end(); layers.open(); },
-            show:function(){return app.state.measuremode !== true &&app.state.measuremode !== true;}
-        },
-        {
-            id: "settings", component: "Button", iconClass: "mdi mdi-settings", className: "icon", container: "#top-menu",
-            callback: function () { window[app.state.appmode].setting(); },
-            show:function(){return app.state.measuremode !== true;}
-        },
-        {
-            id: "back-button", component: "Button", iconClass: "mdi mdi-arrow-left", className: "icon left", container: "#top-menu",
-            show:function(){return app.state.measuremode === true;}
-        },
-        {
-            id: "top-menu-title", component: "Button", className: "text left", container: "#top-menu",
-            show:function(){return app.state.measuremode === true;},
-            text:function(){ return app.state.topMenuTitle;}
-        },
-
-        {
-            id: "delete-item", component: "Button", iconClass: "mdi mdi-delete", className: "icon", container: "#sub-menu",
-            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
-            callback:function(){edit.modify.remove();}
-        },
-        {
-            id: "select-all", component: "Button", iconClass: "mdi mdi-select-all", className: "icon", container: "#sub-menu",
-            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
-            callback:function(){edit.modify.selectAll();}
-        },
-        {
-            id: "mirror-x", component: "Button", iconClass: "mdi mdi-unfold-more-horizontal", className: "icon", container: "#sub-menu",
-            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
-            callback:function(){edit.modify.mirrorX()}
-        },
-        {
-            id: "mirror-y", component: "Button", iconClass: "mdi mdi-unfold-more-vertical", className: "icon", container: "#sub-menu",
-            show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
-            callback:function(){edit.modify.mirrorY()}
+            id:"top-menu",html:[
+                { 
+                    component: "Button", id: "main-menu", iconClass: "mdi mdi-menu", className: "icon",
+                    show:function(){return app.state.measuremode !== true;}
+                },
+                {
+                    component: "Button", id: "set-app-mode", className: "button", container: "#top-menu",
+                    text: function () { return app.state.appmode === "create" ? "Create" : "Edit"; },
+                    callback: function (item) {
+                        create.end();
+                        edit.end();
+                        if (app.state.appmode === "create") { app.state.appmode = "edit"; } else { app.state.appmode = "create"; }
+                        display.render();
+                    },
+                    show:function(){return app.state.measuremode !== true;}
+                },
+                {
+                    component: "Dropdown", id: "create-modes", className: "dropdown", container: "#top-menu",
+                    options: [
+                        { text: "Polyline", value: "polyline" }, 
+                        { text: "Rectangle", value: "rectangle" }, 
+                        { text: "NGon", value: "ngon" },
+                        { text: "Path", value: "path" }, 
+                    ],
+                    text: function () {
+                        switch (app.state.createmode) {
+                            case 'polyline': return 'Polyline';
+                            case 'rectangle': return 'rectangle';
+                            case 'ngon': return 'NGon';
+                            case 'path': return 'Path';
+                        }
+                    },
+                    optionsCallback: function (value) { 
+                        app.state.createmode = value; 
+                        create.end();  
+                        display.render(); 
+                    },
+                    show: function () { return app.state.appmode === "create" && app.state.measuremode !== true; },
+                },
+                {
+                    component: "Dropdown", id: "edit-modes", className: "dropdown", container: "#top-menu",
+                    options: [
+                        { text: "Modify", value: "modify" }, 
+                        { text: "Add Point", value: "addPoint" }, 
+                        { text: "Align Point", value: "alignPoint" }, 
+                        { text: "Chamfer", value: "chamfer" },
+                        { text: "Offset Line", value: "offsetLine" }, 
+                        { text: "Extend Line", value: "extendLine" }, 
+                        { text: "Plumb Line", value: "plumbLine" },
+                        { text: "Measure", value: "measure" },
+                    ],
+                    text: function () {
+                        switch (app.state.editmode) {
+                            case 'modify': return 'Modify';
+                            case 'addPoint': return 'Add Point';
+                            case 'connectPoints': return 'Connect';
+                            case 'chamfer': return 'Chamfer';
+                            case 'joinLines': return 'Join Lines';
+                            case 'offsetLine': return 'Offset Line';
+                            case 'extendLine': return 'Extend Line';
+                            case 'plumbLine': return 'Plumb Line';
+                            case 'divideLine': return 'Divide Line';
+                            case 'alignPoint': return 'Align Point';
+                            case 'measure': return 'Measure';
+                        }
+                    },
+                    optionsCallback: function (value) { app.state.editmode = value; edit.end();},
+                    show: function () { return app.state.appmode === "edit" && app.state.measuremode !== true; },
+                },
+                {
+                    component: "Dropdown", id: "select-mode", className: "dropdown", container: "#top-menu",
+                    text: function () { return edit.modify.selectMode },
+                    options: [{ text: "Point", value: "Point" }, { text: "Line", value: "Line" }, { text: "Spline", value: "Spline" }],
+                    optionsCallback: function (value) { 
+                        edit.modify.selectMode = value; edit.end(); 
+                    },
+                    show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
+                },
+                { 
+                    id: "layer", component: "Button", iconClass: "mdi mdi-buffer", className: "icon", container: "#top-menu", 
+                    callback:function() { create.end(); edit.end(); layers.open(); },
+                    show:function(){return app.state.measuremode !== true &&app.state.measuremode !== true;}
+                },
+                {
+                    id: "settings", component: "Button", iconClass: "mdi mdi-settings", className: "icon", container: "#top-menu",
+                    callback: function () { window[app.state.appmode].setting(); },
+                    show:function(){return app.state.measuremode !== true;}
+                },
+                {
+                    id: "back-button", component: "Button", iconClass: "mdi mdi-arrow-left", className: "icon left", container: "#top-menu",
+                    show:function(){return app.state.measuremode === true;},
+                    callback:function(){app.state.measuremode = false; display.render();}
+                },
+                {
+                    id: "top-menu-title", component: "Button", className: "text left", container: "#top-menu",
+                    show:function(){return app.state.measuremode === true;},
+                    text:function(){ return app.state.topMenuTitle;}
+                },        
+            ]
         },
         {
-            id: "break-point", component: "Button", iconClass: "", className: "button", text: "Break", container: "#sub-menu",
-            show: function () { return edit.modify.breakPointApprove() && app.state.measuremode !== true },
-            callback: function () { edit.modify.breakPoint(); }
+            id:"sub-menu",html:[
+                {
+                    id: "delete-item", component: "Button", iconClass: "mdi mdi-delete", className: "icon",
+                    show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
+                    callback:function(){edit.modify.remove();}
+                },
+                {
+                    id: "select-all", component: "Button", iconClass: "mdi mdi-select-all", className: "icon", container: "#sub-menu",
+                    show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
+                    callback:function(){edit.modify.selectAll();}
+                },
+                {
+                    id: "mirror-x", component: "Button", iconClass: "mdi mdi-unfold-more-horizontal", className: "icon", container: "#sub-menu",
+                    show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
+                    callback:function(){edit.modify.mirrorX()}
+                },
+                {
+                    id: "mirror-y", component: "Button", iconClass: "mdi mdi-unfold-more-vertical", className: "icon", container: "#sub-menu",
+                    show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
+                    callback:function(){edit.modify.mirrorY()}
+                },
+                {
+                    id: "break-point", component: "Button", iconClass: "", className: "button", text: "Break", container: "#sub-menu",
+                    show: function () { return edit.modify.breakPointApprove() && app.state.measuremode !== true },
+                    callback: function () { edit.modify.breakPoint(); }
+                },
+                {
+                    id: "weld", component: "Button", iconClass: "", className: "button", text: "Weld", container: "#sub-menu",
+                    show: function () { return edit.modify.weldPointApprove() && app.state.measuremode !== true },
+                    callback: function () { edit.modify.weldPoint(); }
+                },
+                {
+                    id: "connect", component: "Button", iconClass: "", className: "button", text: "Connect", container: "#sub-menu",
+                    show: function () { return edit.modify.connectPointsApprove() && app.state.measuremode !== true },
+                    callback: function () { edit.modify.connectPoints(); }
+                },
+                {
+                    id: "divide", component: "Button", iconClass: "", className: "button", text: "Divide", container: "#sub-menu",
+                    show: function () { return Lines.selected.length === 1 &&app.state.measuremode !== true; },
+                    callback: function () {
+                        keyboard.open({
+                            isMobile: app.state.isMobile,
+                            fields: [{ prop: "value", title: "Divide By" }],
+                            title: "Divide Line",
+                            close: true,
+                            negative: false,
+                            callback: edit.modify.divide
+                        });
+                    }
+                },
+                {
+                    id: "join", component: "Button", iconClass: "", className: "button", text: "Join", container: "#sub-menu",
+                    show: function () { 
+                        return Lines.selected.length === 2 && 
+                        Lines.getMeet(Lines.selected[0], Lines.selected[1]) && 
+                        !Lines.isConnect(Lines.selected[0], Lines.selected[1]) &&
+                        app.state.measuremode !== true; 
+                    },
+                    callback: function () { edit.modify.joinLines(); }
+                },
+                {
+                    id: "remove-measures", component: "Button", iconClass: "", className: "button", text: "Remove All", container: "#sub-menu",
+                    show: function () { return app.state.appmode === "edit" && app.state.editmode === "measure" && app.state.measuremode !== true; },
+                    callback: function () { edit.measure.removeAll(); }
+                },
+                {
+                    id: "all-measure", component: "Button", iconClass: "", className: "button", text: "Add To All", container: "#sub-menu",
+                    show: function () { return app.state.appmode === "edit" && app.state.editmode === "measure" && app.state.measuremode !== true; },
+                    callback: function () { edit.measure.measureAll(); }
+                },
+            ]
         },
         {
-            id: "weld", component: "Button", iconClass: "", className: "button", text: "Weld", container: "#sub-menu",
-            show: function () { return edit.modify.weldPointApprove() && app.state.measuremode !== true },
-            callback: function () { edit.modify.weldPoint(); }
+            id:"bottom-menu",html:[
+                {
+                    id:"measure",component:"Button",iconClass:"mdi mdi-ruler",className:"icon left",container:"#bottom-menu",
+                    callback:function(){
+                        if(!app.state.measuremode){
+                            app.state.measuremode= true; 
+                            $("#measure").addClass("active");
+                        }
+                        else{app.state.measuremode = false; $("#measure").removeClass("active");}
+                        app.state.topMenuTitle = "Measure Mode";
+                        display.render();
+                    }
+                },
+                {
+                    id:"magnify-plus",component:"Button",iconClass:"mdi mdi-magnify-plus-outline",className:"icon right",container:"#bottom-menu",
+                },
+                {
+                    id:"magnify-minus",component:"Button",iconClass:"mdi mdi-magnify-minus-outline",className:"icon right",container:"#bottom-menu",
+                },
+                {
+                    id:"pan-mode",component:"Button",iconClass:"mdi mdi-gesture-tap",className:"icon left",container:"#bottom-menu",
+                    callback:function(){
+                    $("body").append(
+                        '<div class="pan-background"><p>Pan mode is active!!!<br>Drag to pan screen<br>double tap for deactive pan mode</p></div>'
+                    );
+                        app.eventHandler(".pan-background", "dblclick", $.proxy(app.panremove,app));
+                        app.eventHandler(".pan-background", "mousedown", $.proxy(app.panmousedown,app));
+                    }
+                },
+                {
+                    id:"undo",component:"Button",iconClass:"mdi mdi-undo",className:"icon right",container:"#bottom-menu",
+                    show:function(){return app.state.measuremode !== true;}
+                },
+            ]
         },
-        {
-            id: "connect", component: "Button", iconClass: "", className: "button", text: "Connect", container: "#sub-menu",
-            show: function () { return edit.modify.connectPointsApprove() && app.state.measuremode !== true },
-            callback: function () { edit.modify.connectPoints(); }
-        },
-        {
-            id: "divide", component: "Button", iconClass: "", className: "button", text: "Divide", container: "#sub-menu",
-            show: function () { return Lines.selected.length === 1 &&app.state.measuremode !== true; },
-            callback: function () {
-                keyboard.open({
-                    isMobile: app.state.isMobile,
-                    fields: [{ prop: "value", title: "Divide By" }],
-                    title: "Divide Line",
-                    close: true,
-                    negative: false,
-                    callback: edit.modify.divide
-                });
-            }
-        },
-        {
-            id: "join", component: "Button", iconClass: "", className: "button", text: "Join", container: "#sub-menu",
-            show: function () { 
-                return Lines.selected.length === 2 && 
-                Lines.getMeet(Lines.selected[0], Lines.selected[1]) && 
-                !Lines.isConnect(Lines.selected[0], Lines.selected[1]) &&
-                app.state.measuremode !== true; 
-            },
-            callback: function () { edit.modify.joinLines(); }
-        },
-        {
-            id: "remove-measures", component: "Button", iconClass: "", className: "button", text: "Remove All", container: "#sub-menu",
-            show: function () { return app.state.appmode === "edit" && app.state.editmode === "measure" && app.state.measuremode !== true; },
-            callback: function () { edit.measure.removeAll(); }
-        },
-        {
-            id: "all-measure", component: "Button", iconClass: "", className: "button", text: "Add To All", container: "#sub-menu",
-            show: function () { return app.state.appmode === "edit" && app.state.editmode === "measure" && app.state.measuremode !== true; },
-            callback: function () { edit.measure.measureAll(); }
-        },
-        {
-            id:"measure",component:"Button",iconClass:"mdi mdi-ruler",className:"icon left",container:"#bottom-menu",
-            callback:function(){
-                if(!app.state.measuremode){
-                    app.state.measuremode= true; 
-                    $("#measure").addClass("active");
-                }
-                else{app.state.measuremode = false; $("#measure").removeClass("active");}
-                display.render();
-            }
-        },
-        {
-            id:"magnify-plus",component:"Button",iconClass:"mdi mdi-magnify-plus-outline",className:"icon right",container:"#bottom-menu",
-        },
-        {
-            id:"magnify-minus",component:"Button",iconClass:"mdi mdi-magnify-minus-outline",className:"icon right",container:"#bottom-menu",
-        },
-        {
-            id:"pan-mode",component:"Button",iconClass:"mdi mdi-gesture-tap",className:"icon left",container:"#bottom-menu",
-            callback:function(){
-            $("body").append(
-                '<div class="pan-background"><p>Pan mode is active!!!<br>Drag to pan screen<br>double tap for deactive pan mode</p></div>'
-            );
-                app.eventHandler(".pan-background", "dblclick", $.proxy(app.panremove,app));
-                app.eventHandler(".pan-background", "mousedown", $.proxy(app.panmousedown,app));
-            }
-        },
-        {
-            id:"undo",component:"Button",iconClass:"mdi mdi-undo",className:"icon right",container:"#bottom-menu",
-            show:function(){return app.state.measuremode !== true;}
-        },
-
     ],
     render: function () {
         var str = '';
-        for (var i = 0; i < this.containers.length; i++) {
-            var container = this.containers[i];
-            $('#' + container.id).remove();
-            str += '<div id="' + container.id + '">';
-            for (var j = 0; j < this.items.length; j++) {
-                var item = this.items[j];
-                if (item.show && item.show() === false) { continue; }
-                if (item.container !== '#' + container.id) { continue; }
-                str += components.render(item);
-            }
-            str += '</div>';
+        for (var i = 0; i < this.items.length; i++) {
+            var item = this.items[i];
+            components.remove(item.id);
+            components.render(item,"body");
         }
-        $("body").append(str);
-
-
+        
     },
 };
 

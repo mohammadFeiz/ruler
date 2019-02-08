@@ -1,14 +1,6 @@
 ﻿var edit = {
     selectRect: { start: null, end: null },
     pan:false,
-    dblclick: function (e) {
-        $("body").append(
-            '<div class="pan-background"><p>Pan mode is active!!!<br>Drag to pan screen<br>double tap for deactive pan mode</p></div>'
-        );
-        app.eventHandler(".pan-background", "dblclick", $.proxy(this.panremove,this));
-        app.eventHandler(".pan-background", "mousedown", $.proxy(this.panmousedown,this));
-        
-    },
     mousedown: function (e) {
         app.eventHandler("window", "mousemove", $.proxy(this.mousemove, this));
         app.eventHandler("window", "mouseup", $.proxy(this.mouseup, this));
@@ -104,77 +96,60 @@
         point: null,
         line: null,
         newLine: false,
-        //line: null,
         mousedown: function (e) {
             edit.end();
-            var line = edit.extendLine.line = app.getLine({ is: { layerId: layers.getActive().id } });
-            if (!line) { return; }
-            line.showDimension = true;
-            Lines.select(line);
-
+            this.line = app.getLine({ is: { layerId: layers.getActive().id } });
+            if (!this.line) { return; }
+            this.line.showDimension = true;
+            Lines.select(this.line);
             var coords = app.canvas.getMousePosition();
-            var Points = Lines.getPoints(line);
-            var startDistance = app.canvas.get.line.length({ start: coords, end: Points.start });
-            var endDistance = app.canvas.get.line.length({ start: coords, end: Points.end });
-            var side = startDistance < endDistance ? "start" : "end";
-            var otherSide = startDistance < endDistance ? "end" : "start";
-            var x1 = line[otherSide].x, y1 = line[otherSide].y;
-            var point = edit.extendLine.point = Points[side];
+            var points = Lines.getPoints(this.line);
+            if(Lines.getLength({ start: coords, end: points.start }) < Lines.getLength({ start: coords, end: points.end })){
+                var x1 = this.line.end.x, y1 = this.line.end.y;
+                this.point = points.start;
+            }
+            else{
+                var x1 = this.line.start.x, y1 = this.line.start.y;
+                this.point = points.end;
+            }
             this.startOffset = {
-                x: coords.x,
-                y: coords.y,
                 x1: x1,
                 y1: y1,
-                dip: app.canvas.get.line.dip(line),
-                pointCoords: { x: point.x, y: point.y }
+                dip: Lines.getDip(this.line),
+                pointCoords: { x: this.point.x, y: this.point.y }
             };
-            app.eventHandler("window", "mousemove", edit.extendLine.windowMouseMove);
-            app.eventHandler("window", "mouseup", edit.extendLine.windowMouseUp);
             app.redraw();
         },
-        windowMouseMove: function (e) {
-            var so = edit.extendLine.startOffset,
-            dip = so.dip,
-            step = edit.extendLine.step,
-            point = edit.extendLine.point,
-            line = edit.extendLine.line,
-            newLine = edit.extendLine.newLine,
-            x1 = (newLine) ? point.x : so.x1,
-            y1 = (newLine) ? point.y : so.y1;
-            if (newLine) { app.redraw(); }
-            var coords = app.canvas.getMousePosition();
-            if (dip === "infinity") {
-                var y2 = coords.y;
-                var x2 = line.start.x;
+        mousemove: function (e) {
+            var so = this.startOffset,
+            coords = app.canvas.getMousePosition();
+            if (this.newLine) { app.redraw(); }
+            var start = this.newLine?{ x: this.point.x, y:this.point.y}:{ x:so.x1, y: so.y1 };
+            if (so.dip === "infinity") {
+                var end = {x:this.line.start.x,y:coords.y};
             }
-            else if (dip === 0) {
-                var y2 = line.start.y;
-                var x2 = coords.x;
+            else if (so.dip === 0) {
+                var end = {x:coords.x,y:this.line.start.y};
             }
             else if (Math.abs(so.dip) <= 1) {
-                var x2 = coords.x;
-                var y2 = app.canvas.get.line.yByX(line, x2, so.dip);
+                var end = {x:coords.x,y:Lines.getYByX(this.line, coords.x, so.dip)};
             }
             else {
-                var y2 = coords.y;
-                var x2 = app.canvas.get.line.xByY(line, y2, so.dip);
+                var end = {x:Lines.getXByY(this.line, coords.y, so.dip),y:coords.y};
             }
-            var extendLine = { start: { x: x1, y: y1 }, end: { x: x2, y: y2 } };
-            extendLine = Lines.getStepedLine({ line: extendLine, side: "end", step: step, dip: dip });
-            if (newLine) {
-                edit.extendLine.line = extendLine;
+            var extendLine = {start: start, end: end };
+            extendLine = Lines.getStepedLine({ line: extendLine, side: "end", step: this.step, dip: so.dip });
+            if (this.newLine) {
+                this.line = extendLine;
                 app.drawLine({ start: extendLine.start, end: extendLine.end, color: "yellow", showDimension: true, lineDash: [4, 4] });
             }
             else {
-                Points.moveTo(point, extendLine.end.x, extendLine.end.y);
+                Points.moveTo(this.point, extendLine.end.x, extendLine.end.y);
                 app.redraw();
             }
         },
-        windowMouseUp: function () {
-            app.eventRemover("window", "mousemove", edit.extendLine.windowMouseMove);
-            app.eventRemover("window", "mouseup", edit.extendLine.windowMouseUp);
+        mouseup: function () {
             Lines.selected[0].showDimension = false;
-            edit.end();
             if (edit.extendLine.newLine) {
                 var eline = edit.extendLine.line;
                 if (eline !== null && app.canvas.get.line.length(eline) >= 5) {
@@ -192,11 +167,8 @@
                     });
                 }
             }
-            edit.extendLine.reset();
+            edit.end();
             undo.save();
-        },
-        reset: function () {
-            app.redraw();
         },
         setting: function () {
             Alert.open({
@@ -244,10 +216,9 @@
             var line = edit.extendLine.line = app.getLine({ is: { layerId: layers.getActive().id } });
             if (!line) { return; }
             Lines.select(line);
+
             this.line = line;
             this.points = Lines.getPoints(line);
-            app.eventHandler("window", "mousemove", $.proxy(this.mousemove,this));
-            app.eventHandler("window", "mouseup", $.proxy(this.mouseup,this));
             app.redraw();
         },
         mousemove: function (e) {
@@ -274,7 +245,6 @@
             app.redraw();
             app.drawLine({ start: this.plumb.start, end: this.plumb.end, color: "yellow", showDimension: true, lineDash: [4, 4] });
         },
-
         mouseup: function () {
             edit.end();
             if (Lines.getLength(this.plumb) > 5) {
@@ -291,8 +261,6 @@
                     end: {x: this.plumb.end.x,y: this.plumb.end.y,id: point2.id}
                 });
             }
-            app.eventRemover("window", "mousemove", this.mousemove);
-            app.eventRemover("window", "mouseup", this.mouseup);
             app.redraw();
         },
         setting: function () {
@@ -326,16 +294,15 @@
             var line = app.getLine({ is: { layerId: layers.getActive().id } });
             if (!line) { return; }
             Lines.select(line);
+
             var coords = app.canvas.getMousePosition();
             this.startOffset = {
                 x: coords.x,y: coords.y,line: line,
                 dip: Lines.getDip(line),radian: Lines.getRadian(line),
             };
-            app.eventHandler("window", "mousemove", $.proxy(this.mouseMove,this));
-            app.eventHandler("window", "mouseup", $.proxy(this.mouseUp,this));
             app.redraw();
         },
-        mouseMove: function (e) {
+        mousemove: function (e) {
             var so = this.startOffset;
             var coords = app.canvas.getMousePosition();
             var offset = coords.x - so.x;
@@ -356,7 +323,7 @@
             };
             return offsetedLine;
         },
-        mouseUp: function () {
+        mouseup: function () {
             Lines.deselectAll();
             if (this.offset !== 0) {
                 var ol = edit.offsetLine.offsetedLine;
@@ -365,8 +332,6 @@
                 var line = Lines.add({ start: { x: ol.start.x, y: ol.start.y, id: point1.id }, end: { x: ol.end.x, y: ol.end.y, id: point2.id } });
                 undo.save();
             }
-            app.eventRemover("window", "mousemove", this.mouseMove);
-            app.eventRemover("window", "mouseup", this.mouseUp);
             app.redraw();
             undo.save();
         },
@@ -716,11 +681,11 @@
             }
         },
         backgroundmousedown:function(e){
-            app.eventHandler("window", "mousemove", edit.modify.backgroundmousemove);
-            app.eventHandler("window", "mouseup", edit.modify.backgroundmouseup);
             var axisPos = axis.getPosition();
             var client = app.getClient(e);
             edit.startOffset = { x: client.x, y: client.y, axisX: axisPos.x, axisY: axisPos.y };
+            app.eventHandler("window", "mousemove", edit.modify.backgroundmousemove);
+            app.eventHandler("window", "mouseup", edit.modify.backgroundmouseup);
         },
         backgroundmousemove: function (e) {
             var so = edit.startOffset;
@@ -1094,30 +1059,41 @@ var axis = {
         axis.opened = true;
         edit.modify.rotateNumber = 0;
         var magnetSize = edit.modify.magnetArea * app.canvas.getZoom();
-        var str = '';
-        str += '<div id="axis">';
-        str += '<div id="axis-background">';
-        str += '<div id="axis-magnet" style="top:calc(50% - '+(magnetSize)+'px);left:calc(50% - '+(magnetSize)+'px);width:'+(magnetSize*2)+'px;height:'+(magnetSize*2)+'px;"></div>';
-        str += '<div id="axis-x"><div class="title">X:</div><div class="value"></div></div>';
-        str += '<div id="axis-y"><div class="title">Y:</div><div class="value"></div></div>';
-        str += '<div id="axis-angle"><div class="title">Angle:</div><div class="value">0</div></div>';
-        str += '</div>';
-        for (var i = 0; i < this.buttons.length; i++) {
-            var button = this.buttons[i];
-            str += '<div id="' + button.id + '" class="' + (button.className + (button.active ? button.active() : '')) + '" style="transform:rotate(' + (i * 45) + 'deg)">';
-            str += components.render({
-                id: button.id + "-icon", component: "Button", className: "icon " + button.iconClass, style: 'transform:rotate(' + (i * -45) + 'deg);',
-                callback: edit.modify.axisButton,
-            });
-            str += '</div>';
-        }
-        str += '</div>';
-        $("body").append(str);
-        app.eventHandler("#axis-background", "mousedown", edit.modify.backgroundmousedown);
+        components.render({
+            id:"axis",
+            html:[
+                {
+                    id:"axis-background",
+                    html:[
+                        {id:"axis-magnet",attrs:{style:'top:calc(50% - '+(magnetSize)+'px);left:calc(50% - '+(magnetSize)+'px);width:'+(magnetSize*2)+'px;height:'+(magnetSize*2)+'px;'}},
+                        {id:"axis-x",html:[{className:"title",html:["X:"]},{className:"value"}]},
+                        {id:"axis-y",html:[{className:"title",html:["Y:"]},{className:"value"}]},
+                        {id:"axis-angle",html:[{className:"title",html:["Angle:"]},{className:"value",html:["0"]}]},
+                    ],
+                    callback: edit.modify.backgroundmousedown
+                },
+                {
+                    html:this.buttons.map(function(button,i){
+                        return {
+                            id:button.id,className:button.className + (button.active ? button.active() : ''),
+                            attrs:{style: 'transform:rotate(' + (i * 45) + 'deg);'},
+                            html:[
+                                {
+                                    id: button.id + "-icon", component: "Button", 
+                                    className: "icon " + button.iconClass, 
+                                    attrs:{style: 'transform:rotate(' + (i * -45) + 'deg);'},
+                                    callback: edit.modify.axisButton,
+                                }
+                            ]
+                        } 
+                    })
+                }
+            ]
+        },"body");
         this.setPosition(coords);
     },
     close: function () {
-        $("#axis").remove();
+        components.remove("axis");
         axis.opened = false;
         axis.mode = "none";
     },

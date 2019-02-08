@@ -100,13 +100,7 @@ body {
 }
 
 
-.button .button-icon {
-    display: inline-block;
-}
 
-.button-text {
-    display: inline-block;
-}
 
 
 #main-menu, #set-app-mode, #settings, #delete-item, #select-all, #mirror-x, #mirror-y, #break-point, #weld, 
@@ -169,14 +163,19 @@ body {
     padding: 6px;
     width: calc(100% - 12px);
     font-size:12px;
+    float:left;
 }
-
+.alert-header{
+    position: relative;
+    float:left;
+}
 .alert-footer {
     z-index: 10;
     position: relative;
     padding: 6px;
     width:100%;
     box-sizing:border-box;
+    float:left;
 }
 
 .alert-button {

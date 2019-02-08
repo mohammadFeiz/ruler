@@ -192,6 +192,9 @@ var create = {
         polyline: function () {
             return this.state.points;
         },
+        path:function(){
+            return this.state.points.concat(this.state.points[0]);
+        },
         rectangle: function () {
             var s = this.state, points = [];
             var start = s.points[0], end = s.points[1]

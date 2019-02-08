@@ -5,31 +5,36 @@ var Alert = {
         this.state = {};
         for (prop in obj) { this.state[prop] = obj[prop]; }
         this.state.button = this.state.buttons || [];
-        $("body").append(AlertPopup(this.state));
+        AlertPopup(this.state);
         
     },
     close: function () {
-        $("#alert").remove();
+        components.remove("alert");
     }
 }
 
 function AlertPopup(props) {
     var s = props.style;
-    var str = '<div id="alert">';
-    str += '<div class="back-drop"></div>';
-    str += '<div class="alert-header header" style="float:left;position:relative;">';
-    str += components.render({ id: "alert-close", iconClass: "mdi mdi-close", className: "icon alert-close", component: "Button", callback: Alert.close });
-    str += components.render({ id: "alert-title", text: props.title, className: "text", component: "Button" });    
-    str += '</div>';
-    str += '<div class="alert-body" style="float:left;position:relative;">';
-    if (typeof props.template === "string") { str += props.template; }
+    var headerHTML = [
+        { 
+            component: "Button",id: "alert-close", iconClass: "mdi mdi-close", 
+            className: "icon alert-close",callback: Alert.close 
+        },
+        { 
+            component: "Button",id: "alert-title", text: props.title, className: "text" 
+        }
+    ];
+
+    var bodyHTML = [];
+    if (typeof props.template === "string") { bodyHTML.push(props.template); }
     else if (!Array.isArray(props.template)) {
         if (props.template.type === "color pallete") {
             var colors = ["#ff0000", "#ff4e00", "#ffa800", "#fcff00", "#f5eeb2", "#12ff00", "#2e4f0b", "#00f0ff", "#008aff", "#2400ff", "#1c4663",
             "#41366f", "#7c6c92", "#8400ff", "#ff6868", "#ff00ba", "#72441c", "#482a0b", "#8a8a8a", "#ffffff"];
             for (var i = 0; i < colors.length; i++) {
-                str += components.render({
-                    component: "DIV", id: "color-pallete-item-" + i, className: "color-pallete-item", attrs: { "data-color": colors[i] }, style: "background:" + colors[i] + ";",
+                bodyHTML.push({
+                    id: "color-pallete-item-" + i, className: "color-pallete-item", 
+                    attrs: { "data-color": colors[i],style: "background:" + colors[i] + ";" },
                     callback: props.template.callback
                 });
             }
@@ -38,20 +43,21 @@ function AlertPopup(props) {
     else {
         for (var i = 0; i < props.template.length; i++) {
             var template = props.template[i];
-            str += '<div data-index="' + i + '" class="alert-template-item">';
-            str += '<div class="alert-template-title">' + (template.title || '') + '</div>';
-            str += '<div class="alert-template-control">';
-            str += AlertControl[template.type](template,i);
-            str += '</div>';
-            str += '<div class="alert-template-value">' + (template.value === undefined || template.type !== 'slider' ? '' : template.value) + '</div>';
-            str += '</div>';
+            var templateValue = template.value === undefined || template.type !== 'slider' ? '' : template.value;
+            bodyHTML.push({
+                className:"alert-template-item",attrs:{"data-index":i},
+                html:[
+                    {className:"alert-template-title",html:[template.title || '']},
+                    {className:"alert-template-control",html:[AlertControl[template.type](template,i)]},
+                    {className:"alert-template-value",html:[templateValue]}
+                ]
+            });
         }
-    }
-    str += '</div>';
-    str += '<div class="alert-footer" style="float:left;position:relative;">';
+    } 
+    var footerHTML = [];
     for (var i = 0; i < props.buttons.length; i++) {
         var button = props.buttons[i];
-        str+=components.render({
+        footerHTML.push({
             component: "Button",
             id: "alert-botton-" + i,
             text: button.text,
@@ -59,9 +65,16 @@ function AlertPopup(props) {
             callback: button.callback,
         })
     }
-    str += '</div>';
-    str += '</div>';
-    return str;
+    
+    components.render({
+        id:"alert",
+        html:[
+            {className:"back-drop"},
+            {className:"alert-header header",html:headerHTML},
+            {className:"alert-body",html:bodyHTML},
+            {className:"alert-footer",html:footerHTML}
+        ]
+    },"body");
 }
 
 var AlertControl = {
@@ -75,7 +88,7 @@ var AlertControl = {
             Alert.state.template[index].callback(value);
             $(".alert-template-item[data-index=" + index + "] .alert-template-value").html(value);
         }
-        return components.render(template);
+        return template;
     },
     switch: function (template,index) {
         template.id = "alert-template" + index;
@@ -92,13 +105,13 @@ var AlertControl = {
             var index = obj.index;
             Alert.state.template[index].callback(value === 0 ? false : true);
         }
-        return '<div class="alert-switch-container">' + components.render(template); +'</div>';
+        return {className:"alert-switch-container",html:[template]}
     },
     numberbox:function(template,index){
         template.id = "alert-template" + index;
         template.dataTarget = "#alert-template" + index;
         template.component = "Numberbox";
         template.className="numberbox";
-        return components.render(template);
+        return template;
     }
 };

@@ -13,8 +13,7 @@ var layers = {
     },
     
     render: function (mode) {
-        $("#layer-popup").remove();
-        var className = mode === "init" ? '' : 'active';
+        components.remove("layer-popup")
         var bodyHeight = Math.floor(window.innerHeight - 120);
         var itemsHeight = this.model.length * 42;
         this.startScroll = this.startScroll ||0;
@@ -22,80 +21,99 @@ var layers = {
             this.startScroll = itemsHeight - bodyHeight;
         }
         if(this.startScroll < 0 ){this.startScroll = 0;}
-        var str = '';
-        str += '<div id="layer-popup" class="' + className + '">';
-        str += components.render({ 
+        var layerBackdrop = { 
             component: "DIV", id: "layer-back-drop", 
             className: "back-drop", callback: layers.close 
-        });
-        if(itemsHeight > bodyHeight){ 
-            str+='<div id="layer-scroll">';
-            str+=components.render({
-                id:"layer-scroll-up",iconClass:"mdi mdi-menu-up",component:"Button",
-                className:"icon layer-scroll-arrow",style:"top:0;",
-                callback:function(){layers.startScroll -= 42; layers.render();}
-            });
-            str+='<div id="layer-scroll-slider-container"</div>';
-            str+= components.render({
-                component:"Slider",
-                id:"layer-scroll-slider",
-                start:0,
-                step:1,
-                end:itemsHeight,
-                value:[this.startScroll,this.startScroll + bodyHeight],
-                direction:"down",
-                ondrag:function(obj){
-                    layers.startScroll = obj.value[0]; 
-                    $("#layer-items-container").css("top",layers.startScroll*-1);
+        };
+        var layerScroll = {
+            component:"DIV",
+            id:"layer-scroll",
+            show:itemsHeight > bodyHeight,
+            html:[
+                {
+                    id:"layer-scroll-up",iconClass:"mdi mdi-menu-up",component:"Button",
+                    className:"icon layer-scroll-arrow",style:"top:0;",
+                    callback:function(){layers.startScroll -= 42; layers.render();}
                 },
-                style:{button_height:0,button_width:8,line_width:8}
-            });
-            str+='</div>';
-            str+=components.render({
-                id:"layer-scroll-down",iconClass:"mdi mdi-menu-down",component:"Button",
-                className:"icon layer-scroll-arrow",style:"bottom:0;",
-                callback:function(){layers.startScroll += 42; layers.render();}
-            });
-            str+='</div>';
+                {
+                    component:"DIV",id:"layer-scroll-slider-container",
+                    html:[
+                        {
+                            component:"Slider",
+                            id:"layer-scroll-slider",
+                            start:0,
+                            step:1,
+                            end:itemsHeight,
+                            value:[this.startScroll,this.startScroll + bodyHeight],
+                            direction:"down",
+                            ondrag:function(obj){
+                                layers.startScroll = obj.value[0]; 
+                                $("#layer-items-container").css("top",layers.startScroll*-1);
+                            },
+                            style:{button_height:0,button_width:8,line_width:8}
+                        }
+                    ]
+                },
+                {
+                    id:"layer-scroll-down",iconClass:"mdi mdi-menu-down",component:"Button",
+                    className:"icon layer-scroll-arrow",style:"bottom:0;",
+                    callback:function(){layers.startScroll += 42; layers.render();}
+                }  
+            ]
+        };
+
+        var layerHeader = {
+            component:"DIV",id:"layer-header",className:"header",
+            html:this.headerItems.map(function(item){return item}),
         }
-        str += '<div id="layer-header" class="header">';
-        for (var i = 0; i < this.headerItems.length; i++) { 
-            str += components.render(this.headerItems[i]); 
+        var layerFooter = {
+            component:"DIV",id:"layer-footer",className:"header",
+            html:this.footerItems.map(function(item){return item})
         }
-        str += '</div>';
-        str += '<div id="layer-body">';
-        str += '<div id="layer-items-container" '+
-               'style="top:'+(this.startScroll * -1)+'px;">';
-        for (var i = 0; i < this.model.length; i++) {
-            var model = this.model[i];
-            str += '<div data-index="' + i + '" '+
-                   'class="layer-item' + (model.active ? ' active' : '') + '" '+
-                   'style="border-left:4px solid ' + model.color + ';" '+
-                   'id="' + model.id + '">';
-            str += components.render({
-                component: "Button", id: "layer-item-icon" + i, className: "icon", iconClass: model.show ? "mdi mdi-eye" : "mdi mdi-eye-off",
-                callback: function (e) { layers.setVisibility($(e.currentTarget).parent().attr("id")); }
-            });
-            str += components.render({
-                component: "Button", id: "layer-item-text" + i, className: "text", 
-                text: model.title,
-                callback: function (e) {
-                    var id = $(e.currentTarget).parent().attr("id");
-                    var client = app.getClient(e);
-                    layers.clickedItem = {id:id,y:client.y,startScroll:layers.startScroll};
-                    app.eventHandler('window','mouseup',$.proxy(layers.itemMouseUp,layers));
-                    app.eventHandler('window','mousemove',$.proxy(layers.itemMouseMove,layers));
-                }
-            });
-            str += '</div>';
-        }
-        str += '</div>';
-        str += '</div>';
-        str += '<div id="layer-footer" class="header">';
-        for (var i = 0; i < this.footerItems.length; i++) { str += components.render(this.footerItems[i]); }
-        str += '</div>';
-        str += '</div>';
-        $("body").append(str);
+        var layerBody = {
+            component:"DIV",id:"layer-body",
+            html:[
+                {
+                    component:"DIV",id:"layer-items-container",
+                    attrs:{style:'top:'+(this.startScroll * -1)+'px;'},
+                    html:this.model.map(function(model,i){
+                        return {
+                            component:"DIV",id:model.id,
+                            className:'layer-item' + (model.active ? ' active' : ''),
+                            attrs:{style:'border-left:4px solid ' + model.color + ';'},
+                            html:[
+                                {
+                                    component: "Button", id: "layer-item-icon" + i, className: "icon", iconClass: model.show ? "mdi mdi-eye" : "mdi mdi-eye-off",
+                                    callback: function (e) { layers.setVisibility($(e.currentTarget).parent().attr("id")); }
+                                },
+                                {
+                                    component: "Button", id: "layer-item-text" + i, className: "text", 
+                                    text: model.title,
+                                    callback: function (e) {
+                                        var id = $(e.currentTarget).parent().attr("id");
+                                        var client = app.getClient(e);
+                                        layers.clickedItem = {id:id,y:client.y,startScroll:layers.startScroll};
+                                        app.eventHandler('window','mouseup',$.proxy(layers.itemMouseUp,layers));
+                                        app.eventHandler('window','mousemove',$.proxy(layers.itemMouseMove,layers));
+                                    }
+                                }
+                            ]
+                        }
+                    })
+                }    
+            ]
+        };
+        components.render({
+            component:"DIV",id:"layer-popup",className :mode === "init" ? '' : 'active',
+            html:[
+                layerBackdrop,
+                layerScroll,
+                layerHeader,
+                layerBody,
+                layerFooter
+            ]
+        },"body");
+        
     },
     itemMouseUp:function(e){
         console.log("ok");
