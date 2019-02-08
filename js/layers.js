@@ -32,7 +32,7 @@ var layers = {
             html:[
                 {
                     id:"layer-scroll-up",iconClass:"mdi mdi-menu-up",component:"Button",
-                    className:"icon layer-scroll-arrow",style:"top:0;",
+                    className:"icon layer-scroll-arrow",attrs:{style:"top:0;"},
                     callback:function(){layers.startScroll -= 42; layers.render();}
                 },
                 {
@@ -56,7 +56,7 @@ var layers = {
                 },
                 {
                     id:"layer-scroll-down",iconClass:"mdi mdi-menu-down",component:"Button",
-                    className:"icon layer-scroll-arrow",style:"bottom:0;",
+                    className:"icon layer-scroll-arrow",attrs:{style:"bottom:0;"},
                     callback:function(){layers.startScroll += 42; layers.render();}
                 }  
             ]
