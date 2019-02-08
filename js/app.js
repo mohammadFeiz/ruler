@@ -394,7 +394,7 @@ var components = {
         if(obj.html){for(var i = 0; i < obj.html.length; i++){str += this.getHTML(obj.html[i]);}}
         str += '</div>';
         if (obj.callback) {
-            if(!id){alert("for set callback, id is required!!!")}
+            if(!id){debugger;alert("for set callback, id is required!!!")}
             $('body').off('mousedown', '#' + id);
             $('body').on('mousedown', '#' + id, function (e) {
                 var element = $(e.currentTarget);

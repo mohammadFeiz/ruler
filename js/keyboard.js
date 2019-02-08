@@ -6,34 +6,73 @@ var keyboard = {
         this.render();
     },
     render: function () {
-        var s = this.state,str = '';
-        str += '<div id="keyboard">';
-        str += '<div class="back-drop"></div>';
-        str += '<div id="keyboard-header" class="header">';
-        str += components.render({ id: "keyboard-close", component: "Button", iconClass: "mdi mdi-close", className: "icon", callback: this.close.bind(this) });
-        str += components.render({ id: "keyboard-title", component: "Button", text: s.title, className: "text" });
-        str += '</div>';
-        str += '<div id="keyboard-body">';
+        var s = this.state;
+        var backDrop = {className:"back-drop"};
+        var keyboardHeader = {
+            className:"header",id:"keyboard-header",
+            html:[
+                { 
+                    id: "keyboard-close", component: "Button", 
+                    iconClass: "mdi mdi-close", className: "icon", 
+                    callback: this.close.bind(this) 
+                },
+                { 
+                    id: "keyboard-title", component: "Button", text: s.title, className: "text" 
+                }
+            ]
+        };
+        var keyboardKeys = [];
         for (var i = 1; i < 10; i++) {
-            str += components.render({ id: "keyboard-key" + i, text: i, className: "button keyboard-key", component: "Button", callback: this.getKey.bind(this), attrs: {"data-key":i} });
+            keyboardKeys.push({ 
+                id: "keyboard-key" + i, className: "button keyboard-key",
+                text: i , attrs: {"data-key":i},component: "Button", 
+                callback: this.getKey.bind(this) 
+            });
         }
-        str += s.negative === true ? components.render({ id: "keyboard-key" + i, text: "-/+", className: "button keyboard-key", component: "Button", callback: this.getKey.bind(this), attrs: { "data-key": "-/+" } }) : '';
-        str += components.render({ id: "keyboard-key0", text: "0", className: "button keyboard-key", component: "Button", callback: this.getKey.bind(this), attrs: { "data-key": "0" }});
-        str += components.render({ id: "keyboard-key-backspace" + i, iconClass: "mdi mdi-backspace", className: "button keyboard-key", component: "Button", callback: this.getKey.bind(this), attrs: { "data-key": "back" } });
-        str += '</div>';
-        str += '<div id="keyboard-footer">';
-        for (var i = 0; i < s.fields.length; i++) {
-            var field = s.fields[i];
-            str += '<div data-index="' + i + '" class="keyboard-field' + ((s.activeIndex === i) ? ' active' : '') + '">';
-            str += components.render({ id: "keyboard-label" + i, component: "Button", text: field.title, className: "text keyboard-label" });
-            str += components.render({ id: "keyboard-numberbox" + i, component: "Numberbox", value: field.value===undefined?0:field.value, className: "numberbox keyboard-numberbox" });
-            str += '</div>';
+        keyboardKeys.push(
+            { 
+                id: "keyboard-key-minus", className: "button keyboard-key",
+                text: "-/+",attrs: { "data-key": "-/+" },component: "Button", 
+                callback: this.getKey.bind(this), 
+                show:s.negative === true 
+            },
+            { 
+                id: "keyboard-key0", className: "button keyboard-key",
+                text: "0",attrs: { "data-key": "0" },component: "Button", 
+                callback: this.getKey.bind(this), 
+            },
+            { 
+                id: "keyboard-key-backspace",className: "button keyboard-key", 
+                iconClass: "mdi mdi-backspace", attrs: { "data-key": "back" },component: "Button", 
+                callback: this.getKey.bind(this),  
+            }
+        );
+        var keyboardBody = {id:"keyboard-body",html:keyboardKeys};
+        var keyboardFooter = {
+            id:"keyboard-footer",
+            html:s.fields.map(function(field,i){
+                var className = 'keyboard-field' + (s.activeIndex === i ? ' active' : '');
+                return {
+                    className:className,attrs:{'data-index':i},id:'keyboard-field-'+i,
+                    html:[
+                        { 
+                            id: "keyboard-label" + i, component: "Button", 
+                            text: field.title, className: "text keyboard-label" 
+                        },
+                        { 
+                            id: "keyboard-numberbox" + i, component: "Numberbox", 
+                            value: field.value===undefined?0:field.value, 
+                            className: "numberbox keyboard-numberbox" 
+                        }
+                    ],
+                    callback:keyboard.fieldMouseDown.bind(keyboard)
+                }
+            }).concat({ 
+                id: "keyboard-ok", component: "Button", text: "OK", className: "button", 
+                callback: this.ok.bind(this) 
+            })
         }
-        str += components.render({ id: "keyboard-ok", component: "Button", text: "OK", className: "button", callback: this.ok.bind(this) });
-        str += '</div>';
-        str += '</div>';
-        $("body").append(str);
-        this.eventHandler(".keyboard-field", "mousedown", this.fieldMouseDown.bind(this));
+        components.render({id:"keyboard",html:[backDrop,keyboardHeader,keyboardBody,keyboardFooter]},"body");
     },
     getClient: function (e, axis) {
         axis = axis.toUpperCase();
