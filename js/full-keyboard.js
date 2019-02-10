@@ -6,50 +6,67 @@ var full_keyboard = {
         this.render();
     },
     render: function () {
-        var str = '';
-        str += '<div id="full-keyboard" class="">';
-        str += components.render({ component: "DIV", id: "full-keyboard-back-drop", className: "back-drop", callback: full_keyboard.close });
-        str += '<div class="full-keyboard-row">';
-        str += components.render({ component: "Button", className: "text", id: "full-keyboard-title", text: this.state.title });
-        str += components.render({ id: "full-keyboard-close", component: "Button", iconClass: "mdi mdi-close", className: "icon", callback: full_keyboard.close });
-        str += '</div>';
-        str += '<div class="full-keyboard-row">';
-        str += '<div id="full-keyboard-show">' + this.state.text + '</div>';
-        str += components.render({ id: "full-keyboard-ok", component: "Button", iconClass: "mdi mdi-send", className: "icon", callback: full_keyboard.submit.bind(full_keyboard) });
-        str += '</div>';
-        var list = [];
-        for (var i = 1; i <= 10; i++) { var text = i; if (i === 10) { text = 0; } list.push(text); }
-        str += '<div class="full-keyboard-row">';
-        for (var i = 0; i < list.length; i++) {
-            str += components.render({ id: "full-keyboard-key" + list[i], component: "Button", text: list[i], className: "button full-keyboard-key", callback: full_keyboard.keyDown, attrs: { 'data-key': list[i] } });
-        }
-        str += '</div>';
-        list = ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"];
-        str += '<div class="full-keyboard-row">';
-        for (var i = 0; i < list.length; i++) {
-            str += components.render({ id: "full-keyboard-key" + list[i], component: "Button", text: list[i], className: "button full-keyboard-key", callback: full_keyboard.keyDown, attrs: {'data-key':list[i]} });
-        }
-        str += '</div>';
-        list = ["A", "S", "D", "F", "G", "H", "J", "K", "L"];
-        str += '<div class="full-keyboard-row">';
-        for (var i = 0; i < list.length; i++) {
-            str += components.render({ id: "full-keyboard-key" + list[i], component: "Button", text: list[i], className: "button full-keyboard-key", callback: full_keyboard.keyDown, attrs: { 'data-key': list[i] } });
-        }
-        str += '</div>';
-        list = ["Z", "X", "C", "V", "B", "N", "M"];
-        str += '<div class="full-keyboard-row">';
-        str += components.render({ id: "full-keyboard-space", component: "Button", text: "space", className: "button full-keyboard-key full-keyboard-space", callback: full_keyboard.keyDown });
-        for (var i = 0; i < list.length; i++) {
-            str += components.render({ id: "full-keyboard-key" + list[i], component: "Button", text: list[i], className: "button full-keyboard-key", callback: full_keyboard.keyDown, attrs: { 'data-key': list[i] } });
-        }
-        str += components.render({ id: "full-keyboard-backspace", component: "Button", iconClass: "mdi mdi-backspace", className: "icon full-keyboard-key full-keyboard-backspace", callback: full_keyboard.keyDown });
-        str += '</div>';
-        str += '</div>';
-        $("body").append(str);
+        var backDrop = {id: "full-keyboard-back-drop",className: "back-drop", callback: full_keyboard.close};
+        var title = {component: "Button",id: "full-keyboard-title", className:"text", text: this.state.title};
+        var close = { 
+            component: "Button",id: "full-keyboard-close",className: "icon",  
+            iconClass: "mdi mdi-close",callback: full_keyboard.close 
+        };
+        var show = {id: "full-keyboard-show",html:[this.state.text]};
+        var ok = { 
+            component: "Button",id: "full-keyboard-ok",className: "icon",   
+            iconClass: "mdi mdi-send", callback: full_keyboard.submit.bind(full_keyboard) 
+        };
+        var numbers = [1,2,3,4,5,6,7,8,9,0].map(function(num){
+            return { 
+                component: "Button", id: "full-keyboard-key" + num,
+                className: "button full-keyboard-key",
+                text: num, callback: full_keyboard.keyDown,attrs: { 'data-key': num } 
+            }
+        })
+        var chars1 = ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"].map(function(char){
+            return { 
+                component: "Button", id: "full-keyboard-key" + char,
+                className: "button full-keyboard-key",
+                text: char, callback: full_keyboard.keyDown,attrs: { 'data-key': char } 
+            }
+        });
+        var chars2 = ["A", "S", "D", "F", "G", "H", "J", "K", "L"].map(function(char){
+            return { 
+                component: "Button", id: "full-keyboard-key" + char,
+                className: "button full-keyboard-key",
+                text: char, callback: full_keyboard.keyDown,attrs: { 'data-key': char } 
+            }
+        });
+        var chars3 = ["Z", "X", "C", "V", "B", "N", "M"].map(function(char){
+            return { 
+                component: "Button", id: "full-keyboard-key" + char,
+                className: "button full-keyboard-key",
+                text: char, callback: full_keyboard.keyDown,attrs: { 'data-key': char } 
+            }
+        })
+        var space = { 
+            component: "Button",id: "full-keyboard-space", 
+            className: "button full-keyboard-key full-keyboard-space", 
+            text: "space",  callback: full_keyboard.keyDown 
+        };
+        var backSpace = { 
+            id: "full-keyboard-backspace", component: "Button", iconClass: "mdi mdi-backspace", 
+            className: "icon full-keyboard-key full-keyboard-backspace", 
+            callback: full_keyboard.keyDown 
+        };
+        var row1 = {className: "full-keyboard-row",html:[title,close]};
+        var row2 = {className: "full-keyboard-row",html:[show,ok]};
+        var row3 = {className: "full-keyboard-row",html:numbers};
+        var row4 = {className: "full-keyboard-row",html:chars1};
+        var row5 = {className: "full-keyboard-row",html:chars2};
+        var row6 = {className:"full-keyboard-row",html:[space].concat(chars3,backSpace)};
+        components.render(
+            {id:"full-keyboard",html:[backDrop,row1,row2,row3,row4,row5,row6,]},
+            "body"
+        );
     },
-    close: function () {
-        $("#full-keyboard").remove();
-    },
+    close: function () {components.remove("full-keyboard");},
     submit: function () {
         var value = $("#full-keyboard-show").html();
         if (value === "") { return; }
@@ -75,28 +92,5 @@ var full_keyboard = {
             value = value.toLowerCase();
         }
         display.html(displayValue + value);
-    },
-    keyUp: function () {
-
-    },
-    eventHandler: function (selector, event, action) {
-        if (canvas.isMobile) {
-            if (event === "mousedown") { event = "touchstart"; }
-            else if (event === "mousemove") { event = "touchmove"; }
-            else if (event === "mouseup") { event = "touchend"; }
-        }
-        if (selector === "window") { $(window).unbind(event, $.proxy(action, this)).bind(event, $.proxy(action, this)); }
-        else if (typeof selector === "string") { $(selector).unbind(event, $.proxy(action, this)).bind(event, $.proxy(action, this)); }
-        else { selector.unbind(event, $.proxy(action, this)).bind(event, $.proxy(action, this)); }
-    },
-    eventRemover: function (selector, event, action) {
-        if (canvas.isMobile) {
-            if (event === "mousedown") { event = "touchstart"; }
-            else if (event === "mousemove") { event = "touchmove"; }
-            else if (event === "mouseup") { event = "touchend"; }
-        }
-        if (selector === "window") { $(window).unbind(event, $.proxy(action, this)); }
-        else if (typeof selector === "string") { $(selector).unbind(event, $.proxy(action, this)); }
-        else { selector.unbind(event, $.proxy(action, this)); }
     },
 }

@@ -17,6 +17,7 @@
         Lines.deselectAll();
         if (edit[app.state.editmode].reset !== undefined) { edit[app.state.editmode].reset(); }
         app.redraw();
+        axis.close();
         display.render();
     },
     setting: function () {if(edit[app.state.editmode].setting){edit[app.state.editmode].setting();}},
@@ -202,138 +203,95 @@
             });
         }, 
     },
-    plumbLine: {
-        line: null,
-        plumb: null,
-        points: null,
-        point: null,
-        side: null,
-        bond: false,
-        magnetArea: 10,
-        step: 10,
-        mousedown: function (e) {
-            edit.end();
-            var line = edit.extendLine.line = app.getLine({ is: { layerId: layers.getActive().id } });
-            if (!line) { return; }
-            Lines.select(line);
-
-            this.line = line;
-            this.points = Lines.getPoints(line);
-            app.redraw();
-        },
-        mousemove: function (e) {
-            var coords = app.canvas.getMousePosition();
-            this.plumb = Lines.getPrependicularLine(this.line, coords);
-            var point = this.plumb.start;
-            var distance = {
-                start: Lines.getLength({ start: point, end: this.points.start }),
-                end: Lines.getLength({ start: point, end: this.points.end })
-            }
-            if (distance.start <= distance.end) { this.side = "start"; } else { this.side = "end"; }
-            if (distance[this.side] < this.magnetArea) {
-                var deltaX = this.points[this.side].x - point.x, deltaY = this.points[this.side].y - point.y;
-                this.bond = true;
-            }
-            else { var deltaX = 0, deltaY = 0; this.bond = false; }
-
-
-            this.plumb = {
-                start: { x: this.plumb.start.x + deltaX, y: this.plumb.start.y + deltaY },
-                end: { x: this.plumb.end.x + deltaX, y: this.plumb.end.y + deltaY }
-            };
-            this.plumb = Lines.getStepedLine({ line: this.plumb, side: "end", step: this.step });
-            app.redraw();
-            app.drawLine({ start: this.plumb.start, end: this.plumb.end, color: "yellow", showDimension: true, lineDash: [4, 4] });
-        },
-        mouseup: function () {
-            edit.end();
-            if (Lines.getLength(this.plumb) > 5) {
-                var point1 = Points.add({
-                    x: this.plumb.start.x,y: this.plumb.start.y,
-                    connectedLines: [{id: Lines.getNextID(1),side: "start"}],
-                });
-                var point2 = Points.add({
-                    x: this.plumb.end.x,y: this.plumb.end.y,
-                    connectedLines: [{id: Lines.getNextID(1),side: "end"}],
-                });
-                var line = Lines.add({
-                    start: {x: this.plumb.start.x,y: this.plumb.start.y,id: point1.id},
-                    end: {x: this.plumb.end.x,y: this.plumb.end.y,id: point2.id}
-                });
-            }
-            app.redraw();
-        },
-        setting: function () {
-            Alert.open({
-                title: "Offset Line Setting",
-                buttons: [{
-                    text: "OK",callback:Alert.close
-                }],
-                template: [
-                    {
-                        type:"slider",title: "Magnet Area",
-                        value: this.magnetArea,start: 0,step: 1,min: 1,end: 100,
-                        callback: function (value) {edit.plumbLine.magnetArea = value;}
-                    },
-                    {
-                        type:"slider",title: "Step",
-                        value: this.step,start: 0,step: 1,min: 1,end: 100,
-                        callback: function (value) {edit.plumbLine.step = value;}
-                    }
-                ]
-            });
-        },
-    },
+    
     offsetLine: {
         startOffset: null,
         step: 10,
         offset: null,
-        offsetedLine: null,
+        offsetedLines: [],
+        model:[],
+        selectMode:"Line",
         mousedown: function (e) {
-            edit.end();
-            var line = app.getLine({ is: { layerId: layers.getActive().id } });
-            if (!line) { return; }
-            Lines.select(line);
-
             var coords = app.canvas.getMousePosition();
-            this.startOffset = {
-                x: coords.x,y: coords.y,line: line,
-                dip: Lines.getDip(line),radian: Lines.getRadian(line),
-            };
-            app.redraw();
+            this.startOffset = coords.x;
+            var line = app.getLine({ is: { layerId: layers.getActive().id } });
+            if (!line) {
+                Lines.deselectAll();
+                edit.selectRect = {
+                    start: coords,
+                    end: coords
+                };
+                this.clickMode = "canvas";
+            }
+            else {
+                if(this.selectMode === "Line"){
+                    Lines.select(line);
+                }
+                else{
+                    Lines.selectSpline(line)
+                }
+                this.getParameters(coords);
+                this.clickMode = "line";
+            }
+        },
+        getParameters:function(){
+            this.model = [];
+            for (var i = 0; i < Lines.selected.length; i++) {
+                var line = Lines.selected[i];
+                this.model.push({line: line,radian:Lines.getRadian(line)});
+            }
         },
         mousemove: function (e) {
-            var so = this.startOffset;
-            var coords = app.canvas.getMousePosition();
-            var offset = coords.x - so.x;
-            this.offset = Math.round(offset / this.step) * this.step;
-            this.offsetedLine = this.getOffsetedLine();
-            var ol = this.offsetedLine;
             app.redraw();
-            app.drawLine({ start: ol.start, end: ol.end, color: "yellow", showDimension: true });
-            app.drawLine({ start: { x: ol.start.x, y: ol.start.y }, end: { x: so.line.start.x, y: so.line.start.y }, color: "yellow", lineDash: [4, 4], showDimension: true });
+            if (this.clickMode === "line") { 
+                this.doOffset(); 
+            }
+            else{
+                edit.selectRect.end = app.canvas.getMousePosition();
+                edit.drawSelectRect(); 
+            }
         },
-        getOffsetedLine: function () {
-            var so = this.startOffset;
-            var deltaX = this.offset * Math.cos((90 - so.radian) * Math.PI / 180);
-            var deltaY = this.offset * Math.sin((90 - so.radian) * Math.PI / 180);
-            var offsetedLine = {
-                start: {x: so.line.start.x + deltaX,y: so.line.start.y + deltaY},
-                end: {x: so.line.end.x + deltaX,y: so.line.end.y + deltaY}
-            };
-            return offsetedLine;
+        doOffset:function(){
+            app.redraw();
+            var coords = app.canvas.getMousePosition()
+            var offset = coords.x - this.startOffset;
+            this.offset = Math.round(offset / this.step) * this.step;
+            this.offsetedLines = [];
+            for (var i = 0; i < this.model.length; i++) {
+                var model = this.model[i];
+                var ol = Lines.getParallelLine(model.line,this.offset,model.radian);
+                this.offsetedLines.push(ol);
+                app.drawLine({ start: ol.start, end: ol.end, color: "yellow", showDimension: true });
+                if(i === 0){
+                    app.drawLine({ 
+                        start: { x: ol.start.x, y: ol.start.y }, 
+                        end: { x: model.line.start.x, y: model.line.start.y }, 
+                        color: "yellow", lineDash: [4, 4], showDimension: true 
+                    });
+                }
+            }
         },
         mouseup: function () {
-            Lines.deselectAll();
-            if (this.offset !== 0) {
-                var ol = edit.offsetLine.offsetedLine;
-                var point1 = Points.add({ x: ol.start.x, y: ol.start.y, connectedLines: [{ id: Lines.getNextID(1), side: "start" }] });
-                var point2 = Points.add({ x: ol.end.x, y: ol.end.y, connectedLines: [{ id: Lines.getNextID(1), side: "end" }] });
-                var line = Lines.add({ start: { x: ol.start.x, y: ol.start.y, id: point1.id }, end: { x: ol.end.x, y: ol.end.y, id: point2.id } });
-                undo.save();
+            if (this.clickMode === "canvas") {
+                var sr = edit.selectRect;
+                if (Math.abs(sr.start.x - sr.end.x) >= 3 &&Math.abs(sr.start.y - sr.end.y) >= 3) {edit.selectBySelectRect(this.selectMode);}
+            }
+            else {
+                this.save();
+                edit.end();
             }
             app.redraw();
-            undo.save();
+        },
+        save:function(){
+            if (this.model.length === 0 || Math.abs(this.offset) < 5) { edit.end(); return; }
+            for (var i = 0; i < this.offsetedLines.length; i++) {
+                var model = this.model[i];
+                var ol = this.offsetedLines[i];
+                var point1 = Points.add({ x: ol.start.x, y: ol.start.y, connectedLines: [{ id: Lines.getNextID(1), side: "start" }] });
+                var point2 = Points.add({ x: ol.end.x, y: ol.end.y, connectedLines: [{ id: Lines.getNextID(1), side: "end" }] });
+                var line = Lines.add({ start: { x: ol.start.x, y: ol.start.y, id: point1.id }, end: { x: ol.end.x, y: ol.end.y, id: point2.id } });                
+            }
+            app.redraw();
         },
         setting: function () {
             Alert.open({
@@ -391,6 +349,7 @@
         lines: [],
         copyModel: [],
         magnetArea: 15,
+        snapAngle:15,
         selectAll: function () {
             var layer = layers.getActive();
             if (edit.modify.selectMode === "Point") {
@@ -594,7 +553,9 @@
                     This.move(offset);
                 }
                 else if (axis.mode === "axis-rotate") {
-                    var offset = Math.floor((client.x - so.x) / 4);
+                    var offset = Math.floor(
+                        (client.x - so.x) / (this.snapAngle === 1?3:1)
+                    );
                     This.rotate(offset);
                 }
             }
@@ -733,7 +694,7 @@
             This.isTransformed = true;
         },
         rotate: function (offset) {
-            if(!offset){return false;}
+            offset = Math.round(offset / this.snapAngle) * this.snapAngle;
             var This = edit.modify;
             $("#axis-angle").html((This.rotateNumber + offset) + "&deg;");
             var axisPos = axis.getPosition();
@@ -787,6 +748,12 @@
                     },
                     {
                         type:"slider",
+                        callback: function(value){edit.modify.snapAngle = value;},
+                        start:0,end:90,step:15,min:1,value: edit.modify.snapAngle,
+                        title: "Snap Angle",
+                    },
+                    {
+                        type:"slider",
                         callback: function(value){
                             edit.modify.magnetArea = value;
                             var magnetSize = value * app.canvas.getZoom();
@@ -807,7 +774,6 @@
         },
         reset: function () {
             this.copyMode = this.selectMode === "Point" ? false : this.copyMode;
-            axis.close();
         }
     },
     chamfer: {
@@ -834,8 +800,6 @@
                 this.getParameters(coords);
                 this.clickMode = "point";
             }
-            app.eventHandler("window", "mousemove", $.proxy(this.mousemove,this));
-            app.eventHandler("window", "mouseup", $.proxy(this.mouseup,this));
         },
         getParameters: function () {
             edit.chamfer.model = [];
@@ -885,8 +849,6 @@
             }
         },
         mouseup: function () {
-            app.eventRemover("window", "mousemove", this.mousemove);
-            app.eventRemover("window", "mouseup", this.mouseup);
             if (this.clickMode === "canvas") {
                 var sr = edit.selectRect;
                 if (Math.abs(sr.start.x - sr.end.x) >= 3 &&Math.abs(sr.start.y - sr.end.y) >= 3) {edit.selectBySelectRect("Point");}
@@ -944,7 +906,87 @@
         },
         reset: function () { this.model = []; this.offset = 0; Points.deselectAll(); }
     },
-    
+    plumbLine: {
+        line: null,
+        point: null,
+        plumb: null,
+        points: null,
+        side: null,
+        bond: false,
+        magnetArea: 5,
+        step: 10,
+        mousedown: function (e) {
+            var coords = app.canvas.getMousePosition();
+            this.line = app.getLine({coords: coords,is: { layerId: layers.getActive().id }});
+            if (!this.line) { return; }
+            this.points = Lines.getPoints(this.line);
+            app.redraw();
+        },
+        mousemove: function (e) {
+            var coords = app.canvas.getMousePosition();
+            this.plumb = Lines.getPrependicularLine(this.line, coords);
+            var point = this.plumb.start;
+            var distance = {
+                start: Lines.getLength({ start: point, end: this.points.start }),
+                end: Lines.getLength({ start: point, end: this.points.end })
+            }
+            if (distance.start <= distance.end) { this.side = "start"; } else { this.side = "end"; }
+            if (distance[this.side] < this.magnetArea) {
+                var deltaX = this.points[this.side].x - point.x, deltaY = this.points[this.side].y - point.y;
+                this.bond = true;
+            }
+            else { var deltaX = 0, deltaY = 0; this.bond = false; }
+
+
+            this.plumb = {
+                start: { x: this.plumb.start.x + deltaX, y: this.plumb.start.y + deltaY },
+                end: { x: this.plumb.end.x + deltaX, y: this.plumb.end.y + deltaY }
+            };
+            this.plumb = Lines.getStepedLine({ line: this.plumb, side: "end", step: this.step });
+            app.redraw();
+            app.drawLine({ start: this.plumb.start, end: this.plumb.end, color: "yellow", showDimension: true, lineDash: [4, 4] });
+            app.drawLine({ start: this.plumb.start, end: this.line.end, color: "yellow", showDimension: true, lineDash: [4, 4] });
+            app.drawLine({ start: this.plumb.start, end: this.line.start, color: "yellow", showDimension: true, lineDash: [4, 4] });
+        },
+        mouseup: function () {
+            edit.end();
+            if (Lines.getLength(this.plumb) > 5) {
+                var point1 = Points.add({
+                    x: this.plumb.start.x,y: this.plumb.start.y,
+                    connectedLines: [{id: Lines.getNextID(1),side: "start"}],
+                });
+                var point2 = Points.add({
+                    x: this.plumb.end.x,y: this.plumb.end.y,
+                    connectedLines: [{id: Lines.getNextID(1),side: "end"}],
+                });
+                var line = Lines.add({
+                    start: {x: this.plumb.start.x,y: this.plumb.start.y,id: point1.id},
+                    end: {x: this.plumb.end.x,y: this.plumb.end.y,id: point2.id}
+                });
+            }
+            app.redraw();
+        },
+        setting: function () {
+            Alert.open({
+                title: "Plumb Line Setting",
+                buttons: [{
+                    text: "OK",callback:Alert.close
+                }],
+                template: [
+                    {
+                        type:"slider",title: "Magnet Area",
+                        value: this.magnetArea,start: 0,step: 1,min: 1,end: 20,
+                        callback: function (value) {edit.plumbLine.magnetArea = value;}
+                    },
+                    {
+                        type:"slider",title: "Step",
+                        value: this.step,start: 0,step: 1,min: 1,end: 100,
+                        callback: function (value) {edit.plumbLine.step = value;}
+                    }
+                ]
+            });
+        },
+    },
     addPoint: {
         line: null,
         point: null,
@@ -952,94 +994,57 @@
         endPoint: null,
         min: 5,
         mousedown: function () {
-            var ap = edit.addPoint;
             var coords = app.canvas.getMousePosition();
-            var line = ap.line = app.getLine(
-                {
-                    coords: coords,
-                    is: { layerId: layers.getActive().id } 
-                }
-            );
-            if (!line) { return; }
-            var length = app.canvas.get.line.length(line) / 2;
-            if (ap.min > Math.floor(length)) { ap.min = Math.floor(length); }
-            var delta = Lines.getDelta(line, ap.min);
-            ap.maxX = app.getMax(ap.line.start.x, ap.line.end.x) - delta.x;
-            ap.maxY = app.getMax(ap.line.start.y, ap.line.end.y) - delta.y;
-            ap.minX = app.getMin(ap.line.start.x, ap.line.end.x) + delta.x;
-            ap.minY = app.getMin(ap.line.start.y, ap.line.end.y) + delta.y;
-            ap.point = Lines.getPrependicularPoint(line, coords);
-            var sidePoints = Lines.getPoints(line);
-            ap.startPoint = sidePoints.start;
-            ap.endPoint = sidePoints.end;
-            app.drawLine({ start: ap.startPoint, end: ap.point, color: "yellow", lineDash: [4, 4], showDimension: true });
-            app.drawLine({ start: ap.endPoint, end: ap.point, color: "yellow", lineDash: [4, 4], showDimension: true });
-            edit.drawPoint(ap.point.x, ap.point.y);
+            this.line = app.getLine({coords: coords,is: { layerId: layers.getActive().id }});
+            if (!this.line) { return; }
+            var length = Lines.getLength(this.line) / 2;
+            if (this.min > Math.floor(length)) { this.min = Math.floor(length); }
+            var delta = Lines.getDelta(this.line, this.min);
+            this.maxX = app.getMax(this.line.start.x, this.line.end.x) - delta.x;
+            this.maxY = app.getMax(this.line.start.y, this.line.end.y) - delta.y;
+            this.minX = app.getMin(this.line.start.x, this.line.end.x) + delta.x;
+            this.minY = app.getMin(this.line.start.y, this.line.end.y) + delta.y;
+            this.point = Lines.getPrependicularPoint(this.line, coords);
+            var sidePoints = Lines.getPoints(this.line);
+            this.startPoint = sidePoints.start;
+            this.endPoint = sidePoints.end;
+            app.drawLine({ start: this.startPoint, end: this.point, color: "yellow", lineDash: [4, 4], showDimension: true });
+            app.drawLine({ start: this.endPoint, end: this.point, color: "yellow", lineDash: [4, 4], showDimension: true });
+            edit.drawPoint(this.point.x, this.point.y);
         },
         mousemove: function () {
-            var ap = edit.addPoint;
-            if (!ap.line) { return; }
+            if (!this.line) { return; }
             app.redraw();
-
             var coords = app.canvas.getMousePosition();
-            ap.point = Lines.getPrependicularPoint(ap.line, coords);
-            ap.point.x += ap.point.x > ap.maxX ? ap.maxX - ap.point.x : (ap.point.x < ap.minX ? ap.minX - ap.point.x : 0);
-            ap.point.y += ap.point.y > ap.maxY ? ap.maxY - ap.point.y : (ap.point.y < ap.minY ? ap.minY - ap.point.y : 0);
-            app.drawLine({ start: ap.startPoint, end: ap.point, color: "yellow", lineDash: [4, 4], showDimension: true });
-            app.drawLine({ start: ap.endPoint, end: ap.point, color: "yellow", lineDash: [4, 4], showDimension: true });
-            edit.drawPoint(ap.point.x, ap.point.y);
+            this.point = Lines.getPrependicularPoint(this.line, coords);
+            this.point.x += this.point.x > this.maxX ? this.maxX - this.point.x : (this.point.x < this.minX ? this.minX - this.point.x : 0);
+            this.point.y += this.point.y > this.maxY ? this.maxY - this.point.y : (this.point.y < this.minY ? this.minY - this.point.y : 0);
+            app.drawLine({ start: this.startPoint, end: this.point, color: "yellow", lineDash: [4, 4], showDimension: true });
+            app.drawLine({ start: this.endPoint, end: this.point, color: "yellow", lineDash: [4, 4], showDimension: true });
+            edit.drawPoint(this.point.x, this.point.y);
         },
         mouseup: function () {
-            var ap = edit.addPoint;
-            if (!ap.line) { return; }
-            Lines.remove(ap.line);
-            var addedPoint = Points.add({ x: ap.point.x, y: ap.point.y });
-            Points.connect(ap.startPoint, addedPoint);
-            Points.connect(addedPoint, ap.endPoint);
+            if (!this.line) { return; }
+            Lines.remove(this.line);
+            var addedPoint = Points.add({ x: this.point.x, y: this.point.y });
+            Points.connect(this.startPoint, addedPoint);
+            Points.connect(addedPoint, this.endPoint);
             //undo.save();
             app.redraw();
         },
         setting: function () {
             Alert.open({
                 title: "Add Point Setting",
-                buttons: [{
-                    text: "OK",callback:Alert.close
-                }],
-                template: [{
-                    type:"numberbox",
-                    negative:false,
-                    title: "Distance",
-                    min:5,
-                    value: edit.addPoint.min,
-                    callback: edit.addPoint.setMin,
-                }]
+                buttons: [{text: "OK",callback:Alert.close}],
+                template: [
+                    {
+                        type:"numberbox",negative:false,title: "Distance",min:5,value: this.min,
+                        callback: function (obj) {edit.addPoint.min = obj.value;}
+                    }
+                ]
             });
         },
-        setMin: function (obj) {
-            edit.addPoint.min = obj.value;
-        },
     },
-    measure:{
-        mousedown:function(){
-            var line = app.getLine();
-            if(!line){return;}
-            if(!line.showDimension){line.showDimension = true;}
-            else{line.showDimension = false;}
-            app.redraw();
-        },
-        removeAll:function(){
-            for(var i = 0; i < app.state.lines.length; i++){
-                app.state.lines[i].showDimension = false;
-            }
-            app.redraw();
-        },
-        measureAll:function(){
-            for(var i = 0; i < app.state.lines.length; i++){
-                app.state.lines[i].showDimension = true;
-            }
-            app.redraw();
-        }
-    }
 }
 var axis = {
     mode: "none",

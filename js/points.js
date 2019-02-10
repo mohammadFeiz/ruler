@@ -5,6 +5,7 @@ var Points = {
     },
     selected: [],
     select: function (obj) {
+        if(typeof obj === "string"){obj = this.getObjectByID(obj);}
         var length = Points.selected.length;
         for (var i = 0; i < length; i++) {
             var point = Points.selected[i];
@@ -165,6 +166,13 @@ var Points = {
             var connectedLine = point.connectedLines[i];
             if(connectedLine.id === id){continue;}
             return Lines.getObjectByID(connectedLine.id);
+        }
+        return false;
+    },
+    getConnectedLineByID:function(point,id){
+        for(var i = 0; i < point.connectedLines.length; i++){
+            var connectedLine = point.connectedLines[i];
+            if(connectedLine.id === id){return Lines.getObjectByID(connectedLine.id);}
         }
         return false;
     },

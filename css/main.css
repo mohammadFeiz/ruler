@@ -104,7 +104,7 @@ body {
 
 
 #main-menu, #set-app-mode, #settings, #delete-item, #select-all, #mirror-x, #mirror-y, #break-point, #weld, 
-#create-modes, #select-mode, #edit-modes, .alert-header .text,#connect,#divide,#keyboard-title,.keyboard-label,
+#create-modes, #select-mode,#offset-select-mode, #edit-modes, .alert-header .text,#connect,#divide,#keyboard-title,.keyboard-label,
 #join,#layer-popup .icon,#full-keyboard-close,#full-keyboard-ok,#remove-measures,#all-measure {
     float: left;
 }
@@ -124,7 +124,7 @@ body {
     width: 80px;
 }
 
-#select-mode {
+#select-mode,#offset-select-mode {
     width: 45px;
 }
 

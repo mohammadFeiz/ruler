@@ -1,27 +1,51 @@
 ﻿var Lines = {
     id: "1l",splineIDS: [],selected: [],
     idGenerator: function () {this.id = (parseInt(this.id) + 1) + "l";},
-    setSplineIDS: function (obj) {
-        if (this.splineIDS.indexOf(obj.id) === -1) {this.splineIDS.push(obj.id);}
-        var sideLines = Lines.getLines(obj);
-        if (sideLines.start && this.splineIDS.indexOf(sideLines.start.id) === -1) {
-            this.splineIDS.push(sideLines.start.id);
-            this.setSplineIDS(sideLines.start);
+    sortSplineRecursive:function(line,side){
+        var index =this.splineIDS.indexOf(line.id);
+        if(index === -1){this.splineIDS.push(line.id)}
+        else{return;}
+        var sides = Lines.getLines(line),next = sides[side];
+        if (next) {
+            var sides = Lines.getLines(next);
+            if(sides[side].id === line.id){
+                this.reverseDirection(next);
+            }
+            this.sortSplineRecursive(next,side);
         }
-        if (sideLines.end && this.splineIDS.indexOf(sideLines.end.id) === -1) {
-            this.splineIDS.push(sideLines.end.id);
-            this.setSplineIDS(sideLines.end);
+        
+    },
+    reverseDirection:function(line){
+        if(typeof line === "string"){line = this.getObjectByID(line);}
+        var points = Lines.getPoints(line),startPoint=points.start,endPoint=points.end;
+        var copy = {
+            start:{x:line.start.x,y:line.start.y,id:line.start.id},
+            end:{x:line.end.x,y:line.end.y,id:line.end.id}
+        }
+        line.start.x = copy.end.x;
+        line.start.y = copy.end.y;
+        line.start.id = copy.end.id;
+        for(var i = 0; i < startPoint.connectedLines.length; i++){
+            var cl = startPoint.connectedLines[i];
+            if(cl.id === line.id){cl.side = cl.side === 'start'?'end':'start'}
+        }
+        line.end.x = copy.start.x;
+        line.end.y = copy.start.y;
+        line.end.id = copy.start.id;
+        for(var i = 0; i < endPoint.connectedLines.length; i++){
+            var cl = endPoint.connectedLines[i];
+            if(cl.id === line.id){cl.side = cl.side === 'start'?'end':'start'}
         }
     },
-    getSplineIDS: function (obj) {
-        this.setSplineIDS(obj);
-        var list = this.splineIDS.slice(0, this.splineIDS.length);
+    getSplineIDS: function (line) {
+        if(typeof line === "string"){line = this.getObjectByID(line);}
         this.splineIDS = [];
-        return list;
-    },
-    selectSpline: function (obj) {
-        var list = this.getSplineIDS(obj);
-        for (var i = 0; i < list.length; i++) {this.select(Lines.getObjectByID(list[i]));}
+        this.sortSplineRecursive(line,'start');
+        var startSpline = this.getObjectByID(this.splineIDS[this.splineIDS.length - 1]);
+        this.splineIDS = [];
+        this.sortSplineRecursive(startSpline,'end');
+        
+        return this.splineIDS;
     },
     add: function (obj) {
         obj.id = this.id;
@@ -45,6 +69,7 @@
         app.state.lines.splice(index, 1);
     },
     select: function (obj) {
+        if(typeof obj === "string"){obj = this.getObjectByID(obj);}
         var length = Lines.selected.length;
         for (var i = 0; i < length; i++) {
             var line = Lines.selected[i];
@@ -54,6 +79,10 @@
         obj.showDimention = true;
         obj.lineDash = [2, 3];
         Lines.selected.push(obj);
+    },
+    selectSpline: function (line) {
+        var list = this.getSplineIDS(line);
+        for (var i = 0; i < list.length; i++) {this.select(Lines.getObjectByID(list[i]));}
     },
     deselect: function (id) {
         var length = Lines.selected.length;
@@ -126,13 +155,13 @@
     },
     getDip: function (line) { return line.start.x === line.end.x ? 'infinity' : (line.start.y - line.end.y) / (line.start.x - line.end.x); },
     getXByY: function (line, y, dip) {
-        dip = dip || a.get.dip(line);
+        dip = dip === undefined? this.getDip(line):dip;
         if (dip === "infinity") { return line.start.x; }
         if (dip === 0) { return false; }
         return (y + (dip * line.start.x) - line.start.y) / dip;
     },
     getYByX: function (line, x, dip) {
-        dip = dip || a.get.dip(line);
+        dip = dip === undefined? this.getDip(line):dip;
         if (dip === "infinity") { return false };
         return (dip * x) - (dip * line.start.x) + line.start.y;
     },
@@ -247,6 +276,15 @@
                 y = (dip * x) - (dip * line.start.x) + line.start.y;
         }
         return {start: {x: x,y: y},end: {x: point.x,y: point.y}};
+    },
+    getParallelLine:function(line,offset,radian){
+        radian = radian===undefined?this.getRadian(line):radian;
+        var deltaX = offset * Math.cos((90 - radian) * Math.PI / 180);
+        var deltaY = offset * Math.sin((90 - radian) * Math.PI / 180);
+        return {
+            start: {x: line.start.x + deltaX,y: line.start.y + deltaY},
+            end: {x: line.end.x + deltaX,y: line.end.y + deltaY}
+        };
     },
     getDistance: function (line, point) {
         var line = Lines.getPrependicularLine(line, point);

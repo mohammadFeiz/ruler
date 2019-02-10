@@ -18,6 +18,7 @@
     <script src="js/canvas.js"></script>
     <script src="js/layers.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/components.js"></script>
     <script src="js/create-control.js"></script>
     <script src="js/create.js"></script>
     <script src="js/alert.js"></script>
@@ -40,82 +41,6 @@
         app.init();
         undo.save();
         createStyle();
-        //var toolsSetting = {
-        //    open: function () {
-        //        if (app.appmode === "create") { create.setting(); }
-        //        else if (app.appmode === "edit") {
-        //            if (typeof edit[app.editmode].setting === "function") {
-        //                edit[app.editmode].setting();
-        //            }
-        //        }
-
-        //    }
-        //}
-        //function getCopy(model) {
-        //    return JSON.parse(JSON.stringify(model));
-        //}
-        //var log = {
-        //    text: "",
-        //    show: function () {
-        //        $("#log-popup").show();
-        //    },
-        //    hide: function () {
-        //        $("#log-popup").hide();
-        //    },
-        //    add: function (text) {
-        //        if (typeof text === "object") { text = JSON.stringify(text); }
-        //        log.text += text + " *** ";
-        //        $("#log-text").html(log.text);
-
-        //    },
-        //    clear: function () {
-        //        log.text += "";
-        //        $("#log-text").html("");
-        //    }
-        //};
-
-
-        //createStyle();
-        //canvas.init({
-        //    mouseDown: app.mouseDown,
-        //    mouseMove: app.mouseMove,
-        //    mouseUp: app.mouseUp,
-        //    snap: 10,
-        //    panCallback: app.panCallback,
-        //    container: "my-canvas"
-        //});
-        //app.init();
-        //var B = new slider({
-        //    start: 0,
-        //    step: 1,
-        //    end: 1,
-        //    isMobile: canvas.isMobile,
-        //    value: [0],
-        //    container: "#app-mode",
-        //    showFill: false,
-        //    text: ["Edit", "Create"],
-        //    ondrag: app.setappmode,
-        //    style: {
-        //        line_width: 0,
-        //        button_width: top_menu_size * (3 / 4),
-        //        button_height: top_menu_size * (3 / 4),
-        //    }
-        //});
-        //var C = new slider({
-        //    start: 40, step: 20, end: 200, value: [100], container: "#zoom-slider", showValue: true, fixValue: true,
-        //    style: { line_width: zoom_slider_thickness, button_width: 38, button_height: 22 },
-        //    isMobile: canvas.isMobile,
-        //    ondrag: function (obj) {
-        //        var value = obj.values[0] / 100;
-        //        app.zoom(value);
-        //    }
-        //});
-
-        //undo.save();
-
-
-
-
     </script>
 </body>
 
