@@ -1,0 +1,49 @@
+#full-keyboard {
+    position:fixed;
+    width:100%;
+    left:0;
+    bottom:0;
+    z-index: 10000;
+    background:#425768;
+    padding:12px;
+    padding-top:0;
+    box-sizing: border-box;
+   }
+   .full-keyboard-key {
+    width:calc(10% - 24px);
+    position:relative;
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:6px;
+    margin:3px;
+   }
+   .full-keyboard-row {
+    position: relative;
+    width:100%;
+    z-index:10;
+   }
+   .full-keyboard-key,
+   #full-keyboard-close,
+   #full-keyboard-ok,
+   #full-keyboard-title,
+   #full-keyboard-show,
+   .full-keyboard-row {
+       float: left;
+   }
+   .full-keyboard-key#full-keyboard-keyA{
+       margin-left:calc(5% + 2px);
+   }
+   #full-keyboard-show {
+    color:#71b0ab;
+    text-align:center;
+    background:rgba(0,0,0,0.2);
+    line-height:30px;
+       margin-top:5px;
+    height:30px;
+    width:calc(100% - 30px);
+   } 
+   .full-keyboard-key.full-keyboard-backspace {
+    width:calc(15% - 7px);
+   }
+   .full-keyboard-key.full-keyboard-space {
+    width:calc(15% - 25px);
+   }

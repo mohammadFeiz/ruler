@@ -1,0 +1,73 @@
+#keyboard {
+    z-index:10000;
+    position:fixed;
+    width:216px;
+    left:calc(50% - 108px);
+    top:50px; 
+    box-shadow:4px 4px 10px 0px rgba(0,0,0,0.6);
+   }
+   
+   #keyboard-footer,
+   .keyboard-field,
+   #keyboard-title,
+   .keyboard-label,
+   #keyboard-body,
+   .keyboard-key{
+       float: left;
+   }
+
+   #keyboard-ok,#keyboard .numberbox{
+       float:right;
+   }
+   
+   #keyboard-body {
+    z-index:10;
+    position:relative;
+    width:100%;
+    opacity:0.6;
+    background:#3e4146;
+   }
+   .keyboard-field {
+    position: relative;
+    width:100%;
+     border:1px solid;
+     border-color:#535458 #141519 #141519 #535458;
+   }
+   #keyboard-ok {
+     float:right;
+     position: relative;
+     width:100%;
+       box-sizing: border-box;
+       margin:12px 0 0 0;
+   }
+   #keyboard-footer {
+       opacity:0.6;
+    background:#3e4146;
+    z-index:10;
+    position: relative;
+    width:100%;
+     padding:6px;
+     box-sizing: border-box;
+   }
+   
+   
+   .keyboard-key {
+    width:33%;
+    margin:0;
+       height:36px;
+       line-height: 36px;
+    font-size:14.4px;
+    box-sizing: border-box;
+   }
+   .keyboard-key.active {
+    background:rgba(255,255,255,0.1);
+   }
+   .keyboard-field.active .keyboard-label, .keyboard-field.active .keyboard-numberbox{
+    color:#1ad25f;
+   }
+   #keyboard .numberbox {
+    border-bottom:1px solid;
+    width:54px;
+    border-radius:0;
+    text-align:center;
+   }

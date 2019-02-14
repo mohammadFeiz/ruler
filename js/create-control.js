@@ -23,11 +23,13 @@ var createControl = {
         this.state = {};
         for (var prop in items) { this.state[prop] = items[prop]; }
         this.render();
-        var coords = app.canvas.canvasToClient(this.state.coords);
+        this.position = this.state.coords;
+        var coords = app.canvas.canvasToClient(this.position);
         $("#" + this.id).css({ left: coords.x, top: coords.y });
     },
     close: function () {
         $("#" + this.id).remove();
+        this.position = false;
     },
     render: function () {
         function getStyle() {
@@ -59,12 +61,10 @@ var createControl = {
         app.eventHandler(".draw-control-item", "mousedown", this.mousedown.bind(this));
     },
     mousedown: function (e) {
-        var element = $(e.currentTarget);
         create[$(e.currentTarget).attr("id")](e);
     },
-    move: function (coords) {
-        var coords = canvas.convertCanvasXYToBodyXY({ x: coords.x, y: coords.y });
-        this.container.css({ left: coords.x, top: coords.y });
+    getPosition:function(){
+        return this.position;
     }
 }
 

@@ -2,8 +2,8 @@ function Canvas(config) {
     var a = {
         isDown:false,
         state: {
-            zoom: 1,
-            snap: 1,
+            zoom: 0.8,
+            snap: 10,
             screenPosition: { x: 0, y: 0 },
         },
         update: function (config) {
@@ -15,10 +15,14 @@ function Canvas(config) {
             s.height = container[0].height = container.height();
             container.css({backgroundColor: s.background});
             if (s.gridLineColor) {
+                var a = 100 * s.zoom;
+                a = a + 'px ' + a + 'px,' + a + 'px ' + a + 'px';
+                var b = 10 * s.zoom;
+                b = b + 'px ' + b + 'px,' + b + 'px ' + b + 'px';
                 container.css({
                     backgroundPosition: s.width / 2 / s.zoom + "px " + s.height / 2 / s.zoom + "px",
                     backgroundImage: 'linear-gradient(rgba(' + s.gridLineColor + ',0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(' + s.gridLineColor + ',0.5) 1px, transparent 1px), linear-gradient(rgba(' + s.gridLineColor + ',0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(' + s.gridLineColor + ',0.3) 1px, transparent 1px)',
-                    backgroundSize: "100px 100px, 100px 100px, 10px 10px, 10px 10px",
+                    backgroundSize: a + ',' + b
                 });
             }
             this.eventHandler(container, "mousedown", this.mousedown.bind(this));
@@ -29,6 +33,9 @@ function Canvas(config) {
         getClient: function (e) {return { x: e.clientX === undefined?e.changedTouches[0].clientX:e.clientX, y: e.clientY===undefined?e.changedTouches[0].clientY:e.clientY };},
         getZoom:function(){
             return this.state.zoom;
+        },
+        setZoom: function (zoom) {
+            this.state.zoom = zoom;
         },
         eventHandler: function (selector, e, action) {
             var mobileEvents = { down: "touchstart", move: "tocuhmove", up: "tocuhend" };
@@ -89,7 +96,6 @@ function Canvas(config) {
             s.translate = { x: (s.width / 2) - (x * s.zoom), y: (s.height / 2) - (y * s.zoom * -1) };
             ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.translate(s.translate.x, s.translate.y);
-            ctx.scale(s.zoom, s.zoom);
             $("canvas").css({ "background-position": s.translate.x + "px " + s.translate.y + "px" });
             if (obj.callback) { obj.callback();}
         },
@@ -105,12 +111,14 @@ function Canvas(config) {
         },
         drawLine: function (obj) {
             var ctx = this.ctx,
-                x1 = obj.start.x, y1 = obj.start.y,
-                x2 = obj.end.x, y2 = obj.end.y, color = obj.color || "#000", lineWidth = obj.lineWidth || 1;
+                zoom = this.state.zoom,
+                x1 = obj.start.x*zoom, y1 = obj.start.y*zoom,
+                x2 = obj.end.x*zoom, y2 = obj.end.y*zoom, 
+                color = obj.color || "#000", lineWidth = obj.lineWidth || 1;
             if (!obj.lineDash) {
                 ctx.beginPath();
                 ctx.strokeStyle = color;
-                ctx.lineWidth = lineWidth / this.zoom;
+                ctx.lineWidth = lineWidth * zoom;
                 ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
                 ctx.stroke();
                 ctx.closePath();
@@ -120,15 +128,24 @@ function Canvas(config) {
                 ctx.beginPath();
                 ctx.setLineDash(obj.lineDash);
                 ctx.strokeStyle = color;
-                ctx.lineWidth = lineWidth / this.zoom;
+                ctx.lineWidth = lineWidth * zoom;
                 ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
                 ctx.stroke();
                 ctx.closePath();
                 ctx.restore();
             }
             if (obj.showDimension) {
+                var zoom = this.state.zoom;
                 var center = this.get.line.center(obj);
-                this.drawText({x:center.x,y:center.y,text:this.get.line.length(obj).toFixed(1),angle:this.getTextAngle(obj),textBaseLine:"bottom",color:obj.color,textAlign:"center"});
+                this.drawText({
+                    x:center.x,y:center.y,
+                    text:this.get.line.length(obj).toFixed(1),
+                    angle:this.getTextAngle(obj),
+                    textBaseLine:"bottom",
+                    color:obj.color,
+                    textAlign:"center",
+                    fontSize:10 / zoom,
+                });
             }
         },
         getTextAngle:function(line){
@@ -176,19 +193,25 @@ function Canvas(config) {
 
         },
         drawText: function (obj) {//x,y,text,angle,textBaseLine,color,textAlign
+            var zoom = this.state.zoom;
             var ctx = this.ctx;
-            obj.angle = obj.angle || 0;
-            obj.textBaseLine = obj.textBaseLine || "middle";
-            obj.fontSize = obj.fontSize || 12;
+            var angle = obj.angle || 0;
+            var textBaseLine = obj.textBaseLine || 'middle';
+            var textAlign = obj.textAlign || 'center';
+            var fontSize = obj.fontSize * zoom;
+            var x = obj.x * zoom;
+            var y = obj.y * zoom;
+            var color = obj.color || '#000';
+            var text = obj.text;
             ctx.save();
             ctx.beginPath();
-            ctx.textBaseline = obj.textBaseLine;
-            ctx.font = (obj.fontSize / this.state.zoom) + "px arial";
-            ctx.translate(obj.x, obj.y);
-            ctx.rotate(obj.angle * Math.PI / -180);
-            ctx.textAlign = obj.textAlign;
-            ctx.fillStyle = obj.color;
-            ctx.fillText(obj.text, 0, 0);
+            ctx.textBaseline = textBaseLine;
+            ctx.font = (fontSize) + "px arial";
+            ctx.translate(x, y);
+            ctx.rotate(angle * Math.PI / -180);
+            ctx.textAlign = textAlign;
+            ctx.fillStyle = color;
+            ctx.fillText(text, 0, 0);
             ctx.closePath();
             ctx.restore();
         },
@@ -198,10 +221,11 @@ function Canvas(config) {
             obj.lineWidth = obj.lineWidth || 1;
             obj.start = obj.start === undefined ? 0 : obj.start;
             obj.end = obj.end === undefined ? 2 * Math.PI : obj.end;
+            var zoom = this.state.zoom;
             var ctx = this.ctx;
             ctx.beginPath();
-            ctx.arc(obj.x, obj.y, obj.radius, obj.start, obj.end);
-            ctx.lineWidth = obj.lineWidth / this.zoom;
+            ctx.arc(obj.x * zoom, obj.y * zoom, obj.radius * zoom, obj.start, obj.end);
+            ctx.lineWidth = obj.lineWidth;
             if (obj.fill) {ctx.fillStyle = obj.fill; ctx.fill();}
             if(obj.stroke){ctx.strokeStyle = obj.stroke; ctx.stroke();}
             ctx.closePath();
@@ -209,26 +233,24 @@ function Canvas(config) {
         //required: x(number) , y(number) , width(number) , height(number) 
         //optional: center(boolean)(default:false) , fill(string color) , stroke(string color) , lineWidth(number)(default:1)
         drawRectangle: function (obj) { 
-            obj.center = obj.center === undefined ? false : obj.center;
-            obj.lineWidth = obj.lineWidth || 1;
+            var zoom = this.state.zoom;
+            var center = obj.center === undefined ? false:true;
+            var lineWidth = (obj.lineWidth || 1) * zoom;
+            var width =  obj.width * zoom;
+            var height = obj.height * zoom;
+            var x = obj.x * zoom;
+            var y = obj.y * zoom;
             var ctx = this.ctx;
+            var zoom = this.state.zoom;
             ctx.beginPath();
-            if (obj.center) {ctx.rect(obj.x - obj.width / 2, obj.y - obj.height / 2, obj.width, obj.height);}
-            else {ctx.rect(obj.x, obj.y, obj.width, obj.height);}
-            ctx.lineWidth = obj.lineWidth / this.zoom;
+            if (obj.center) {ctx.rect(x - width / 2, y - height / 2, width, height);}
+            else {ctx.rect(x, y, width, height);}
+            ctx.lineWidth = lineWidth;
             if (obj.fill) {ctx.fillStyle = obj.fill; ctx.fill();}
             if(obj.stroke) {ctx.strokeStyle = obj.stroke; ctx.stroke();}
             ctx.closePath();
         },
 
-        setZoom: function (zoom) {
-            this.zoom = zoom;
-            canvas.setScreenPosition({
-                x: canvas.screenPosition.x,
-                y: canvas.screenPosition.y
-            });
-            this.redraw();
-        },
         windowmosedown:function(){
             this.isDown = true;
         },
@@ -271,6 +293,9 @@ function Canvas(config) {
         },
         setSnap: function (value) {
             this.state.snap = value;
+        },
+        getPageSize:function(){
+            return {width:this.state.width,height:this.state.height};
         }
 
     }
@@ -289,11 +314,13 @@ function Canvas(config) {
         clientToCanvas:a.clientToCanvas.bind(a),
         getSnapedCoords: a.getSnapedCoords.bind(a),
         getZoom: a.getZoom.bind(a),
+        setZoom: a.setZoom.bind(a),
         getWidth: a.getWidth.bind(a),
         getHeight: a.getHeight.bind(a),
         getIsDown: a.getIsDown.bind(a),
         getSnap: a.getSnap.bind(a),
         setSnap: a.setSnap.bind(a),
+        getPageSize:a.getPageSize.bind(a),
         get:a.get,
     };
 }

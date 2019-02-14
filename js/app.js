@@ -93,10 +93,14 @@
         }
     },
     drawLine: function (line) {
+        var zoom = this.canvas.getZoom();
+        line.lineWidth = 1 / zoom;
         this.canvas.drawLine(line);
     },
-    drawPoint: function (point) { this.canvas.drawArc({ x: point.x, y: point.y, radius: 2, fill: point.selected === true ? "red" : "#fff" }); },
-    drawOpenPoint: function (point) { this.canvas.drawRectangle({ center: true, x: point.x, y: point.y, width: 4, height: 4, fill: point.selected === true ? "red" : "yellow" }); },
+    drawPoint: function (point) { this.canvas.drawArc({ x: point.x, y: point.y, radius: 2 / this.canvas.getZoom(), fill: point.selected === true ? "red" : "#fff" }); },
+    drawOpenPoint: function (point) { 
+        var zoom = this.canvas.getZoom();
+        this.canvas.drawRectangle({ center: true, x: point.x, y: point.y, width: 4/zoom, height: 4/zoom, fill: point.selected === true ? "red" : "yellow" }); },
     drawAxes: function () {
         this.ctx.save();
         this.ctx.setLineDash([3, 3]);
@@ -153,33 +157,34 @@
 
         return false;
     },
-    zoom: function (zoom) {
-        zoom = parseFloat(zoom.toFixed(2));
-        canvas.setZoom(zoom);
-        var str =
-            '<div id="zoomShow" style="position: fixed;top: calc(50% - 90px);left:calc(50% - 50px);"><i class="icon icon-search" style="font-size: 120px;color: rgba(255,255,255,0.15);"></i><span style="position: relative;font-size: 25px;color: rgba(255,255,255,0.4);top:-59px;left:-100px;font-weight: bold;">' +
-            parseInt(zoom * 100) + '%</span></div>';
-        $("body").append(str);
-        $("#zoomShow").fadeOut(400);
-        setTimeout(function () {
-            $("#zoomShow").remove();
-        }, 400);
-        var a = 100 * zoom,
-            b = 10 * zoom;
-        $("canvas").css({
-            "background-size": "" + a + "px " + a + "px, " + a + "px " + a + "px, " + b + "px " +
-                b + "px, " + b + "px " + b + "px"
-        });
-        var c = create.currentSpline;
-        if (c) {
-            create.screenCorrection(function () {
-                canvas.redraw();
-                c.draw();
-                c.drawHelp();
-                c.setController();
-            });
-        }
-    },
+    // zoom: function (zoom) {
+    //     zoom = parseFloat(zoom.toFixed(2));
+    //     canvas.setZoom(zoom);
+    //     var str =
+    //         '<div id="zoomShow" style="position: fixed;top: calc(50% - 90px);left:calc(50% - 50px);"><i class="icon icon-search" style="font-size: 120px;color: rgba(255,255,255,0.15);"></i><span style="position: relative;font-size: 25px;color: rgba(255,255,255,0.4);top:-59px;left:-100px;font-weight: bold;">' +
+    //         parseInt(zoom * 100) + '%</span></div>';
+    //     $("body").append(str);
+    //     $("#zoomShow").fadeOut(400);
+    //     setTimeout(function () {
+    //         $("#zoomShow").remove();
+    //     }, 400);
+    //     var a = 100 * zoom,
+    //         b = 10 * zoom;
+    //     $("canvas").css({
+    //         "background-size": "" + a + "px " + a + "px, " + a + "px " + a + "px, " + b + "px " +
+    //             b + "px, " + b + "px " + b + "px"
+    //     });
+    //     var c = create.currentSpline;
+    //     if (c) {
+    //         create.screenCorrection(function () {
+    //             canvas.redraw();
+    //             c.draw();
+    //             c.drawHelp();
+    //             c.setController();
+    //         });
+    //     }
+    // },
+
     windowMouseDown: function (e) {
         var mousePosition = app.getMousePosition(e);
         app.x = mousePosition.x;
@@ -195,33 +200,37 @@
         app.x = mousePosition.x;
         app.y = mousePosition.y;
     },
-    zoom: function (zoom) {
-
+    zoom: function (value) {
+        var currentZoom = app.canvas.getZoom();
+        if(value === 'out' && currentZoom <= 0.2){return;}
+        if(value === 'in' && currentZoom >= 2){return;}
+        var zoom = currentZoom + (value === "in"? 0.2:-0.2);
         zoom = parseFloat(zoom.toFixed(2));
-        canvas.setZoom(zoom);
-        var str =
-            '<div id="zoomShow" style="position: fixed;top: calc(50% - 90px);left:calc(50% - 50px);"><i class="icon icon-search" style="font-size: 120px;color: rgba(255,255,255,0.15);"></i><span style="position: relative;font-size: 25px;color: rgba(255,255,255,0.4);top:-59px;left:-100px;font-weight: bold;">' +
-            parseInt(zoom * 100) + '%</span></div>';
-        $("body").append(str);
-        $("#zoomShow").fadeOut(400);
-        setTimeout(function () {
-            $("#zoomShow").remove();
-        }, 400);
+        app.canvas.setZoom(zoom);
+        
         var a = 100 * zoom,
             b = 10 * zoom;
         $("canvas").css({
             "background-size": "" + a + "px " + a + "px, " + a + "px " + a + "px, " + b + "px " +
                 b + "px, " + b + "px " + b + "px"
         });
-        var c = create.currentSpline;
-        if (c) {
-            create.screenCorrection(function () {
-                canvas.redraw();
-                c.draw();
-                c.drawHelp();
-                c.setController();
-            });
+        var createControlPosition = createControl.getPosition();
+        var axisPosition = axis.getPosition();
+        if(createControlPosition){
+            this.canvas.setScreenTo({x:createControlPosition.x,y:createControlPosition.y * -1,animate:true,callback:function(){create.preview();}});
         }
+        else if(axisPosition){
+            this.canvas.setScreenTo({x:axisPosition.x,y:axisPosition.y * -1,animate:true,callback:function(){
+                axis.setPosition(axisPosition);
+                app.redraw();
+            }});
+        }
+        else{
+            var screenPosition = this.canvas.getScreenPosition();
+            this.canvas.setScreenTo({x:screenPosition.x,y:screenPosition.y});
+            this.redraw();
+        }
+        components.update("zoom-show");
     },
     getMin: function (a, b) { if (a <= b) { return a; } else { return b; } },
     getMax: function (a, b) { if (a <= b) { return b; } else { return a; } },
@@ -263,11 +272,11 @@ var display = {
         {
             id:"top-menu",html:[
                 { 
-                    component: "Button", id: "main-menu", iconClass: "mdi mdi-menu", className: "icon",
+                    component: "Button", id: "main-menu", iconClass: "mdi mdi-menu", className: "icon left",
                     show:function(){return app.state.measuremode !== true;}
                 },
                 {
-                    component: "Button", id: "set-app-mode", className: "button", container: "#top-menu",
+                    component: "Button", id: "set-app-mode", className: "button left", container: "#top-menu",
                     text: function () { return app.state.appmode === "create" ? "Create" : "Edit"; },
                     callback: function (item) {
                         create.end();
@@ -278,7 +287,7 @@ var display = {
                     show:function(){return app.state.measuremode !== true;}
                 },
                 {
-                    component: "Dropdown", id: "create-modes", className: "dropdown", container: "#top-menu",
+                    component: "Dropdown", id: "create-modes", className: "dropdown left", container: "#top-menu",
                     options: [
                         { text: "Polyline", value: "polyline" }, 
                         { text: "Rectangle", value: "rectangle" }, 
@@ -301,7 +310,7 @@ var display = {
                     show: function () { return app.state.appmode === "create" && app.state.measuremode !== true; },
                 },
                 {
-                    component: "Dropdown", id: "edit-modes", className: "dropdown", container: "#top-menu",
+                    component: "Dropdown", id: "edit-modes", className: "dropdown left", container: "#top-menu",
                     options: [
                         { text: "Modify", value: "modify" }, 
                         { text: "Add Point", value: "addPoint" }, 
@@ -330,7 +339,7 @@ var display = {
                     show: function () { return app.state.appmode === "edit" && app.state.measuremode !== true; },
                 },
                 {
-                    component: "Dropdown", id: "select-mode", className: "dropdown", container: "#top-menu",
+                    component: "Dropdown", id: "select-mode", className: "dropdown left", container: "#top-menu",
                     text: function () { return edit.modify.selectMode },
                     options: [{ text: "Point", value: "Point" }, { text: "Line", value: "Line" }, { text: "Spline", value: "Spline" }],
                     optionsCallback: function (value) { 
@@ -339,7 +348,7 @@ var display = {
                     show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
                 },
                 {
-                    component: "Dropdown", id: "offset-select-mode", className: "dropdown",
+                    component: "Dropdown", id: "offset-select-mode", className: "dropdown left",
                     text: function () { return edit.offsetLine.selectMode },
                     options: [{ text: "Line", value: "Line" }, { text: "Spline", value: "Spline" }],
                     optionsCallback: function (value) { 
@@ -353,7 +362,7 @@ var display = {
                     show:function(){return app.state.measuremode !== true &&app.state.measuremode !== true;}
                 },
                 {
-                    id: "settings", component: "Button", iconClass: "mdi mdi-settings", className: "icon", container: "#top-menu",
+                    id: "settings", component: "Button", iconClass: "mdi mdi-settings", className: "icon left", container: "#top-menu",
                     callback: function () { window[app.state.appmode].setting(); },
                     show:function(){return app.state.measuremode !== true;}
                 },
@@ -372,42 +381,42 @@ var display = {
         {
             id:"sub-menu",html:[
                 {
-                    id: "delete-item", component: "Button", iconClass: "mdi mdi-delete", className: "icon",
+                    id: "delete-item", component: "Button", iconClass: "mdi mdi-delete", className: "icon left",
                     show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
                     callback:function(){edit.modify.remove();}
                 },
                 {
-                    id: "select-all", component: "Button", iconClass: "mdi mdi-select-all", className: "icon", container: "#sub-menu",
+                    id: "select-all", component: "Button", iconClass: "mdi mdi-select-all", className: "icon left", container: "#sub-menu",
                     show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
                     callback:function(){edit.modify.selectAll();}
                 },
                 {
-                    id: "mirror-x", component: "Button", iconClass: "mdi mdi-unfold-more-horizontal", className: "icon", container: "#sub-menu",
+                    id: "mirror-x", component: "Button", iconClass: "mdi mdi-unfold-more-horizontal", className: "icon left", container: "#sub-menu",
                     show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
                     callback:function(){edit.modify.mirrorX()}
                 },
                 {
-                    id: "mirror-y", component: "Button", iconClass: "mdi mdi-unfold-more-vertical", className: "icon", container: "#sub-menu",
+                    id: "mirror-y", component: "Button", iconClass: "mdi mdi-unfold-more-vertical", className: "icon left", container: "#sub-menu",
                     show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
                     callback:function(){edit.modify.mirrorY()}
                 },
                 {
-                    id: "break-point", component: "Button", iconClass: "", className: "button", text: "Break", container: "#sub-menu",
+                    id: "break-point", component: "Button", iconClass: "", className: "button left", text: "Break", container: "#sub-menu",
                     show: function () { return edit.modify.breakPointApprove() && app.state.measuremode !== true },
                     callback: function () { edit.modify.breakPoint(); }
                 },
                 {
-                    id: "weld", component: "Button", iconClass: "", className: "button", text: "Weld", container: "#sub-menu",
+                    id: "weld", component: "Button", iconClass: "", className: "button left", text: "Weld", container: "#sub-menu",
                     show: function () { return edit.modify.weldPointApprove() && app.state.measuremode !== true },
                     callback: function () { edit.modify.weldPoint(); }
                 },
                 {
-                    id: "connect", component: "Button", iconClass: "", className: "button", text: "Connect", container: "#sub-menu",
+                    id: "connect", component: "Button", iconClass: "", className: "button left", text: "Connect", container: "#sub-menu",
                     show: function () { return edit.modify.connectPointsApprove() && app.state.measuremode !== true },
                     callback: function () { edit.modify.connectPoints(); }
                 },
                 {
-                    id: "divide", component: "Button", iconClass: "", className: "button", text: "Divide", container: "#sub-menu",
+                    id: "divide", component: "Button", iconClass: "", className: "button left", text: "Divide", container: "#sub-menu",
                     show: function () { return Lines.selected.length === 1 &&app.state.measuremode !== true; },
                     callback: function () {
                         keyboard.open({
@@ -421,7 +430,7 @@ var display = {
                     }
                 },
                 {
-                    id: "join", component: "Button", iconClass: "", className: "button", text: "Join", container: "#sub-menu",
+                    id: "join", component: "Button", iconClass: "", className: "button left", text: "Join", container: "#sub-menu",
                     show: function () { 
                         return Lines.selected.length === 2 && 
                         Lines.getMeet(Lines.selected[0], Lines.selected[1]) && 
@@ -457,10 +466,17 @@ var display = {
                     }
                 },
                 {
-                    id:"magnify-plus",component:"Button",iconClass:"mdi mdi-magnify-plus-outline",className:"icon right",container:"#bottom-menu",
+                    id:"magnify-plus",component:"Button",iconClass:"mdi mdi-magnify-plus-outline",className:"icon right",
+                    callback:function (){app.zoom("in");}
                 },
                 {
-                    id:"magnify-minus",component:"Button",iconClass:"mdi mdi-magnify-minus-outline",className:"icon right",container:"#bottom-menu",
+                    id:"zoom-show",component:"Button",className:"text right",
+                    text:function(){return (app.canvas.getZoom() * 100) + "%"},
+                    attrs:{style:"padding-left:0;padding-right:0;"}
+                },
+                {
+                    id:"magnify-minus",component:"Button",iconClass:"mdi mdi-magnify-minus-outline",className:"icon right",
+                    callback:function (){app.zoom("out");}
                 },
                 {
                     id:"pan-mode",component:"Button",iconClass:"mdi mdi-gesture-tap",className:"icon left",container:"#bottom-menu",
@@ -474,7 +490,22 @@ var display = {
                 },
                 {
                     id:"undo",component:"Button",iconClass:"mdi mdi-undo",className:"icon right",container:"#bottom-menu",
-                    show:function(){return app.state.measuremode !== true;}
+                    show:function(){return app.state.measuremode !== true;},
+                    callback:function(){undo.load();}
+                },
+                {
+                    id:"selected-show",component:"Button",className:"text left",
+                    attrs:{style:"padding-left:0;padding-right:0;"},
+                    text:function(){
+                        var text = '';
+                        if(Points.selected.length){
+                            text += Points.selected.length + " Point(s) selected"
+                        }
+                        else if(Lines.selected.length){
+                            text += Lines.selected.length + " Line(s) selected"
+                        }
+                        return text;
+                    }
                 },
             ]
         },

@@ -1,13 +1,11 @@
 ﻿function spline(config, getPoints) {
     var a = {
-        state: { points: [], close: false, extraData: {}, },
+        state: { points: [], close: false },
         init: function (obj) {
             for (var prop in obj) { this.state[prop] = obj[prop]; }
             this.addPoint(this.state.start);
         },
         addPoint: function (point) { this.state.points.push(point); },
-        removePoint: function (index) { this.state.points.splice(index, 1); },
-        updatePoint: function (index, obj) { for (var prop in obj) { this.state.points[index][prop] = obj[prop]; } },
         getMode: function () { return this.state.mode; },
         getLines: function () {
             var s = this.state, lines = [], points = this.getPoints();
@@ -47,13 +45,16 @@ var create = {
     getAutoWeldCoords:function(coords){
         var point = app.getPoint({ coords: coords, area: this.autoWeldArea });
         if (point) { return { x: point.x, y: point.y }; }
-        else { return app.canvas.getSnapedCoords(coords); }
+        else { return coords; }
     },
     mousedown: function () {
         app.eventHandler("window", "mousemove", $.proxy(this.mousemove, this));
         app.eventHandler("window", "mouseup", $.proxy(this.mouseup, this));
-        var mode = app.state.createmode, 
-        close = ["rectangle", "ngon"].indexOf(mode) !== -1;
+        var mode = app.state.createmode;
+        if(mode === 'polyline'){var close = false,type = 'spline';}
+        else if(mode === 'path'){var close = true,type = 'spline';}
+        else if(mode === 'rectangle'){var close = true,type = 'polygon';}
+        else if(mode === 'ngon'){var close = true,type = 'polygon';} 
         var coords = this.getAutoWeldCoords(app.canvas.getSnapedCoords());
         if (this.firstPoint) {
             this.object = new spline(
@@ -72,7 +73,7 @@ var create = {
             var lastPoint = this.object.getLastPoint();
             if(Lines.getLength({start:lastPoint,end:coords})<5){return;}
             this.object.addPoint(coords);
-            if (close) { this.firstPoint = true; createControl.close(); }
+            if (type === 'polygon') { this.firstPoint = true; createControl.close(); }
         }
         var lastPoint = this.object.getLastPoint();
         this.startOffset = { deltaX: lastPoint.x - coords.x, deltaY: lastPoint.y - coords.y};
@@ -115,8 +116,9 @@ var create = {
     },
     drawLastPoint: function () {
         var lastPoint = this.object.getLastPoint();
-        app.canvas.drawArc({ x: lastPoint.x, y: lastPoint.y, radius: 3, fill: "orange" });
-        app.canvas.drawArc({ x: lastPoint.x, y: lastPoint.y, radius: 6, stroke: "orange" });
+        var zoom = app.canvas.getZoom();
+        app.canvas.drawArc({ x: lastPoint.x, y: lastPoint.y, radius: 3/zoom, fill: "orange" });
+        app.canvas.drawArc({ x: lastPoint.x, y: lastPoint.y, radius: 6/zoom, stroke: "orange" });
     },
     drawController: function () {
         var o = this.object, points = o.getPoints(), lines = o.getLines();
@@ -193,7 +195,7 @@ var create = {
             return this.state.points;
         },
         path:function(){
-            return this.state.points.concat(this.state.points[0]);
+            return this.state.points;
         },
         rectangle: function () {
             var s = this.state, points = [];
@@ -288,6 +290,7 @@ var screenCorrection = {
     margin: { left: 80 + 0, top: 80, right: 80 + 0, bottom: 80 + 0 },//80 is createControl.style.distance
     run: function (coords, callback,endCallback) {
         var c = app.canvas;
+        var zoom = app.canvas.getZoom();
         var speed = 2, x = coords.x, y = coords.y, m = this.margin, width = c.getWidth(), height = c.getHeight();
         var top = m.top + (app.state.appmode === "create"?36:72);
         if (x > width - m.right) { var deltaX = x - width + m.right; }
@@ -297,6 +300,6 @@ var screenCorrection = {
         else if (y < top) { var deltaY = y - top; }
         else { var deltaY = 0; }
         if(!deltaX&&!deltaY){callback(); return;}
-        c.setScreenBy({ x: deltaX, y: deltaY * -1, animate: true, callback: callback });
+        c.setScreenBy({ x: deltaX/zoom, y: deltaY * -1/zoom, animate: true, callback: callback });
     }
 }

@@ -98,16 +98,8 @@ body {
     position: relative;
     width: 100%;
 }
+ 
 
-
-
-
-
-#main-menu, #set-app-mode, #settings, #delete-item, #select-all, #mirror-x, #mirror-y, #break-point, #weld, 
-#create-modes, #select-mode,#offset-select-mode, #edit-modes, .alert-header .text,#connect,#divide,#keyboard-title,.keyboard-label,
-#join,#layer-popup .icon,#full-keyboard-close,#full-keyboard-ok,#remove-measures,#all-measure {
-    float: left;
-}
 
 #layer, #snap, .alert-header .icon,#keyboard-close,#full-keyboard-close {
     float: right;
@@ -146,156 +138,9 @@ body {
     z-index: 1;
 }
 
-#alert {
-    position: fixed;
-    top: 100px;
-    width: 340px;
-    left: calc(50% - 170px);
-    z-index: 1000;
-    color: #fff;
-    background:#425768;
-}
-
-
-.alert-body {
-    z-index: 10;
-    position: relative;
-    padding: 6px;
-    width: calc(100% - 12px);
-    font-size:12px;
-    float:left;
-}
-.alert-header{
-    position: relative;
-    float:left;
-}
-.alert-footer {
-    z-index: 10;
-    position: relative;
-    padding: 6px;
-    width:100%;
-    box-sizing:border-box;
-    float:left;
-}
-
-.alert-button {
-    float: right;
-    width: calc(33% - 22px);
-    background:#414a51;
-    
-}
-
-.alert-switch-container {
-    position: relative;
-    width: 64px;;
-    height: 24px;
-    float: left;
-    color: #fff;
-    text-align: center;
-    background: #333;
-    border-radius:45px;
-    margin-top: 5px;
-    box-shadow: inset 0px 0px 5px 0px #000;
-    
-}
-
-#alert .alert-template-item {
-    position: relative;
-    width: 100%;
-    height: 36px;
-    
-}
-
-
-.alert-template-title {
-    position: relative;
-    width: calc(80px - 6px);
-    white-space: nowrap;
-    text-align: left;
-    float: left;
-    height: 36px;
-    line-height: 36px;
-    margin-left: 6px;
-    
-}
-.alert-template-control{
-    position:relative;
-    width:calc(100% - 120px);
-    height:36px;
-    float:left;
-    line-height:36px;
-    color:#fff;
-    text-align:center;
-    
-}
-.alert-template-value {
-    position: relative;
-    width: 40px;
-    text-align: center;
-    font-size: 12px;
-    float: right;
-    height: 36px;
-    line-height: 36px;
-}
-
-#keyboard {
- z-index:10000;
- position:fixed;
- width:216px;
- left:calc(50% - 108px);
- top:50px;
- 
- box-shadow:4px 4px 10px 0px rgba(0,0,0,0.6);
-}
 
 
 
-#keyboard-body {
- z-index:10;
- position:relative;
- width:100%;
- float:left;
- opacity:0.6;
- background:#3e4146;
-}
-.keyboard-field {
- position: relative;
- width:100%;
- float:left;
-  border:1px solid;
-  border-color:#535458 #141519 #141519 #535458;
-}
-#keyboard-ok {
-  float:right;
-  position: relative;
-  width:100%;
-    box-sizing: border-box;
-    margin:12px 0 0 0;
-}
-#keyboard-footer {
-    opacity:0.6;
- background:#3e4146;
- z-index:10;
- position: relative;
- width:100%;
- float:left;
-  padding:6px;
-  box-sizing: border-box;
-}
-
-
-.keyboard-key {
- float:left;
- width:33%;
- margin:0;
-    height:36px;
-    line-height: 36px;
- font-size:14.4px;
- box-sizing: border-box;
-}
-.keyboard-key.active {
- background:rgba(255,255,255,0.1);
-}
 
 .numberbox {
  border-bottom:1px solid;
@@ -304,105 +149,8 @@ body {
  border-radius:0;
  text-align:center;
 }
-.keyboard-field.active .keyboard-label, .keyboard-field.active .keyboard-numberbox{
- color:#1ad25f;
-}
-#layer-popup {
- position: fixed;
- z-index:100;
- color: #fff;
- background:#425768;
- width: 162px;
- height: calc(100% - 40px);
- top: 40px;
- right:-180px;
-    transition:0.3s;
-}
-#layer-scroll{
-    position:absolute;
-    width:18px;
-    height: calc(100% - 0px);
-    left:-18px;
-    top:0px;
-    z-index:1000;
-    background:#414a51;
-}
-#layer-scroll-slider-container{
-    position:absolute;
-    top:40px;
-    left:0;
-    height:calc(100% - 80px);
-    width:100%;
-}
-.layer-scroll-arrow{
-    position:absolute;
-    left:0;
-    height:40px;
-    line-height:40px;
-    width:100%;
-    margin:0;
-}
 
-#layer-scroll .r-slider-fill{
-    background:#bbb;
-    border-radius:12px;
-}
-#layer-scroll .r-slider-container{
-    background:#414a51;
-    border-radius:4px;
-}
-#layer-popup.active {
- right:0;
- transition:0.3s;
-}
 
-.layer-item {
- position: relative;
- width: calc(100% - 4px);
- border-top:1px solid #647588;
- border-bottom:1px solid #141519;
- background:#425768;
-}
-.layer-item.active {
-    background:#647588;
- color: #1ad25f;
-}
-.layer-item .text {
-  width:calc(100% - 55px);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow:hidden;
-  margin-left:0;
-  padding-left:0;
-}
-
-#layer-header {
- position: absolute;
-}
-#layer-footer {
- position: absolute;
- bottom: 0;
- 
-}
-
-#layer-body {
- position: absolute;
- width: 100%;
- left: 0;
- overflow: hidden;
- z-index:1;
- top: 40px;
- top:42px;
-    height:calc(100% - 80px);
-}
-#layer-items-container{
-    position:absolute;
-    width:100%;
-    height:100%;
-    left:0;
-    top:0;
-
-}
 
 .color-pallete-item{
     background:Red;
@@ -410,56 +158,7 @@ body {
     height:36px;
     float:left;
 }
-#full-keyboard {
- position:fixed;
- width:100%;
- left:0;
- bottom:0;
- z-index: 10000;
- background:#425768;
- padding:12px;
- padding-top:0;
- box-sizing: border-box;
-}
-.full-keyboard-key {
- float:left;
- width:calc(10% - 24px);
- position:relative;
- border:1px solid rgba(255,255,255,0.1);
- border-radius:6px;
- margin:3px;
-}
-.full-keyboard-row {
-    float:left;
- position: relative;
- width:100%;
- z-index:10;
-}
-#full-keyboard-title{
-    float:left;
-}
 
-.full-keyboard-key#full-keyboard-keyA{
-    margin-left:calc(5% + 2px);
-}
-#full-keyboard-show {
- color:#71b0ab;
- text-align:center;
- float:left;
- background:rgba(0,0,0,0.2);
- line-height:30px;
-    margin-top:5px;
- height:30px;
- width:calc(100% - 30px);
-}
-
- 
-.full-keyboard-key.full-keyboard-backspace {
- width:calc(15% - 7px);
-}
-.full-keyboard-key.full-keyboard-space {
- width:calc(15% - 25px);
-}
 .pan-background{
     position: fixed;
     background:black;

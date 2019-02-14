@@ -17,25 +17,34 @@ var components = {
         else if(typeof html === "function"){html = html();}
         else if(html.component === "Dropdown"){html = this.DIV(this.Dropdown(html));}
         else if(html.component === "Button"){html = this.DIV(this.Button(html));}
+        else if(html.component === "Numberbox"){html = this.DIV(this.Numberbox(html));}
         else if(html.component){html = this[html.component](html);}
         else if(!html.component){html = this.DIV(html);}
         else {alert("error!!!")}
         return html;
     },
-    add: function (item) {
-        for (var i = 0; i < this.items.length; i++) { if (this.items[i].id === item.id) { this.items[i] = item; return; } }
-        this.items.push(item);
-    },
     render: function (obj,container) {
-        this.add(obj);
+        this.items.push(obj);
         $(container).append(this.getHTML(obj));
     },
+    removeEvents:function(items){
+        for(var i = 0; i < items.length; i++){
+            var item = items[i];
+            if(item.id){$('body').off('mousedown', '#' + item.id);}
+            if(item.html){this.removeEvents(item.html)}
+        }
+    },
     remove:function(id,items){
-        $("#" + id).remove();
         items = items || this.items;
         for (var i = 0; i < items.length; i++) { 
             var item = items[i];
-            if (item.id === id) { items.splice(i,1); return; }
+            if (item.id === id) {
+                $('body').off('mousedown', '#' + item.id);
+                $("#" + id).remove();
+                this.removeEvents(item.html); 
+                items.splice(i,1); 
+                return; 
+            }
             if(item.html){
                 this.remove(id,item.html);
             }
@@ -57,28 +66,24 @@ var components = {
         return obj;
     },
     Numberbox: function (obj) {
-        if(this.getValue(obj.show) === false){return "";}    
-        var str = '';
-        str += '<div class="' + (obj.className || '') + '" id="' + obj.id + '" data-step="' + obj.step + '">';
-        str += obj.value === undefined ? '' : obj.value;
-        str += '</div>';
-        $('body').off('mousedown', '#' + obj.id);
-        $('body').on('mousedown', '#' + obj.id, function (e) {
+        if(!obj.id){alert("missing id in Numberbox");}
+        obj.component = "DIV";
+        obj.html = [obj.value === undefined ? '' : obj.value]; 
+        obj.keyboardCallback = obj.callback;
+        obj.callback = function(e){
             var element = $(e.currentTarget);
+            var value = parseFloat(element.html());
             var id = element.attr("id");
             var item = components.findItem(id);
-            if(item.callback){
-                keyboard.open({
-                    fields:[{min:item.min,prop:"value",title:"value",value:item.value,dataTarget:item.dataTarget}],
-                    title:"Inter Number",   
-                    close:true,
-                    negative:obj.negative===undefined?true:obj.negative,
-                    callback:item.callback,   
-                });
-            }
-            
-        });
-        return str;
+            keyboard.open({
+                fields:[{prop:"value",title:"value",value:value,dataTarget:item.dataTarget}],
+                title:"Inter Number",   
+                close:true,
+                negative:item.negative===undefined?true:item.negative,
+                callback:item.keyboardCallback,   
+            });
+        };
+        return obj;
     },
     Dropdown: function (obj) {
         obj.component = "DIV";
@@ -146,11 +151,12 @@ var components = {
         return str;
     },
     Slider: function (obj) {
-        if(this.getValue(obj.show) === false){return "";}    
+        if(this.getValue(obj.show) === false){return "";}   
         obj.style = obj.style || { button_width: 24, button_height: 24, line_width: 4 };
         return new slider(obj).getHTML();
     },
     update: function (id, obj) {
+        obj = obj || {};
         var item = components.findItem(id);
         for (var prop in obj) { item[prop] = obj[prop]; }
         $("#" + id).replaceWith(components[item.component](item));

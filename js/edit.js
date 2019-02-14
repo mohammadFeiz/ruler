@@ -2,6 +2,7 @@
     selectRect: { start: null, end: null },
     pan:false,
     mousedown: function (e) {
+        if(!e){debugger;}
         app.eventHandler("window", "mousemove", $.proxy(this.mousemove, this));
         app.eventHandler("window", "mouseup", $.proxy(this.mouseup, this));
         this[app.state.editmode].mousedown(e);
@@ -564,7 +565,13 @@
             var This = edit.modify;
             if (axis.mode === "none") {
                 var position = edit.selectBySelectRect(This.selectMode) || edit.selectByClick(This.selectMode);
-                if(position){axis.setPosition(position); app.redraw(); display.render();}
+                if(position){
+                    screenCorrection.run(app.canvas.canvasToClient(position), function () { 
+                        app.redraw();
+                        axis.setPosition(position);
+                    }); 
+                    display.render();
+                }
                 else{edit.end();}
                 return;
             }
@@ -599,7 +606,7 @@
                         for (var i = 0; i < connectedPoints.length; i++) {
                             forbidenIds.push(connectedPoints[i].id);
                         }
-                        var point = app.getPoint({ area: edit.modify.snapArea, coords: selected, isnt: { id: forbidenIds } });
+                        var point = app.getPoint({ area: edit.modify.magnetArea, coords: selected, isnt: { id: forbidenIds } });
                         if (point) {
                             Points.moveTo(selected, point.x, point.y);
                             axis.setPosition(point);
@@ -607,7 +614,7 @@
                         app.redraw();
                     }
                 }
-                edit.modify.rotateNumber = parseInt($("#axis-angle").html());
+                edit.modify.rotateNumber = axis.getPosition()?parseInt($("#axis-angle .value").html()):0;
                 This.isTransformed = false;
                 screenCorrection.run(app.canvas.canvasToClient(axis.getPosition()), function () { 
                     app.redraw();
@@ -696,7 +703,7 @@
         rotate: function (offset) {
             offset = Math.round(offset / this.snapAngle) * this.snapAngle;
             var This = edit.modify;
-            $("#axis-angle").html((This.rotateNumber + offset) + "&deg;");
+            $("#axis-angle .value").html((This.rotateNumber + offset) + "&deg;");
             var axisPos = axis.getPosition();
             if (this.copyMode && This.selectMode !== "Point") {
                 app.redraw();
@@ -915,14 +922,14 @@
         bond: false,
         magnetArea: 5,
         step: 10,
-        mousedown: function (e) {
+        mousedown: function () {
             var coords = app.canvas.getMousePosition();
             this.line = app.getLine({coords: coords,is: { layerId: layers.getActive().id }});
             if (!this.line) { return; }
             this.points = Lines.getPoints(this.line);
             app.redraw();
         },
-        mousemove: function (e) {
+        mousemove: function () {
             var coords = app.canvas.getMousePosition();
             this.plumb = Lines.getPrependicularLine(this.line, coords);
             var point = this.plumb.start;
@@ -967,6 +974,7 @@
             app.redraw();
         },
         setting: function () {
+        
             Alert.open({
                 title: "Plumb Line Setting",
                 buttons: [{
@@ -976,12 +984,18 @@
                     {
                         type:"slider",title: "Magnet Area",
                         value: this.magnetArea,start: 0,step: 1,min: 1,end: 20,
-                        callback: function (value) {edit.plumbLine.magnetArea = value;}
+                        callback: function (value) {
+                            console.log(value);
+                            edit.plumbLine.magnetArea = value;
+                        }
                     },
                     {
                         type:"slider",title: "Step",
                         value: this.step,start: 0,step: 1,min: 1,end: 100,
-                        callback: function (value) {edit.plumbLine.step = value;}
+                        callback: function (value) {
+                            if(isNaN(value)){debugger;}
+                            edit.plumbLine.step = value;
+                        }
                     }
                 ]
             });
@@ -1048,7 +1062,7 @@
 }
 var axis = {
     mode: "none",
-    opened:false,
+    position:false,
     buttons: [
         { id: "axis-move-horizontal", iconClass: "mdi mdi-arrow-right-bold", className: "axis-icon-container radio", active: function () { return edit.modify.axisMode === "axis-move-horizontal" ? ' active' : '' } },
         { id: "axis-rotate", iconClass: "mdi mdi-loop", className: "axis-icon-container radio", active: function () { return edit.modify.axisMode === "axis-rotate" ? ' active' : '' } },
@@ -1060,8 +1074,7 @@ var axis = {
         { id: "axis-move", iconClass: "mdi mdi-arrow-all", className: "axis-icon-container radio", active: function () { return edit.modify.axisMode === "axis-move" ? ' active' : '' } },
     ],
     open: function (coords) {
-        console.log("open");
-        axis.opened = true;
+        this.position = coords;
         edit.modify.rotateNumber = 0;
         var magnetSize = edit.modify.magnetArea * app.canvas.getZoom();
         components.render({
@@ -1095,27 +1108,27 @@ var axis = {
                 }
             ]
         },"body");
-        this.setPosition(coords);
+        this.setPosition(this.position);
     },
     close: function () {
         components.remove("axis");
-        axis.opened = false;
-        axis.mode = "none";
+        this.position = false;
+        this.mode = "none";
     },
     setPosition: function (obj) {
         if(!obj){return;}
-        if (axis.opened === false) { axis.open(obj); return;}
+        if (this.position === false) { axis.open(obj); return;}
         var coords;
         if (obj === "center") { coords = edit.modify.selectMode === "Point" ? 
         Points.getCenterOfList(Points.selected) : Lines.getCenterOfList(Lines.selected); }
         else { coords = obj; }
-        this.axisPos = {x:coords.x, y:coords.y};
-        var bodyCoords = app.canvas.canvasToClient(coords);
+        this.position = coords;
+        var bodyCoords = app.canvas.canvasToClient(this.position);
         $("#axis").css({ "left": bodyCoords.x, "top": bodyCoords.y });
         $("#axis-x").html("X:" + coords.x.toFixed(1));
         $("#axis-y").html("Y:" + (coords.y * -1).toFixed(1));
     },
     getPosition: function () {
-        return this.axisPos;
+        return this.position;
     }
 }

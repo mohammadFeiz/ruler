@@ -15,64 +15,66 @@ var Alert = {
 
 function AlertPopup(props) {
     var s = props.style;
-    var headerHTML = [
-        { 
-            component: "Button",id: "alert-close", iconClass: "mdi mdi-close", 
-            className: "icon alert-close",callback: Alert.close 
-        },
-        { 
-            component: "Button",id: "alert-title", text: props.title, className: "text" 
-        }
-    ];
-
-    var bodyHTML = [];
-    if (typeof props.template === "string") { bodyHTML.push(props.template); }
-    else if (!Array.isArray(props.template)) {
-        if (props.template.type === "color pallete") {
-            var colors = ["#ff0000", "#ff4e00", "#ffa800", "#fcff00", "#f5eeb2", "#12ff00", "#2e4f0b", "#00f0ff", "#008aff", "#2400ff", "#1c4663",
-            "#41366f", "#7c6c92", "#8400ff", "#ff6868", "#ff00ba", "#72441c", "#482a0b", "#8a8a8a", "#ffffff"];
-            for (var i = 0; i < colors.length; i++) {
-                bodyHTML.push({
-                    id: "color-pallete-item-" + i, className: "color-pallete-item", 
-                    attrs: { "data-color": colors[i],style: "background:" + colors[i] + ";" },
-                    callback: props.template.callback
-                });
-            }
-        }
-    }
-    else {
-        for (var i = 0; i < props.template.length; i++) {
-            var template = props.template[i];
-            var templateValue = template.value === undefined || template.type !== 'slider' ? '' : template.value;
-            bodyHTML.push({
-                className:"alert-template-item",attrs:{"data-index":i},
-                html:[
-                    {className:"alert-template-title",html:[template.title || '']},
-                    {className:"alert-template-control",html:[AlertControl[template.type](template,i)]},
-                    {className:"alert-template-value",html:[templateValue]}
-                ]
-            });
-        }
-    } 
-    var footerHTML = [];
-    for (var i = 0; i < props.buttons.length; i++) {
-        var button = props.buttons[i];
-        footerHTML.push({
+    var close = { 
+        component: "Button",id: "alert-close", iconClass: "mdi mdi-close", 
+        className: "icon",callback: Alert.close 
+    };
+    var title = { 
+        component: "Button",id: "alert-title", text: props.title, className: "text left" 
+    };
+    var buttons = props.buttons.map(function(button,i){
+        return {
             component: "Button",
             id: "alert-botton-" + i,
             text: button.text,
-            className: "button alert-button alert-close",
+            className: "button",
             callback: button.callback,
-        })
+        }
+    });
+
+    if (typeof props.template === "string") { var bodyHTML = [props.template]; }
+    else if (!Array.isArray(props.template)) {
+        if (props.template.type === "color pallete") {
+            var bodyHTML = [
+                "#ff0000", "#ff4e00", "#ffa800", "#fcff00","#f5eeb2",
+                "#12ff00", "#2e4f0b", "#00f0ff", "#008aff", "#2400ff", 
+                "#1c4663","#41366f", "#7c6c92", "#8400ff", "#ff6868", 
+                "#ff00ba","#72441c","#482a0b", "#8a8a8a", "#ffffff"
+            ].map(function(color,i){
+                return {
+                    id: "color-pallete-item-" + i, className: "color-pallete-item", 
+                    attrs: { "data-color": color,style: "background:" + color + ";" },
+                    callback: props.template.callback
+                }
+            });
+        }
     }
+    else {
+        var bodyHTML = props.template.map(function(template,i){
+            
+            return {
+                className:'alert-template-item',attrs:{'data-index':i},
+                html:[
+                    {className:'alert-template-title',html:[template.title || '']},
+                    {className:'alert-template-control',html:[AlertControl[template.type](template,i)]},
+                    {
+                        className:'alert-template-value',
+                        html:[template.value === undefined ?'':template.value],
+                        show:template.type === 'slider'
+                    }
+                ]
+            }
+        });
+    } 
+    
     
     components.render({
         id:"alert",
         html:[
             {className:"back-drop"},
-            {className:"alert-header header",html:headerHTML},
+            {className:"alert-header header",html:[close,title]},
             {className:"alert-body",html:bodyHTML},
-            {className:"alert-footer",html:footerHTML}
+            {className:"alert-footer",html:buttons}
         ]
     },"body");
 }

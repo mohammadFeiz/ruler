@@ -8,28 +8,22 @@ var keyboard = {
     render: function () {
         var s = this.state;
         var backDrop = {className:"back-drop"};
-        var keyboardHeader = {
-            className:"header",id:"keyboard-header",
-            html:[
-                { 
-                    id: "keyboard-close", component: "Button", 
-                    iconClass: "mdi mdi-close", className: "icon", 
-                    callback: this.close.bind(this) 
-                },
-                { 
-                    id: "keyboard-title", component: "Button", text: s.title, className: "text" 
-                }
-            ]
+        var close = { 
+            id: "keyboard-close", component: "Button", 
+            iconClass: "mdi mdi-close", className: "icon", 
+            callback: this.close.bind(this) 
         };
-        var keyboardKeys = [];
+        var title = {id: "keyboard-title",component: "Button",text:s.title,className:"text"}
+        var header = {className:"header",id:"keyboard-header",html:[close,title]};
+        var keys = [];
         for (var i = 1; i < 10; i++) {
-            keyboardKeys.push({ 
+            keys.push({ 
                 id: "keyboard-key" + i, className: "button keyboard-key",
                 text: i , attrs: {"data-key":i},component: "Button", 
                 callback: this.getKey.bind(this) 
             });
         }
-        keyboardKeys.push(
+        keys.push(
             { 
                 id: "keyboard-key-minus", className: "button keyboard-key",
                 text: "-/+",attrs: { "data-key": "-/+" },component: "Button", 
@@ -47,32 +41,31 @@ var keyboard = {
                 callback: this.getKey.bind(this),  
             }
         );
-        var keyboardBody = {id:"keyboard-body",html:keyboardKeys};
-        var keyboardFooter = {
-            id:"keyboard-footer",
-            html:s.fields.map(function(field,i){
-                var className = 'keyboard-field' + (s.activeIndex === i ? ' active' : '');
-                return {
-                    className:className,attrs:{'data-index':i},id:'keyboard-field-'+i,
-                    html:[
-                        { 
-                            id: "keyboard-label" + i, component: "Button", 
-                            text: field.title, className: "text keyboard-label" 
-                        },
-                        { 
-                            id: "keyboard-numberbox" + i, component: "Numberbox", 
-                            value: field.value===undefined?0:field.value, 
-                            className: "numberbox keyboard-numberbox" 
-                        }
-                    ],
-                    callback:keyboard.fieldMouseDown.bind(keyboard)
-                }
-            }).concat({ 
-                id: "keyboard-ok", component: "Button", text: "OK", className: "button", 
-                callback: this.ok.bind(this) 
-            })
-        }
-        components.render({id:"keyboard",html:[backDrop,keyboardHeader,keyboardBody,keyboardFooter]},"body");
+        var body = {id:"keyboard-body",html:keys};
+        var fields = s.fields.map(function(field,i){
+            var className = 'keyboard-field' + (s.activeIndex === i ? ' active' : '');
+            return {
+                className:className,attrs:{'data-index':i},id:'keyboard-field-'+i,
+                html:[
+                    { 
+                        id: "keyboard-label" + i, component: "Button", 
+                        text: field.title, className: "text keyboard-label" 
+                    },
+                    { 
+                        id: "keyboard-numberbox" + i, component: "Numberbox", 
+                        value: field.value===undefined?0:field.value, 
+                        className: "numberbox keyboard-numberbox" 
+                    }
+                ],
+                callback:keyboard.fieldMouseDown.bind(keyboard)
+            }
+        });
+        var ok = { 
+            id: "keyboard-ok", component: "Button", text: "OK", className: "button", 
+            callback: this.ok.bind(this) 
+        };
+        var footer = {id:"keyboard-footer",html:fields.concat(ok)}
+        components.render({id:"keyboard",html:[backDrop,header,body,footer]},"body");
     },
     getClient: function (e, axis) {
         axis = axis.toUpperCase();
@@ -82,7 +75,7 @@ var keyboard = {
         var s = this.state;
         s.activeIndex = 0;
         s.firstInter = true;
-        $("#keyboard").remove();
+        components.remove("keyboard");
     },
     fieldMouseDown: function (e) {
         var element = $(e.currentTarget);
