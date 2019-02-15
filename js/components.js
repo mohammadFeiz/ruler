@@ -117,7 +117,7 @@ var components = {
                             var object = components.findItem(id);
                             var option = object.options[index];
                             dropdown.find(".dropdown-text").html(option.text);
-                            if(object.optionsCallback){object.optionsCallback(option.value);}
+                            if(object.optionsCallback){object.optionsCallback(option);}
                             dropdown.find(".back-drop").hide();
                             dropdown.find(".dropdown-popup").hide();
                         }

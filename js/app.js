@@ -6,7 +6,7 @@
         showLines: true,
         showPoints: true,
         appmode: "create",
-        createmode: "polyline",
+        createmode:{ text: "Polyline", value: "polyline",close:false,linesMethod:'singleRow',pointsMethod:'polyline' },
         editmode: "modify",
         container: "#container",
         background: "#2c2f37",
@@ -154,7 +154,6 @@
                 return line;
             }
         }
-
         return false;
     },
     // zoom: function (zoom) {
@@ -184,7 +183,6 @@
     //         });
     //     }
     // },
-
     windowMouseDown: function (e) {
         var mousePosition = app.getMousePosition(e);
         app.x = mousePosition.x;
@@ -289,21 +287,15 @@ var display = {
                 {
                     component: "Dropdown", id: "create-modes", className: "dropdown left", container: "#top-menu",
                     options: [
-                        { text: "Polyline", value: "polyline" }, 
-                        { text: "Rectangle", value: "rectangle" }, 
-                        { text: "NGon", value: "ngon" },
-                        { text: "Path", value: "path" }, 
+                        { text: "Polyline", value: "polyline",close:false,linesMethod:'singleRow',pointsMethod:'polyline' }, 
+                        { text: "Doubleline", value: "doubleline",close:false,linesMethod:'doubleRow',pointsMethod:'doubleline' }, 
+                        { text: "Rectangle", value: "rectangle",close:true,linesMethod:'singleRow',pointsMethod:'rectangle' }, 
+                        { text: "NGon", value: "ngon",close:true,linesMethod:'singleRow',pointsMethod:'ngon' },
+                        { text: "Path", value: "path",close:true ,linesMethod:'singleRow',pointsMethod:'path'}, 
                     ],
-                    text: function () {
-                        switch (app.state.createmode) {
-                            case 'polyline': return 'Polyline';
-                            case 'rectangle': return 'rectangle';
-                            case 'ngon': return 'NGon';
-                            case 'path': return 'Path';
-                        }
-                    },
-                    optionsCallback: function (value) { 
-                        app.state.createmode = value; 
+                    text: function () {return app.state.createmode.text;},
+                    optionsCallback: function (obj) { 
+                        app.state.createmode = obj; 
                         create.end();  
                         display.render(); 
                     },
@@ -335,15 +327,15 @@ var display = {
                             case 'measure': return 'Measure';
                         }
                     },
-                    optionsCallback: function (value) { app.state.editmode = value; edit.end();},
+                    optionsCallback: function (obj) { app.state.editmode = obj.value; edit.end();},
                     show: function () { return app.state.appmode === "edit" && app.state.measuremode !== true; },
                 },
                 {
                     component: "Dropdown", id: "select-mode", className: "dropdown left", container: "#top-menu",
                     text: function () { return edit.modify.selectMode },
                     options: [{ text: "Point", value: "Point" }, { text: "Line", value: "Line" }, { text: "Spline", value: "Spline" }],
-                    optionsCallback: function (value) { 
-                        edit.modify.selectMode = value; edit.end(); 
+                    optionsCallback: function (obj) { 
+                        edit.modify.selectMode = obj.value; edit.end(); 
                     },
                     show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
                 },
@@ -351,8 +343,8 @@ var display = {
                     component: "Dropdown", id: "offset-select-mode", className: "dropdown left",
                     text: function () { return edit.offsetLine.selectMode },
                     options: [{ text: "Line", value: "Line" }, { text: "Spline", value: "Spline" }],
-                    optionsCallback: function (value) { 
-                        edit.offsetLine.selectMode = value; edit.end(); 
+                    optionsCallback: function (obj) { 
+                        edit.offsetLine.selectMode = obj.value; edit.end(); 
                     },
                     show: function () { return app.state.appmode === "edit" && app.state.editmode === "offsetLine" && app.state.measuremode !== true; },
                 },
