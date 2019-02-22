@@ -128,8 +128,10 @@ var components = {
         return obj;
     },
     DIV:function(obj){
-        if(this.getValue(obj.show) === false){return "";}    
         var id = this.getValue(obj.id) || "";
+        if(this.getValue(obj.show) === false){
+            return '<div id="'+obj.id+'" style="display:none;"></div>';
+        }    
         var className = this.getValue(obj.className) || "";
         var attrs = this.getAttrs(obj.attrs);
         var str = '<div ';
@@ -139,13 +141,18 @@ var components = {
         str+='>';
         if(obj.html){for(var i = 0; i < obj.html.length; i++){str += this.getHTML(obj.html[i]);}}
         str += '</div>';
-        if (obj.callback) {
+        if (obj.callback||obj.affectTo) {
             if(!id){debugger;alert("for set callback, id is required!!!")}
             $('body').off('mousedown', '#' + id);
             $('body').on('mousedown', '#' + id, function (e) {
                 var element = $(e.currentTarget);
                 var item = components.findItem(element.attr("id"));
-                item.callback(e);
+                if(item.callback){item.callback(e);}
+                if(item.affectTo){
+                    for(var i = 0; i < item.affectTo.length; i++){
+                        components.update(item.affectTo[i]);
+                    }
+                }
             });
         }
         return str;
@@ -156,9 +163,12 @@ var components = {
         return new slider(obj).getHTML();
     },
     update: function (id, obj) {
+        var element = $("#" + id);
+        if(!element){alert('not found a component with id='+id);return;}
+        
         obj = obj || {};
         var item = components.findItem(id);
         for (var prop in obj) { item[prop] = obj[prop]; }
-        $("#" + id).replaceWith(components[item.component](item));
+        element.replaceWith(components.getHTML(item));
     },
 }

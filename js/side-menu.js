@@ -1,185 +1,160 @@
 var sideMenu = {
-    items: [
-        { 
-            id: "Dimension", 
-            title: "Show Dimension", 
-            iconClass: function(){
-                if(canvas.showDimention){
-                    return "mdi mdi-checkbox-marked-outline";
+    savedFiles:[],
+    reloadAfterSave:false,
+    renderObject: {
+        id:"side-menu",
+        html:[
+            {className:'back-drop',id:'side-menu-back-drop',callback:function(){sideMenu.close();}},
+            {id:'side-menu-popup',
+                html:[
+                    {id:'side-menu-header'},
+                    {
+                        id:'side-menu-file-name',html:[
+                        function(){return app.state.fileName}
+                        ]
+                    },
+                    {
+                        id: "new", text: "New", iconClass: "mdi mdi-file-outline",component:"Button",className:'button side-menu-item', 
+                        callback: function () {sideMenu.close(); sideMenu.new();}
+                    },
+                    { 
+                        id: "save", text: "Save", iconClass: "mdi mdi-content-save",component:"Button",className:'button side-menu-item', 
+                        callback: function () {sideMenu.close(); sideMenu.save();}
+                    },
+                    { 
+                        id: "save-as", text: "Save As", iconClass: "mdi mdi-content-save-settings",component:"Button",className:'button side-menu-item', 
+                        callback: function () {sideMenu.close(); sideMenu.saveAs();}
+                    },
+                    { 
+                        id: "open", text: "Open", iconClass: "mdi mdi-folder-open",component:"Button",className:'button side-menu-item',
+                        callback:function(){sideMenu.close(); sideMenu.openFile();}
+                    },
+                    { 
+                        id: "export-dxf-file", text: "Export DXF File", iconClass: "mdi mdi-export",component:"Button",className:'button side-menu-item', 
+                        callback:function(){sideMenu.removeAllSavedFiles();}
+                    },
+                    { id: "about", text: "About", iconClass: "mdi mdi-information-variant",component:"Button",className:'button side-menu-item',},
+                    { id: "exit", text: "Exit", iconClass: "mdi mdi-close",component:"Button",className:'button side-menu-item', },
+                ]      
+            }
+        ]
+    },
+    getSavedFiles:function(){
+        var savedFiles = localStorage.getItem('rulerSavedFiles');
+        localStorage.setItem('rulerSavedFiles',savedFiles || '[]');
+        return JSON.parse(localStorage.getItem('rulerSavedFiles'));
+    },
+    getDefaultName:function(){
+        var savedFiles = this.getSavedFiles();
+        if(app.state.fileName !== 'Not save'){return app.state.fileName;}
+        var j = 1;
+        while(savedFiles.indexOf('untitle ' + j) !== -1){
+            j++;
+        }
+        return 'untitle ' + j;
+    },
+    new:function(){
+        Alert.open({
+            title:'New drawing',
+            buttons:[
+                {text:'Yes', callback:function(){Alert.close(); sideMenu.reloadAfterSave = true; sideMenu.save();}},
+                {text:'No',callback:function(){location.reload();}},
+                {text:'Cansel',callback:function(){Alert.close();}}
+            ],
+            template:'Do you want save current drawing?'
+        });   
+    },
+    save:function(){
+        if(app.state.fileName === 'Not save'){
+            this.saveAs();
+        }
+        else{
+            this.finalSave(app.state.fileName);
+        }
+    },
+    saveAs:function(){
+        var defaultName = this.getDefaultName();
+        full_keyboard.open({
+            text: defaultName,
+            title: "Inter file name for save.",
+            callback: function(name){
+                var savedFiles = sideMenu.getSavedFiles();
+                if(savedFiles.indexOf(name)!== -1){
+                    Alert.open({
+                        title:'Confirm Save',
+                        template:name + ' already exist. Do you want replace it?',
+                        buttons:[
+                            {
+                                text:'yes',
+                                value:name,
+                                callback:function(e){
+                                    var name = $(e.currentTarget).attr('data-value');
+                                    Alert.close();
+                                    sideMenu.finalSave(name);
+                                }
+                            },
+                            {text:'No',callback:function(){Alert.close();}}
+                        ]
+                    })
                 }
                 else{
-                    return "mdi mdi-checkbox-blank-outline";
+                    sideMenu.finalSave(name);
+                }
+            }
+        });
+    },
+    finalSave:function(name){
+        var savedFiles = this.getSavedFiles();
+        app.state.fileName = name;
+        var index = savedFiles.indexOf(name);
+        if(index === -1){
+            savedFiles.push(name);
+        }
+        else {
+            savedFiles[index] = name;
+        }
+        localStorage.setItem('rulerSavedFiles',JSON.stringify(savedFiles));
+        localStorage.setItem(name,JSON.stringify(undo.getLast()));
+        if(this.reloadAfterSave){location.reload();}
+    },
+    openFile:function(){
+        var savedFiles = this.getSavedFiles();
+        var items = savedFiles.map(function(savedFile){
+            return {
+                text:savedFile,
+                value:savedFile
+            }
+        });
+        Alert.open({
+            title:'Open file',
+            template:{
+                type:'list',
+                items:items,
+                callback:function(e){
+                    var value = $(e.currentTarget).attr('data-value');
+                    app.state.fileName = value;
+                    var file = localStorage.getItem(value);
+                    undo.model = [JSON.parse(file),null];
+                    undo.load();
+                    Alert.close();
                 }
             },
-            callback:function(){
-                var state = canvas.showDimention = !canvas.showDimention;
-                canvas.redraw();
-                create.end();
-                sideMenu.close(); 
-            }, 
-        },
-        {
-            id: "new", title: "New", iconClass: "mdi mdi-file-outline", callback: function () {
-                Location.reload();
-            }
-        },
-        { id: "save", title: "Save", iconClass: "mdi mdi-content-save" },
-        { id: "save-as", title: "Save As", iconClass: "mdi mdi-content-save-settings" },
-        { id: "open", title: "Open", iconClass: "mdi mdi-folder-open" },
-        { id: "export-dxf-file", title: "Export DXF File", iconClass: "mdi mdi-export" },
-        { id: "about", title: "About", iconClass: "mdi mdi-information-variant" },
-        { id: "exit", title: "Exit", iconClass: "mdi mdi-close" },
-    ],
-    style: {
-        top: top_menu_size,
-        size: 36,
-        width: 200,
-        background: "#fff",
-        icon_color: font_color,
-        icon_font_size: font_color,
-        title_color: font_color,
-        title_font_size: 12,
-        header_height: 36,
-        zIndex: 100000
+            buttons:[{text:'Close',callback:Alert.close}]
+        });
     },
-    getStyle: function () {
-        var style = sideMenu.style;
-        var str = '';
-        str += 'position: fixed;';
-        str += 'top:0;';
-        str += 'left:0;';
-        str += 'width:100%;';
-        str += 'height:100%;';
-        str += 'z-index:' + style.zIndex + ';';
-        return str;
+    removeAllSavedFiles:function(){
+        var savedFiles = this.getSavedFiles();
+        for(var i = 0; i < savedFiles.length; i++){
+            localStorage.removeItem(savedFiles[i]);
+        }
+        localStorage.setItem('rulerSavedFiles','[]');
     },
     open: function () {
-        
-        var str = '';
-        str += '<div id="side-menu" style="' + sideMenu.getStyle() + '">';
-        str += SideMenuBackDrop();
-        str += SideMenuPopup({ items: sideMenu.items, style: sideMenu.style });
-        str += '</div>';
-        $("body").append(str);
-        setTimeout(function () { $("#side-menu-popup").addClass("active"); }, 10);
-        sideMenu.setEvents();
+        components.render(this.renderObject,'body');
+        setTimeout(function () { $("#side-menu").addClass("active"); }, 300);
     },
     close: function () {
-        $("#side-menu-popup").removeClass("active");
-        setTimeout(function () { $("#side-menu").remove(); }, 300);
+        $("#side-menu").removeClass("active");
+        setTimeout(function () { components.remove("side-menu"); }, 300);
     },
-    setEvents: function () {
-        for (var i = 0; i < sideMenu.items.length; i++) {
-            var item = sideMenu.items[i];
-            this.eventHandler("#" + item.id, "mousedown", item.callback);
-        }
-        this.eventHandler("#side-menu .back-drop", "mousedown", sideMenu.close);
-    },
-    eventHandler: function (selector, event, action) {
-        if (canvas.isMobile) {
-            if (event === "mousedown") { event = "touchstart"; }
-            else if (event === "mousemove") { event = "touchmove"; }
-            else if (event === "mouseup") { event = "touchend"; }
-        }
-        if (selector === "window") { $(window).unbind(event, $.proxy(action, this)).bind(event, $.proxy(action, this)); }
-        else if (typeof selector === "string") { $(selector).unbind(event, $.proxy(action, this)).bind(event, $.proxy(action, this)); }
-        else { selector.unbind(event, $.proxy(action, this)).bind(event, $.proxy(action, this)); }
-    },
-}
-function SideMenuBackDrop() {
-    function getStyle() {
-        var str = '';
-        str += 'position:absolute;';
-        str += 'z-index:1;';
-        str += 'width:100%;';
-        str += 'height:100%;';
-        str += 'left:0;';
-        str += 'top:0;';
-        
-        return str;
-    }
-    var str = '';
-    str += '<div class="back-drop" style="' + getStyle() + '"></div>';
-    return str;
-}
-
-function SideMenuPopup(props) {
-    var items = props.items;
-    var style = props.style;
-    function getStyle() {
-        var str = '';
-        
-        return str;
-    }
-    var str = '';
-    str += '<div id="side-menu-popup">';
-    str += SideMenuHeader({ style: sideMenu.style });
-    for (var i = 0; i < items.length; i++) {
-        var item = items[i];
-        str += SideMenuItem({ style: style, item: item });
-    }
-    str += '</div>';
-    return str;
-}
-
-function SideMenuHeader(props) {
-    function getStyle() {
-        var str = '';
-        str += 'position:relative;';
-        str += 'width:100%;';
-        str += 'height:' + props.style.header_height + 'px;';
-        str += 'background:url(ruler.png);';
-        str += 'background-size:cover;';
-        return str;
-    }
-    var str = '';
-    str += '<div id="side-menu-header" style="' + getStyle() + '"></div>';
-    return str;
-}
-
-function SideMenuItem(props) {
-    var style = props.style, item = props.item;
-    function getItemStyle() {
-        var str = '';
-        str += 'position: relative;';
-        str += 'width:100%;';
-        str += 'float:left;';
-        str += 'color:' + font_color+';';
-        str += 'background:rgba(0,0,0,0.5);';
-        str += 'height:' + style.size + 'px;';
-        return str;
-    }
-    function getIconContainerStyle() {
-        var str = '';
-        str += 'position: relative;';
-        str += 'float:left;';
-        str += 'text-align:center;';
-        str += 'width:' + style.size + 'px;';
-        str += 'height:' + style.size + 'px;';
-        return str;
-    }
-    function getIconStyle() {
-        var str = '';
-        str += 'line-height:' + style.size + 'px;';
-        str += 'color:' + style.icon_color + 'px;';
-        str += 'font-size:' + style.icon_font_size + 'px;';
-        return str;
-    }
-    function getTitleContainerStyle() {
-        var str = '';
-        str += 'line-height:' + style.size + 'px;';
-        str += 'color:' + style.title_color + 'px;';
-        str += 'float:left;';
-        str += 'font-size:' + style.title_font_size + 'px;';
-        return str;
-    }
-    var iconClass = typeof item.iconClass === "function"?item.iconClass():item.iconClass;
-    var str = '';
-    str += '<div class="side-menu-item" id="' + item.id + '" style="' + getItemStyle() + '">';
-    str += '<div class="icon-container" style="' + getIconContainerStyle() + '">';
-    str += '<span class="icon ' + iconClass + '" style="' + getIconStyle() + '"></span>';
-    str += '</div>';
-    str += '<div class="title-container" style="' + getTitleContainerStyle() + '">' + item.title + '</div>';
-    str += '</div>';
-    return str;
 }

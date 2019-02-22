@@ -10,7 +10,8 @@
         editmode: "modify",
         container: "#container",
         background: "#2c2f37",
-        gridLineColor: "70,70,70"
+        gridLineColor: "70,70,70",
+        fileName:'Not save'
     },
     style: {
         lightFontColor: "#fff",
@@ -28,6 +29,7 @@
         app.eventHandler("window","mousemove",app.windowMouseMove);
         app.eventHandler("window","mouseup",app.windowMouseUp);
         display.render();
+        this.redraw();
     },
 
     canvasmousedown: function (e) {
@@ -102,15 +104,12 @@
         var zoom = this.canvas.getZoom();
         this.canvas.drawRectangle({ center: true, x: point.x, y: point.y, width: 4/zoom, height: 4/zoom, fill: point.selected === true ? "red" : "yellow" }); },
     drawAxes: function () {
-        this.ctx.save();
-        this.ctx.setLineDash([3, 3]);
-        this.drawLine({ start: { x: 0, y: -4002 }, end: { x: 0, y: 4000 }, color: "#777" });
-        this.drawLine({ start: { x: -4002, y: 0 }, end: { x: 4000, y: 0 }, color: "#777" });
-        this.ctx.restore();
+        this.drawLine({ start: { x: 0, y: -4002 }, end: { x: 0, y: 4000 }, color: "#555",lineDash:[2,3] });
+        this.drawLine({ start: { x: -4002, y: 0 }, end: { x: 4000, y: 0 }, color: "#555",lineDash:[2,3] });
     },
     redraw: function () {
         this.canvas.clear();
-        //this.drawAxes();
+        this.drawAxes();
         this.drawLines();
         this.drawPoints();
     },
@@ -156,33 +155,6 @@
         }
         return false;
     },
-    // zoom: function (zoom) {
-    //     zoom = parseFloat(zoom.toFixed(2));
-    //     canvas.setZoom(zoom);
-    //     var str =
-    //         '<div id="zoomShow" style="position: fixed;top: calc(50% - 90px);left:calc(50% - 50px);"><i class="icon icon-search" style="font-size: 120px;color: rgba(255,255,255,0.15);"></i><span style="position: relative;font-size: 25px;color: rgba(255,255,255,0.4);top:-59px;left:-100px;font-weight: bold;">' +
-    //         parseInt(zoom * 100) + '%</span></div>';
-    //     $("body").append(str);
-    //     $("#zoomShow").fadeOut(400);
-    //     setTimeout(function () {
-    //         $("#zoomShow").remove();
-    //     }, 400);
-    //     var a = 100 * zoom,
-    //         b = 10 * zoom;
-    //     $("canvas").css({
-    //         "background-size": "" + a + "px " + a + "px, " + a + "px " + a + "px, " + b + "px " +
-    //             b + "px, " + b + "px " + b + "px"
-    //     });
-    //     var c = create.currentSpline;
-    //     if (c) {
-    //         create.screenCorrection(function () {
-    //             canvas.redraw();
-    //             c.draw();
-    //             c.drawHelp();
-    //             c.setController();
-    //         });
-    //     }
-    // },
     windowMouseDown: function (e) {
         var mousePosition = app.getMousePosition(e);
         app.x = mousePosition.x;
@@ -228,7 +200,6 @@
             this.canvas.setScreenTo({x:screenPosition.x,y:screenPosition.y});
             this.redraw();
         }
-        components.update("zoom-show");
     },
     getMin: function (a, b) { if (a <= b) { return a; } else { return b; } },
     getMax: function (a, b) { if (a <= b) { return b; } else { return a; } },
@@ -263,24 +234,22 @@
         } });
     },
 }
-
-
 var display = {
     items: [
         {
-            id:"top-menu",html:[
+            id:"top-menu",className:'header',html:[
                 { 
                     component: "Button", id: "main-menu", iconClass: "mdi mdi-menu", className: "icon left",
-                    show:function(){return app.state.measuremode !== true;}
+                    show:function(){return app.state.measuremode !== true;},
+                    callback:function(){sideMenu.open();}
                 },
                 {
                     component: "Button", id: "set-app-mode", className: "button left", container: "#top-menu",
                     text: function () { return app.state.appmode === "create" ? "Create" : "Edit"; },
-                    callback: function (item) {
-                        create.end();
-                        edit.end();
+                    affectTo:['top-menu','sub-menu','selected-show'],
+                    callback: function (e) {
+                        create.end(); edit.end();
                         if (app.state.appmode === "create") { app.state.appmode = "edit"; } else { app.state.appmode = "create"; }
-                        display.render();
                     },
                     show:function(){return app.state.measuremode !== true;}
                 },
@@ -296,8 +265,7 @@ var display = {
                     text: function () {return app.state.createmode.text;},
                     optionsCallback: function (obj) { 
                         app.state.createmode = obj; 
-                        create.end();  
-                        display.render(); 
+                        create.end();
                     },
                     show: function () { return app.state.appmode === "create" && app.state.measuremode !== true; },
                 },
@@ -327,16 +295,19 @@ var display = {
                             case 'measure': return 'Measure';
                         }
                     },
-                    optionsCallback: function (obj) { app.state.editmode = obj.value; edit.end();},
+                    affectTo:['select-mode','offset-select-mode','sub-menu','selected-show'],
+                    optionsCallback: function (obj) { 
+                        app.state.editmode = obj.value;
+                        edit.end();
+                    },
                     show: function () { return app.state.appmode === "edit" && app.state.measuremode !== true; },
                 },
                 {
                     component: "Dropdown", id: "select-mode", className: "dropdown left", container: "#top-menu",
                     text: function () { return edit.modify.selectMode },
                     options: [{ text: "Point", value: "Point" }, { text: "Line", value: "Line" }, { text: "Spline", value: "Spline" }],
-                    optionsCallback: function (obj) { 
-                        edit.modify.selectMode = obj.value; edit.end(); 
-                    },
+                    affectTo:['sub-menu','selected-show'],
+                    optionsCallback: function (obj) { edit.modify.selectMode = obj.value; edit.end(); },
                     show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
                 },
                 {
@@ -351,7 +322,8 @@ var display = {
                 { 
                     id: "layer", component: "Button", iconClass: "mdi mdi-buffer", className: "icon", container: "#top-menu", 
                     callback:function() { create.end(); edit.end(); layers.open(); },
-                    show:function(){return app.state.measuremode !== true &&app.state.measuremode !== true;}
+                    show:function(){return app.state.measuremode !== true &&app.state.measuremode !== true;},
+                    affectTo:['sub-menu','selected-show'],
                 },
                 {
                     id: "settings", component: "Button", iconClass: "mdi mdi-settings", className: "icon left", container: "#top-menu",
@@ -361,7 +333,8 @@ var display = {
                 {
                     id: "back-button", component: "Button", iconClass: "mdi mdi-arrow-left", className: "icon left", container: "#top-menu",
                     show:function(){return app.state.measuremode === true;},
-                    callback:function(){app.state.measuremode = false; display.render();}
+                    callback:function(){app.state.measuremode = false;},
+                    affectTo:['top-menu','sub-menu','bottom-menu']
                 },
                 {
                     id: "top-menu-title", component: "Button", className: "text left", container: "#top-menu",
@@ -371,45 +344,47 @@ var display = {
             ]
         },
         {
-            id:"sub-menu",html:[
+            id:"sub-menu",className:'header',
+            show:function(){return app.state.measuremode !== true;},
+            html:[
                 {
                     id: "delete-item", component: "Button", iconClass: "mdi mdi-delete", className: "icon left",
-                    show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
+                    show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
                     callback:function(){edit.modify.remove();}
                 },
                 {
                     id: "select-all", component: "Button", iconClass: "mdi mdi-select-all", className: "icon left", container: "#sub-menu",
-                    show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
+                    show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
                     callback:function(){edit.modify.selectAll();}
                 },
                 {
                     id: "mirror-x", component: "Button", iconClass: "mdi mdi-unfold-more-horizontal", className: "icon left", container: "#sub-menu",
-                    show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
+                    show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
                     callback:function(){edit.modify.mirrorX()}
                 },
                 {
                     id: "mirror-y", component: "Button", iconClass: "mdi mdi-unfold-more-vertical", className: "icon left", container: "#sub-menu",
-                    show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify" && app.state.measuremode !== true; },
+                    show: function () { return app.state.appmode === "edit" && app.state.editmode === "modify"; },
                     callback:function(){edit.modify.mirrorY()}
                 },
                 {
                     id: "break-point", component: "Button", iconClass: "", className: "button left", text: "Break", container: "#sub-menu",
-                    show: function () { return edit.modify.breakPointApprove() && app.state.measuremode !== true },
+                    show: function () { return edit.modify.breakPointApprove(); },
                     callback: function () { edit.modify.breakPoint(); }
                 },
                 {
                     id: "weld", component: "Button", iconClass: "", className: "button left", text: "Weld", container: "#sub-menu",
-                    show: function () { return edit.modify.weldPointApprove() && app.state.measuremode !== true },
+                    show: function () { return edit.modify.weldPointApprove(); },
                     callback: function () { edit.modify.weldPoint(); }
                 },
                 {
                     id: "connect", component: "Button", iconClass: "", className: "button left", text: "Connect", container: "#sub-menu",
-                    show: function () { return edit.modify.connectPointsApprove() && app.state.measuremode !== true },
+                    show: function () { return edit.modify.connectPointsApprove(); },
                     callback: function () { edit.modify.connectPoints(); }
                 },
                 {
                     id: "divide", component: "Button", iconClass: "", className: "button left", text: "Divide", container: "#sub-menu",
-                    show: function () { return Lines.selected.length === 1 &&app.state.measuremode !== true; },
+                    show: function () { return Lines.selected.length === 1; },
                     callback: function () {
                         keyboard.open({
                             isMobile: app.state.isMobile,
@@ -426,25 +401,14 @@ var display = {
                     show: function () { 
                         return Lines.selected.length === 2 && 
                         Lines.getMeet(Lines.selected[0], Lines.selected[1]) && 
-                        !Lines.isConnect(Lines.selected[0], Lines.selected[1]) &&
-                        app.state.measuremode !== true; 
+                        !Lines.isConnect(Lines.selected[0], Lines.selected[1]); 
                     },
                     callback: function () { edit.modify.joinLines(); }
-                },
-                {
-                    id: "remove-measures", component: "Button", iconClass: "", className: "button", text: "Remove All", container: "#sub-menu",
-                    show: function () { return app.state.appmode === "edit" && app.state.editmode === "measure" && app.state.measuremode !== true; },
-                    callback: function () { edit.measure.removeAll(); }
-                },
-                {
-                    id: "all-measure", component: "Button", iconClass: "", className: "button", text: "Add To All", container: "#sub-menu",
-                    show: function () { return app.state.appmode === "edit" && app.state.editmode === "measure" && app.state.measuremode !== true; },
-                    callback: function () { edit.measure.measureAll(); }
                 },
             ]
         },
         {
-            id:"bottom-menu",html:[
+            id:"bottom-menu",className:'header',html:[
                 {
                     id:"measure",component:"Button",iconClass:"mdi mdi-ruler",className:"icon left",container:"#bottom-menu",
                     callback:function(){
@@ -454,12 +418,14 @@ var display = {
                         }
                         else{app.state.measuremode = false; $("#measure").removeClass("active");}
                         app.state.topMenuTitle = "Measure Mode";
-                        display.render();
-                    }
+                        create.end(); edit.end();
+                    },
+                    affectTo:['top-menu','sub-menu','bottom-menu']
                 },
                 {
                     id:"magnify-plus",component:"Button",iconClass:"mdi mdi-magnify-plus-outline",className:"icon right",
-                    callback:function (){app.zoom("in");}
+                    callback:function (){app.zoom("in");},
+                    affectTo:['zoom-show'],
                 },
                 {
                     id:"zoom-show",component:"Button",className:"text right",
@@ -468,7 +434,8 @@ var display = {
                 },
                 {
                     id:"magnify-minus",component:"Button",iconClass:"mdi mdi-magnify-minus-outline",className:"icon right",
-                    callback:function (){app.zoom("out");}
+                    callback:function (){app.zoom("out");},
+                    affectTo:['zoom-show'],
                 },
                 {
                     id:"pan-mode",component:"Button",iconClass:"mdi mdi-gesture-tap",className:"icon left",container:"#bottom-menu",

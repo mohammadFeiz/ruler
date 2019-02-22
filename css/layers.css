@@ -2,7 +2,7 @@
     position: fixed;
     z-index:100;
     color: #fff;
-    background:#425768;
+    background:rgba(0,0,0,.9);
     width: 162px;
     height: calc(100% - 40px);
     top: 40px;
@@ -53,12 +53,12 @@
    .layer-item {
     position: relative;
     width: calc(100% - 4px);
-    border-top:1px solid #647588;
-    border-bottom:1px solid #141519;
-    background:#425768;
+    border-bottom:1px solid #222;
+    border-top:1px solid #111;
+    background:rgba(30,30,40,0.6);
    }
    .layer-item.active {
-       background:#647588;
+       background:rgba(40,40,50,1);
     color: #1ad25f;
    }
    .layer-item .text {

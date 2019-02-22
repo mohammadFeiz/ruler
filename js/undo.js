@@ -4,6 +4,7 @@ var undo = {
     getCopy:function (model) {
         return JSON.parse(JSON.stringify(model));
     },
+    getLast:function(){return undo.model[undo.model.length - 1]},
     save: function () {
         var u_points = this.getCopy(app.state.points);
         var u_lines = this.getCopy(app.state.lines);

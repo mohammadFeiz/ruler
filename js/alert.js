@@ -27,6 +27,7 @@ function AlertPopup(props) {
             component: "Button",
             id: "alert-botton-" + i,
             text: button.text,
+            attrs:{'data-value':button.value},
             className: "button",
             callback: button.callback,
         }
@@ -44,6 +45,16 @@ function AlertPopup(props) {
                 return {
                     id: "color-pallete-item-" + i, className: "color-pallete-item", 
                     attrs: { "data-color": color,style: "background:" + color + ";" },
+                    callback: props.template.callback
+                }
+            });
+        }
+        else if(props.template.type === "list"){
+            var bodyHTML = props.template.items.map(function(item,i){
+                return {
+                    id: "alert-list-item-" + i, className: "alert-list-item", 
+                    attrs: { "data-value": item.value},
+                    html:[item.text],
                     callback: props.template.callback
                 }
             });

@@ -19,7 +19,6 @@
         if (edit[app.state.editmode].reset !== undefined) { edit[app.state.editmode].reset(); }
         app.redraw();
         axis.close();
-        display.render();
     },
     setting: function () {if(edit[app.state.editmode].setting){edit[app.state.editmode].setting();}},
     drawSelectRect: function () {
@@ -70,21 +69,6 @@
         if(selectedList.length === 0){ return false;}
         else if(mode === "Point"){return Points.getCenterOfList(selectedList)}
         else{return Lines.getCenterOfList(selectedList)}
-    },
-    selectByClick:function(mode){
-        if (mode === "Point") {
-            var point = app.getPoint();
-            if (point) { Points.select(point); return point; }
-        }
-        else {
-            var line = app.getLine();
-            if (line) {
-                if (mode === "Line") { Lines.select(line); } 
-                else { Lines.selectSpline(line); }
-                return Lines.getCenterOfList([line]);
-            }
-        }
-        return false;
     },
     drawPoint: function (x, y) {
         var size = 3 / app.canvas.getZoom();
@@ -310,7 +294,7 @@
         firstPoint: false,
         secoundPoint: false,
         mousedown: function () {
-            var point = app.getPoint(), This = edit.alignPoint;
+            var point = app.getPoint({is:{layerId:layers.getActive().id}}), This = edit.alignPoint;
             if (!point) { This.reset(); return; }
             if (!This.firstPoint) { This.firstPoint = point; edit.drawPoint(point.x, point.y); return; }
             if (point.id === This.firstPoint.id) { This.reset(); return; }
@@ -351,6 +335,7 @@
         copyModel: [],
         magnetArea: 15,
         snapAngle:15,
+        weldArea:5,
         selectAll: function () {
             var layer = layers.getActive();
             if (edit.modify.selectMode === "Point") {
@@ -370,7 +355,8 @@
                 }
             }
             app.redraw();
-            display.render();
+            components.update('sub-menu');
+            components.update('selected-show');
         },
         remove: function () {
             if (edit.modify.selectMode === "Point") {
@@ -387,6 +373,8 @@
             }
             edit.end();
             undo.save();
+            components.update('sub-menu');
+            components.update('selected-show');
         },
         mirrorX: function () { edit.modify.mirror("x"); },
         mirrorY: function () { edit.modify.mirror("y"); },
@@ -422,6 +410,7 @@
                 for (var j = 0; j < Points.selected.length; j++) {
                     if (i === j) { continue; }
                     var s = Points.selected[j];
+                    if(Lines.getLength({start:f,end:s}) > this.weldArea){continue;}
                     if (Points.isConnect(f, s)) {
                         return true;
                     }
@@ -440,6 +429,7 @@
                     if (i === j) { continue; }
                     var selected2 = Points.selected[j];
                     var id2 = selected2.id;
+                    if(Lines.getLength({start:selected1,end:selected2}) > this.weldArea){continue;}
                     var point = Points.merge(selected1, selected2);
                     if (point === false) { continue; }
                     Points.deselect(id1);
@@ -456,6 +446,8 @@
             }
             edit.end();
             undo.save();
+            components.update('sub-menu');
+            components.update('selected-show');
         },
         breakPointApprove: function () {
             for (var i = 0; i < Points.selected.length; i++) {
@@ -480,6 +472,8 @@
             }
             edit.end();
             undo.save();
+            components.update('sub-menu');
+            components.update('selected-show');
         },
         connectPointsApprove: function () {
             if (Points.selected.length !== 2) { return false; }
@@ -490,18 +484,24 @@
             Points.connect(Points.selected[0], Points.selected[1]);
             edit.end();
             undo.save();
+            components.update('sub-menu');
+            components.update('selected-show');
         },
         divide: function (obj) {
             if(obj.value < 2){return;}
             Lines.divide(Lines.selected[0], obj.value);
             edit.end();
             undo.save();
+            components.update('sub-menu');
+            components.update('selected-show');
         },
         joinLines: function () {
             Lines.join(Lines.selected[0], Lines.selected[1]);
             Lines.deselectAll();
             edit.end();
             undo.save();
+            components.update('sub-menu');
+            components.update('selected-show');
         },
         updateModel: function () {
             var axisPos = axis.getPosition();
@@ -570,9 +570,10 @@
                         app.redraw();
                         axis.setPosition(position);
                     }); 
-                    display.render();
                 }
                 else{edit.end();}
+                components.update('sub-menu');
+                components.update('selected-show');
                 return;
             }
             if(This.isTransformed){
@@ -793,7 +794,7 @@
         mousedown: function () {
             var coords = app.canvas.getMousePosition();
             this.startOffset = coords.x;
-            var point = app.getPoint();
+            var point = app.getPoint({is:{layerId:layers.getActive().id}});
             if (!point) {
                 Points.deselectAll();
                 edit.selectRect = {

@@ -38,7 +38,7 @@ body {
 .header{
     float:left;
     position: relative;
-    background: #414a51;
+    background:rgba(30,30,40,1);
     padding:0 6px;
     box-sizing:border-box;
     width:100%;
@@ -123,9 +123,9 @@ body {
 #sub-menu, #top-menu {
     position: fixed;
     left: 0;
-    width: calc(100% - 6px);
-    padding: 0 3px;
-    background: #414a51;
+    width: 100%;
+    padding: 0 6px;
+    box-sizing: border-box
 }
 
 #top-menu {
@@ -134,8 +134,9 @@ body {
 }
 
 #sub-menu {
-    top: 36px;
+    top: 40px;
     z-index: 1;
+    border-bottom: 1px dashed rgba(120,120,160,1)
 }
 
 
@@ -197,5 +198,64 @@ body {
     left:0;
     bottom:0;
     width: 100%;
+    border-top: 1px dashed rgba(120,120,160,1)
     
+}
+
+#side-menu{
+    position: fixed;
+    top:0;
+    left:0;
+    width:168px;
+    height:100%;
+    z-index:10;
+    left:-168px;
+    transition:0.3s;
+}
+#side-menu.active{
+    left:0px;
+    transition:0.3s;
+}
+
+#side-menu-popup{
+        position:absolute;
+    height:100%;
+    background:rgba(0,0,0,.9);
+    z-index:10;
+    
+}
+
+.side-menu-item{
+    margin:0;
+    padding:12px 12px;
+    text-align: left;
+    position: relative;
+    width:100%;
+    float:left;
+    color: #fff;
+    background:rgba(30,30,40,0.6);
+    box-sizing: border-box;
+    line-height: unset;
+    height:unset;
+    border-bottom:1px solid #222;
+    border-top:1px solid #111;
+}
+.side-menu-item .button-text{
+    margin-left: 8px
+}
+#side-menu-header{
+    position:relative;
+    height:50px;
+    width: 100%;
+    background:url(ruler.png);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-size: 200px 36px;
+    background-position:3px 8px
+}
+#side-menu-file-name{
+    color:#fff;
+    padding:16px;
+    font-size:12px;
+        
 }
