@@ -1,4 +1,5 @@
 var components = {
+    isMobile:false,
     items: [],
     findItem: function (id,items) {
         items = items || this.items;
@@ -30,23 +31,46 @@ var components = {
     removeEvents:function(items){
         for(var i = 0; i < items.length; i++){
             var item = items[i];
-            if(item.id){$('body').off('mousedown', '#' + item.id);}
+            if(item.id){this.eventRemover(item.id,'mousedown');}
             if(item.html){this.removeEvents(item.html)}
         }
     },
-    remove:function(id,items){
+    eventRemover:function(id,event,childs){
+        if(this.isMobile === true){
+            switch(event){
+                case 'mousedown':event = 'touchstart';
+                case 'mousemove':event = 'touchmove';
+                case 'mouseup':event = 'touchend';
+            }
+        }
+        $('body').off(event,'#' + id);
+        if(childs === true){
+            var item = this.findItem(id);
+            this.removeEvents(item.html); 
+        }
+    },
+    eventHandler:function(id,event,action){
+        if(this.isMobile === true){
+            switch(event){
+                case 'mousedown':event = 'touchstart';
+                case 'mousemove':event = 'touchmove';
+                case 'mouseup':event = 'touchend';
+            }
+        }
+        $('body').on(event,'#' + id,action);
+    },
+    remove:function(id,removeChildsEvents,items){
         items = items || this.items;
         for (var i = 0; i < items.length; i++) { 
             var item = items[i];
             if (item.id === id) {
-                $('body').off('mousedown', '#' + item.id);
+                this.eventRemover(item.id,'mousedown',removeChildsEvents);
                 $("#" + id).remove();
-                this.removeEvents(item.html); 
                 items.splice(i,1); 
                 return; 
             }
             if(item.html){
-                this.remove(id,item.html);
+                this.remove(id,item.html,removeChildsEvents);
             }
         } 
     },
@@ -147,8 +171,8 @@ var components = {
         str += '</div>';
         if (obj.callback||obj.affectTo) {
             if(!id){debugger;alert("for set callback, id is required!!!")}
-            $('body').off('mousedown', '#' + id);
-            $('body').on('mousedown', '#' + id, function (e) {
+            this.eventRemover(id,'mousedown');
+            this.eventHandler(id,'mousedown', function (e) {
                 var element = $(e.currentTarget);
                 var item = components.findItem(element.attr("id"));
                 if(item.callback){item.callback(e);}

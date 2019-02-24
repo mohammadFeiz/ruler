@@ -9,7 +9,7 @@ var Alert = {
         
     },
     close: function () {
-        components.remove("alert");
+        components.remove('alert',true);
     }
 }
 
