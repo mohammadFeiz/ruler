@@ -104,7 +104,7 @@ var create = {
         for (var i = 0; i < points.length; i++) {  app.drawPoint(points[i]); }
         for (var i = 0; i < lines.length; i++) { app.drawLine($.extend({}, lines[i], { showDimension: true })); }
         this.drawLastPoint();
-        if(!this.firstPoint){this.drawController();}
+        if(!this.firstPoint){this.createController();}
     },
     drawLastPoint: function () {
         var lastPoint = this.object.getLastPoint();
@@ -112,19 +112,11 @@ var create = {
         app.canvas.drawArc({ x: lastPoint.x, y: lastPoint.y, radius: 3/zoom, fill: "orange" });
         app.canvas.drawArc({ x: lastPoint.x, y: lastPoint.y, radius: 6/zoom, stroke: "orange" });
     },
-    drawController: function () {
-        var o = this.object, points = o.getPoints(), lines = o.getLines();
-        var control = { end: true, keyboard: true, move: true };
-        if (this.mode.value === "polyline") {
-            control.close = points.length > 2;
-            control.join = lines.length > 2 && Lines.getMeet(lines[0], lines[lines.length - 1]) !== false;
-            control.remove = points.length > 1;
-        }
-        var lastPoint = o.getLastPoint()
-        control.coords = { x: lastPoint.x, y: lastPoint.y };
-        createControl.open(control);
+    createController: function () {
+        var o = this.object,lastPoint = o.getLastPoint()
+        createControl.update({ x: lastPoint.x, y: lastPoint.y });
     },
-    drawcontrolremove: function () { 
+    'create-control-remove': function () { 
         this.object.state.points.pop(); 
         var lastPoint = this.object.getLastPoint();
         if(!lastPoint){this.end(); return;}
@@ -132,17 +124,17 @@ var create = {
             create.preview(); 
         }); 
     },
-    drawcontrolclose: function () { this.object.close(); this.end(); },
-    drawcontroljoin: function () { this.object.join(); this.end(); },
-    drawcontrolmove: function (e) {
+    'create-control-close': function () { this.object.close(); this.end(); },
+    'create-control-join': function () { this.object.join(); this.end(); },
+    'create-control-move': function () {
         app.eventHandler("window", "mousemove", $.proxy(this.mousemove,this));
         app.eventHandler("window", "mouseup", $.proxy(this.mouseup,this));
         var lastPoint = this.object.getLastPoint();
         var coords = app.canvas.clientToCanvas(app.getClient());
         this.startOffset = { deltaX: lastPoint.x - coords.x, deltaY: lastPoint.y - coords.y};
     },
-    drawcontrolend: function () { this.end(); },
-    drawcontrolkeyboard: function () {
+    'create-control-end': function () { this.end(); },
+    'create-control-keyboard': function () {
         keyboard.open({
             isMobile: app.state.isMobile,
             fields: [{ prop: "x", title: "X" }, { prop: "y", title: "y" }],

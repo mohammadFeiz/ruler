@@ -20,7 +20,7 @@ var undo = {
         console.log("save");
     },
     load: function () {
-        if(create.drawing){create.drawcontrolremove(); return;}
+        if(create.drawing){create['create-control-remove'](); return;}
         edit.end();
         if (undo.model.length < 2) { return false; }
         undo.model.pop();
@@ -29,6 +29,8 @@ var undo = {
         app.state.lines = this.getCopy(model.u_lines);
         Points.id = model.u_points_id;
         Lines.id = model.u_lines_id;
+        Points.deselectAll();
+        Lines.deselectAll();
         layers.model = this.getCopy(model.u_layers_model);
         app.redraw();
         return true;

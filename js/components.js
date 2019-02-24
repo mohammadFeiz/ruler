@@ -50,12 +50,14 @@ var components = {
             }
         } 
     },
-    getValue:function(prop){
-        return typeof prop === "function" ? prop() : prop;
+    getValue:function(prop,obj){
+        return typeof prop === "function" ? prop(obj) : prop;
     },
-    getAttrs:function(obj){
+    getAttrs:function(obj,item){        
         var attrs = ''; obj = obj || {};
-        for (var prop in obj) {attrs+=' ' + prop + '="' + obj[prop] + '"'}
+        for (var prop in obj) {
+            attrs+=' ' + prop + '="' + (typeof obj[prop] === 'function'?obj[prop](item):obj[prop]) + '"'
+        }
         return attrs;
     },
     Button: function (obj) {
@@ -75,6 +77,7 @@ var components = {
             var value = parseFloat(element.html());
             var id = element.attr("id");
             var item = components.findItem(id);
+            if(!item.keyboard){return;}
             keyboard.open({
                 fields:[{prop:"value",title:"value",value:value,dataTarget:item.dataTarget}],
                 title:"Inter Number",   
@@ -129,11 +132,12 @@ var components = {
     },
     DIV:function(obj){
         var id = this.getValue(obj.id) || "";
-        if(this.getValue(obj.show) === false){
+        obj.show = obj.show === undefined?true:obj.show;
+        if(!this.getValue(obj.show,obj)){
             return '<div id="'+obj.id+'" style="display:none;"></div>';
         }    
         var className = this.getValue(obj.className) || "";
-        var attrs = this.getAttrs(obj.attrs);
+        var attrs = this.getAttrs(obj.attrs,obj);
         var str = '<div ';
         if(className){str += 'class="' + className + '" ';}
         if(id){str += 'id="' + id + '" ';}
@@ -163,12 +167,10 @@ var components = {
         return new slider(obj).getHTML();
     },
     update: function (id, obj) {
-        var element = $("#" + id);
-        if(!element){alert('not found a component with id='+id);return;}
-        
+        var item = typeof id === 'object' ? id : components.findItem(id);
+        if(!item || !item.id) {alert('components error: for update a component id is required');return;}
         obj = obj || {};
-        var item = components.findItem(id);
         for (var prop in obj) { item[prop] = obj[prop]; }
-        element.replaceWith(components.getHTML(item));
+        $("#" + item.id).replaceWith(components.getHTML(item));
     },
 }

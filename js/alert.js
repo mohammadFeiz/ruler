@@ -125,6 +125,7 @@ var AlertControl = {
         template.dataTarget = "#alert-template" + index;
         template.component = "Numberbox";
         template.className="numberbox";
+        template.keyboard = true;
         return template;
     }
 };

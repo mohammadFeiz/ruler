@@ -97,7 +97,7 @@
         obj.lineDash = undefined;
     },
     deselectAll: function () {
-        var length = Lines.selected.length;
+        var length = this.selected.length;
         for (var i = 0; i < length; i++) {
             var line = Lines.selected[i];
             line.selected = false;

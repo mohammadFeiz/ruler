@@ -70,6 +70,21 @@
         else if(mode === "Point"){return Points.getCenterOfList(selectedList)}
         else{return Lines.getCenterOfList(selectedList)}
     },
+    selectByClick:function(mode){
+        if (mode === "Point") {
+            var point = app.getPoint();
+            if (point) { Points.select(point); return point; }
+        }
+        else {
+            var line = app.getLine();
+            if (line) {
+                if (mode === "Line") { Lines.select(line); } 
+                else { Lines.selectSpline(line); }
+                return Lines.getCenterOfList([line]);
+            }
+        }
+        return false;
+    },
     drawPoint: function (x, y) {
         var size = 3 / app.canvas.getZoom();
         app.canvas.drawArc({ x: x, y: y, radius: size, fill: "orange" });

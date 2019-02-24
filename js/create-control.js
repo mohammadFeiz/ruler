@@ -1,104 +1,90 @@
 var createControl = {
-    state: {},
-    id: "draw-control",
     items: [
-        { name: "move", text: "Move", className: "", fontSize: 10 },
-        { name: "end", text: "End", className: "", fontSize: 10 },
-        { name: "close", text: "Close", className: "", fontSize: 10 },
-        { name: "join", text: "Join", className: "", fontSize: 10 },
-        { name: "keyboard", text: "Keyboard", className: "", fontSize: 10 },
-        { name: "remove", text: "Remove", className: "", fontSize: 10 },
-        { name: "pan", text: "Pan", className: "", fontSize: 10 },
+        { value: "move", text: "Move",show:true, },
+        { value: "end", text: "End",show:true, },
+        { value: "keyboard", text: "Keyboard",show:true, },
+        { 
+            value: "remove", text: "Remove",
+            show:function(){
+                var o = create.object, points = o.getPoints();
+                return create.mode.value === 'polyline' && points.length > 1;  
+            } 
+        },
+        { 
+            value: "close", text: "Close",
+            show:function(){
+                var o = create.object, points = o.getPoints();
+                return create.mode.value === 'polyline' && points.length > 2;  
+            }
+        },
+        { 
+            value: "join", text: "Join",
+            show:function(){
+                var o = create.object, lines = o.getLines();
+                return create.mode.value === 'polyline' && lines.length > 2 && 
+                Lines.getMeet(lines[0], lines[lines.length - 1]) !== false; 
+            }
+        },
+
     ],
     style: {
         item_size: 36,
         distance: 80,
         angle: 40,
         start_angle: 90,
-        font_color: app.style.lightFontColor,//read from style-genarator.js
-        item_background: "rgba(255, 255, 255, 0.1)",
-    },
-    open: function (items) {
-        this.close();
-        this.state = {};
-        for (var prop in items) { this.state[prop] = items[prop]; }
-        this.render();
-        this.position = this.state.coords;
-        var coords = app.canvas.canvasToClient(this.position);
-        $("#" + this.id).css({ left: coords.x, top: coords.y });
     },
     close: function () {
-        $("#" + this.id).remove();
-        this.position = false;
+        components.remove('create-control');
+        this.coords = false;
+    },
+    getButtonStyle:function(obj){
+        var index = obj.index;
+        var s = this.style;
+        var style = 'width:'+s.item_size+'px;height:'+s.item_size+'px;';
+        style += 'left:'+(s.distance * -1)+'px;top:' + (s.item_size / -2) + 'px;';
+        style += 'transform:rotate(' + (index * s.angle + s.start_angle) + 'deg);';
+        style+='line-height:'+s.item_size+'px;'
+        return style;        
+    },
+    update:function(coords){
+        if(!this.coords){
+            this.coords = {x:coords.x,y:coords.y};
+            this.render();
+        }
+        else{
+            this.coords = {x:coords.x,y:coords.y};
+            components.update(this.renderObject);
+        }
     },
     render: function () {
-        function getStyle() {
-            var str = '';
-            str += 'position: fixed;';
-            return str;
-        }
-        var str = '';
-        str += '<div id="' + this.id + '" style="' + getStyle() + '">';
-        var counter = 0;
-        for (var i = 0; i < this.items.length; i++) {
-            var item = this.items[i];
-            if (this.state[item.name]) {
-                item.counter = counter;
-                str += CreateControlItem({
-                    name: item.name,
-                    className: item.className,
-                    text: item.text,
-                    fontSize: item.fontSize,
-                    style: this.style,
-                    counter: counter
-                });
-                counter++;
-            }
-
-        }
-        str += '</div>';
-        $("body").append(str);
-        app.eventHandler(".draw-control-item", "mousedown", this.mousedown.bind(this));
-    },
-    mousedown: function (e) {
-        create[$(e.currentTarget).attr("id")](e);
+        var angle = this.style.angle,start_angle=this.style.start_angle;
+        this.renderObject = {
+            id:'create-control',
+            attrs:{
+                style:function(){
+                    var style = '';
+                    var coords = app.canvas.canvasToClient(createControl.coords); 
+                    style+='left:'+coords.x+'px;top:'+coords.y+'px;';
+                    return style;
+                }
+            },
+            html:this.items.map(function(item,i){
+                return {
+                    index:i,id:'create-control-'+item.value,className:'create-control-item',
+                    attrs:{style:'transform:rotate(' + (i * -1 * angle - start_angle) + 'deg);'},
+                    show:item.show,
+                    callback:function(e){create[$(e.currentTarget).attr("id")](e);},
+                    html:[{
+                        component:'Button',text:item.text,className:'button',
+                        iconClass:item.iconClass,index:i,
+                        attrs:{style:createControl.getButtonStyle.bind(createControl)}
+                    }]                    
+                }
+            })
+        };
+        components.render(this.renderObject,"body");
     },
     getPosition:function(){
-        return this.position;
+        return this.coords;
     }
-}
-
-function CreateControlItem(props) {
-    function getIconContainerStyle() {
-        var str = '';
-        str += 'position: absolute;';
-        str += 'background:' + props.style.item_background + ';';
-        str += 'border-radius:100%;';
-        str += 'text-align:center;';
-        str += 'width:' + props.style.item_size + 'px;';
-        str += 'height:' + props.style.item_size + 'px;';
-        str += 'color:' + props.style.font_color + ';';
-        str += 'left:' + (props.style.distance * -1) + 'px;top:' + (props.style.item_size / -2) + 'px;';
-        str += 'transform:rotate(' + (props.counter * props.style.angle + props.style.start_angle) + 'deg);';
-        str += 'opacity:.5';
-        return str;
-    }
-    function getItemStyle() {
-        var str = '';
-        str += 'transform:rotate(' + (props.counter * -1 * props.style.angle - props.style.start_angle) + 'deg);';
-        return str;
-    }
-    function getIconStyle() {
-        var str = '';
-        str += 'line-height:' + props.style.item_size + 'px;';
-        str += 'font-size:' + props.fontSize + 'px;';
-        return str;
-    }
-    var str = '';
-    str += '<div id="drawcontrol' + props.name + '" class="draw-control-item" style="' + getItemStyle() + '">';
-    str += '<div class="icon-container" style="' + getIconContainerStyle() + '">';
-    str += '<span class="icon ' + props.className + '" style="' + getIconStyle() + '">' + props.text + '</span>';
-    str += '</div>';
-    str += '</div>';
-    return str;
 }
