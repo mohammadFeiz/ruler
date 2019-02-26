@@ -118,4 +118,11 @@
     padding-left:12px;
     box-sizing: border-box;
     font-size: 14px;
+    border-bottom:1px solid #333;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.alert-list-item:last-child{
+    border-bottom:none !important;
 }

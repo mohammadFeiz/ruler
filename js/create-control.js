@@ -2,9 +2,9 @@ var createControl = {
     items: [
         { value: "move", text: "Move",show:true, },
         { value: "end", text: "End",show:true, },
-        { value: "keyboard", text: "Keyboard",show:true, },
+        { value: "keyboard", iconClass: "mdi mdi-keyboard",show:true, },
         { 
-            value: "remove", text: "Remove",
+            value: "remove", iconClass: "mdi mdi-delete",
             show:function(){
                 var o = create.object, points = o.getPoints();
                 return create.mode.value === 'polyline' && points.length > 1;  
@@ -75,7 +75,7 @@ var createControl = {
                     show:item.show,
                     callback:function(e){create[$(e.currentTarget).attr("id")](e);},
                     html:[{
-                        component:'Button',text:item.text,className:'button',
+                        component:'Button',text:item.text,iconClass:item.iconClass,className:'button',
                         iconClass:item.iconClass,index:i,
                         attrs:{style:createControl.getButtonStyle.bind(createControl)}
                     }]                    

@@ -77,7 +77,7 @@ body {
 .dropdown-popup {
     border: 1px solid;
     border-radius: 2px;
-    background: #000;
+    background:rgba(30,30,40,1);
     position: absolute;
     width: 100%;
     left: -1px;
@@ -239,6 +239,9 @@ body {
     height:unset;
     border-bottom:1px solid #222;
     border-top:1px solid #111;
+}
+.side-menu-item .mdi{
+    font-size:16px;
 }
 .side-menu-item .button-text{
     margin-left: 8px

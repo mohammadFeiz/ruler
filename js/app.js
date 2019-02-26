@@ -2,7 +2,6 @@
     state: {
         lines: [],
         points: [],
-        isMobile: false,
         showLines: true,
         showPoints: true,
         appmode: "create",
@@ -18,16 +17,17 @@
     },
     init: function () {
         var s = this.state;
+        s.isMobile = 'ontouchstart' in document.documentElement?true:false;
         this.canvas = new Canvas({
-            isMobile: this.state.isMobile,
             container: s.container,
             background: s.background,
             gridLineColor: s.gridLineColor,
             onmousedown: this.canvasmousedown.bind(this),
         });
-        app.eventHandler("window","mousedown",app.windowMouseDown);
-        app.eventHandler("window","mousemove",app.windowMouseMove);
-        app.eventHandler("window","mouseup",app.windowMouseUp);
+        this.eventHandler("window","mousedown",app.windowMouseDown);
+        this.eventHandler("window","mousemove",app.windowMouseMove);
+        this.eventHandler("window","mouseup",app.windowMouseUp);
+        components.isMobile = s.isMobile;
         display.render();
         this.redraw();
     },
@@ -52,16 +52,18 @@
     getClient: function (e) {    
          return {x:app.x,y:app.y};
     },
-    eventHandler: function (selector, e, action) {
-        var mobileEvents = { down: "touchstart", move: "tocuhmove", up: "tocuhend" };
+    getEvent:function(event){
+        var mobileEvents = { mousedown: "touchstart", mousemove: "touchmove", mouseup: "touchend" };
+        return this.state.isMobile ? mobileEvents[event] : event;
+    },
+    eventHandler: function (selector, event, action) {
         var element = typeof selector === "string" ? (selector === "window" ? $(window) : $(selector)) : selector;
-        var event = this.state.isMobile ? mobileEvents[e] : e;
+        event = this.getEvent(event);
         element.unbind(event, action).bind(event, action);
     },
-    eventRemover: function (selector, e, action) {
-        var mobileEvents = { down: "touchstart", move: "tocuhmove", up: "tocuhend" };
+    eventRemover: function (selector, event, action) {
         var element = typeof selector === "string" ? (selector === "window" ? $(window) : $(selector)) : selector;
-        var event = this.state.isMobile ? mobileEvents[e] : e;
+        event = this.getEvent(event);
         element.unbind(event, action);
     },
     drawLines: function () {

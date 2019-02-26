@@ -8,6 +8,7 @@ function Canvas(config) {
         },
         update: function (config) {
             var s = this.state;
+            s.isMobile = 'ontouchstart' in document.documentElement?true:false;
             for (var prop in config) { s[prop] = config[prop]; }
             var container = $(s.container);
             this.ctx = container[0].getContext("2d");
@@ -37,17 +38,19 @@ function Canvas(config) {
         setZoom: function (zoom) {
             this.state.zoom = zoom;
         },
-        eventHandler: function (selector, e, action) {
-            var mobileEvents = { down: "touchstart", move: "tocuhmove", up: "tocuhend" };
-            var element = typeof selector === "string" ? (selector === "window" ? $(window) : $(selector)) : selector;
-            var event = this.isMobile ? mobileEvents[e] : e;
-            element.unbind(event, action.bind(this)).bind(event, action.bind(this));
+        getEvent:function(event){
+            var mobileEvents = { mousedown: "touchstart", mousemove: "touchmove", mouseup: "touchend" };
+            return this.state.isMobile ? mobileEvents[event] : event;
         },
-        eventRemover: function (selector, e, action) {
-            var mobileEvents = { down: "touchstart", move: "tocuhmove", up: "tocuhend" };
+        eventHandler: function (selector, event, action) {
             var element = typeof selector === "string" ? (selector === "window" ? $(window) : $(selector)) : selector;
-            var event = this.isMobile ? mobileEvents[e] : e;
-            element.unbind(event, action.bind(this));
+            event = this.getEvent(event);
+            element.unbind(event, action).bind(event, action);
+        },
+        eventRemover: function (selector, event, action) {
+            var element = typeof selector === "string" ? (selector === "window" ? $(window) : $(selector)) : selector;
+            event = this.getEvent(event);
+            element.unbind(event, action);
         },
         getMousePosition: function () { return { x: (this.x - this.state.translate.x) / this.state.zoom, y: (this.y - this.state.translate.y) / this.state.zoom }; },
         getSnapedCoords: function (coords) {
@@ -258,8 +261,8 @@ function Canvas(config) {
             if (this.state.ondblclick) { this.state.ondblclick(e); }
         },
         mousedown: function (e) {
-            this.eventHandler("window", "mousemove", this.mousemove);
-            this.eventHandler("window", "mouseup", this.mouseup);
+            this.eventHandler("window", "mousemove", this.mousemove.bind(this));
+            this.eventHandler("window", "mouseup", this.mouseup.bind(this));
             var client = this.getClient(e);
             this.x = client.x;
             this.y = client.y;
