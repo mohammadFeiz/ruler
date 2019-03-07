@@ -2,7 +2,6 @@
     selectRect: { start: null, end: null },
     pan:false,
     mousedown: function (e) {
-        if(!e){debugger;}
         app.eventHandler("window", "mousemove", $.proxy(this.mousemove, this));
         app.eventHandler("window", "mouseup", $.proxy(this.mouseup, this));
         this[app.state.editmode].mousedown(e);
@@ -291,6 +290,8 @@
                 var point2 = Points.add({ x: ol.end.x, y: ol.end.y, connectedLines: [{ id: Lines.getNextID(1), side: "end" }] });
                 var line = Lines.add({ start: { x: ol.start.x, y: ol.start.y, id: point1.id }, end: { x: ol.end.x, y: ol.end.y, id: point2.id } });                
             }
+            Lines.deselectAll();
+            undo.save();
             app.redraw();
         },
         setting: function () {
@@ -549,7 +550,7 @@
             edit.selectRect = { 
                 start: { x: coords.x, y: coords.y }, end: { x: coords.x, y: coords.y }
             };
-            var client = app.getClient();
+            var client = app.getClient(e);
             This.updateModel();
             This.startOffset = { x: client.x, y: client.y, axisX: axisPos.x, axisY: axisPos.y };
         },
@@ -677,7 +678,7 @@
             var offset = { x: (client.x - so.x) / app.canvas.getZoom(), y: (client.y - so.y) / app.canvas.getZoom() };
             axis.setPosition(app.canvas.getSnapedCoords({x:so.axisX + offset.x,y:so.axisY + offset.y}));
         },
-        backgroundmouseup: function (e) {
+        backgroundmouseup: function () {
             app.eventRemover("window", "mousemove", edit.modify.backgroundmousemove)
             app.eventRemover("window", "mouseup", edit.modify.backgroundmouseup);
             var point = app.getPoint({ area: edit.modify.magnetArea, coords: axis.getPosition() });
@@ -986,6 +987,7 @@
                     start: {x: this.plumb.start.x,y: this.plumb.start.y,id: point1.id},
                     end: {x: this.plumb.end.x,y: this.plumb.end.y,id: point2.id}
                 });
+                undo.save();
             }
             app.redraw();
         },

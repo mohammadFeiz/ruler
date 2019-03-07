@@ -58,7 +58,7 @@ function slider(config) {
         },
         getClient: function (e) { return { x: e.clientX === undefined ? e.changedTouches[0].clientX : e.clientX, y: e.clientY === undefined ? e.changedTouches[0].clientY : e.clientY }; },
         spacemousedown: function (e) {
-            e.preventDefault();
+            //e.preventDefault();
             var s = this.state;
             var element = $(e.currentTarget);
             var index = element.data("index");
@@ -88,7 +88,7 @@ function slider(config) {
             this.eventHandler("window", "mouseup", $.proxy(this.mouseup,this));
         },
         buttonmousedown: function (e) {
-            e.preventDefault();
+            //e.preventDefault();
             var s = this.state;
             var element = $(e.currentTarget);
             var index = element.data("index");
@@ -171,25 +171,19 @@ function slider(config) {
             str += sn.Thickness_r + ':' + size_r + 'px;';
             return str;
         },
+        getEvent:function(event){
+            var mobileEvents = { mousedown: "touchstart", mousemove: "touchmove", mouseup: "touchend" };
+            return 'ontouchstart' in document.documentElement ? mobileEvents[event] : event;
+        },
         eventHandler: function (selector, event, action) {
-            if (selector === "window") { $(window).unbind(event, $.proxy(action, this)).bind(event, $.proxy(action, this)); }
-            else if (typeof selector === "string") { $(selector).unbind(event, $.proxy(action, this)).bind(event, $.proxy(action, this)); }
-            else { selector.unbind(event, $.proxy(action, this)).bind(event, $.proxy(action, this)); }
-            if (event === "mousedown") { event = "touchstart"; } else if (event === "mousemove") { event = "touchmove"; } else if (event === "mouseup") { event = "touchend"; }
-            if (selector === "window") { $(window).unbind(event, $.proxy(action, this)).bind(event, $.proxy(action, this)); }
-            else if (typeof selector === "string") { $(selector).unbind(event, $.proxy(action, this)).bind(event, $.proxy(action, this)); }
-            else { selector.unbind(event, $.proxy(action, this)).bind(event, $.proxy(action, this)); }
-
+            var element = typeof selector === "string" ? (selector === "window" ? $(window) : $(selector)) : selector;
+            event = this.getEvent(event);
+            element.unbind(event, action).bind(event, action);
         },
         eventRemover: function (selector, event, action) {
-            if (selector === "window") { $(window).unbind(event, $.proxy(action, this)); }
-            else if (typeof selector === "string") { $(selector).unbind(event, $.proxy(action, this)); }
-            else { selector.unbind(event, $.proxy(action, this)); }
-            if (event === "mousedown") { event = "touchstart"; } else if (event === "mousemove") { event = "touchmove"; } else if (event === "mouseup") { event = "touchend"; }
-            if (selector === "window") { $(window).unbind(event, $.proxy(action, this)); }
-            else if (typeof selector === "string") { $(selector).unbind(event, $.proxy(action, this)); }
-            else { selector.unbind(event, $.proxy(action, this)); }
-
+            var element = typeof selector === "string" ? (selector === "window" ? $(window) : $(selector)) : selector;
+            event = this.getEvent(event);
+            element.unbind(event, action);
         },
         getHTML: function () {
             return this.html;
@@ -255,12 +249,12 @@ function slider(config) {
         setEvents:function(){
             var s = this.state;
             if (s.changable !== false) {
-                $('body').off('mousedown', "#" + s.id + " .r-slider-button");
-                $('body').on('mousedown', "#" + s.id + " .r-slider-button", this.buttonmousedown.bind(this));
-                $('body').off('mousedown', "#" + s.id + " .r-slider-space");
-                $('body').on('mousedown', "#" + s.id + " .r-slider-space", this.spacemousedown.bind(this));
-                $('body').off('mousedown', "#" + s.id + " .r-slider-label");
-                $('body').on('mousedown', "#" + s.id + " .r-slider-label", this.labelmousedown.bind(this));
+                $('body').off(this.getEvent('mousedown'), "#" + s.id + " .r-slider-button");
+                $('body').on(this.getEvent('mousedown'), "#" + s.id + " .r-slider-button", this.buttonmousedown.bind(this));
+                $('body').off(this.getEvent('mousedown'), "#" + s.id + " .r-slider-space");
+                $('body').on(this.getEvent('mousedown'), "#" + s.id + " .r-slider-space", this.spacemousedown.bind(this));
+                $('body').off(this.getEvent('mousedown'), "#" + s.id + " .r-slider-label");
+                $('body').on(this.getEvent('mousedown'), "#" + s.id + " .r-slider-label", this.labelmousedown.bind(this));
             }
         },
         render: function () {

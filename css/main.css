@@ -250,7 +250,7 @@ body {
     position:relative;
     height:50px;
     width: 100%;
-    background:url(ruler.png);
+    background:url(../images/ruler.png);
     background-size: cover;
     background-repeat: no-repeat;
     background-size: 200px 36px;

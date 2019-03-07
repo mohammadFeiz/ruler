@@ -37,3 +37,41 @@ var undo = {
         //console.log("load");
     }
 }
+
+function addPoint (model,obj){
+    return model.push (obj)
+}
+function removePoint (model, index){
+    return model.splice(index,1);
+}
+class Command {
+    constructor (run , undo, value, index, model){
+        this.run = run;
+        this.undo = undo;
+        this.value = value;
+        this.index = index;
+    }
+}
+var obj = {
+    x : 1,
+    y : 2,
+    connectedLines : [
+        {id :'1l' , side : 'start'}
+    ]
+}
+
+function PointCommand (obj, model){
+    return new Command (addPoint, removePoint, val, i, model)
+}
+
+
+class Ruler {
+
+    constructor (){
+        this.current = [];
+        this.history = [];      
+    }
+    drawPoint (cmd){
+        
+    }
+}

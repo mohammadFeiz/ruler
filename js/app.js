@@ -5,7 +5,7 @@
         showLines: true,
         showPoints: true,
         appmode: "create",
-        createmode:{ text: "Polyline", value: "polyline",close:false,linesMethod:'singleRow',pointsMethod:'polyline' },
+        createmode:{ text: "Polyline", value: "polyline",close:false,linesMethod:'singlerow',pointsMethod:'polyline' },
         editmode: "modify",
         container: "#container",
         background: "#2c2f37",
@@ -24,10 +24,10 @@
             gridLineColor: s.gridLineColor,
             onmousedown: this.canvasmousedown.bind(this),
         });
-        this.eventHandler("window","mousedown",app.windowMouseDown);
-        this.eventHandler("window","mousemove",app.windowMouseMove);
-        this.eventHandler("window","mouseup",app.windowMouseUp);
-        components.isMobile = s.isMobile;
+        this.eventHandler("window","mousedown",$.proxy(this.windowMouseDown,this));
+        this.eventHandler("window","mousemove",$.proxy(this.windowMouseMove,this));
+        this.eventHandler("window","mouseup",$.proxy(this.windowMouseUp,this));
+        document.addEventListener("backbutton", onBackKeyDown, false);
         display.render();
         this.redraw();
     },
@@ -44,13 +44,13 @@
     },
     getMousePosition:function(e){
         var obj = { 
-            x: e.clientX === undefined ? e.changedTouches[0].clientX : e.clientX, 
-            y: e.clientY === undefined ? e.changedTouches[0].clientY : e.clientY 
+            x: this.state.isMobile ? e.changedTouches[0].clientX : e.clientX, 
+            y: this.state.isMobile ? e.changedTouches[0].clientY : e.clientY 
         };
         return obj; 
     },
     getClient: function (e) {    
-         return {x:app.x,y:app.y};
+        return e?this.getMousePosition(e):{x:app.x,y:app.y};
     },
     getEvent:function(event){
         var mobileEvents = { mousedown: "touchstart", mousemove: "touchmove", mouseup: "touchend" };
@@ -158,17 +158,17 @@
         return false;
     },
     windowMouseDown: function (e) {
-        var mousePosition = app.getMousePosition(e);
+        var mousePosition = this.getMousePosition(e);
         app.x = mousePosition.x;
         app.y = mousePosition.y;
     },
     windowMouseMove: function (e) {
-        var mousePosition = app.getMousePosition(e);
+        var mousePosition = this.getMousePosition(e);
         app.x = mousePosition.x;
         app.y = mousePosition.y;
     },
     windowMouseUp: function (e) {
-        var mousePosition = app.getMousePosition(e);
+        var mousePosition = this.getMousePosition(e);
         app.x = mousePosition.x;
         app.y = mousePosition.y;
     },
@@ -208,11 +208,11 @@
     panremove:function(){
         $(".pan-background").remove();
     },
-    panmousedown:function(){
+    panmousedown:function(e){
         app.eventHandler("window", "mousemove", $.proxy(this.panmousemove,this));
         app.eventHandler("window", "mouseup", $.proxy(this.panmouseup,this));
         var screenPosition = app.canvas.getScreenPosition();
-        var client = this.getClient();
+        var client = this.getClient(e);
         this.startOffset = { 
             x: client.x, y: client.y, 
             endX: screenPosition.x, endY: screenPosition.y 
@@ -258,11 +258,13 @@ var display = {
                 {
                     component: "Dropdown", id: "create-modes", className: "dropdown left", container: "#top-menu",
                     options: [
-                        { text: "Polyline", value: "polyline",close:false,linesMethod:'singleRow',pointsMethod:'polyline' }, 
-                        { text: "Doubleline", value: "doubleline",close:false,linesMethod:'doubleRow',pointsMethod:'doubleline' }, 
-                        { text: "Rectangle", value: "rectangle",close:true,linesMethod:'singleRow',pointsMethod:'rectangle' }, 
-                        { text: "NGon", value: "ngon",close:true,linesMethod:'singleRow',pointsMethod:'ngon' },
-                        { text: "Path", value: "path",close:true ,linesMethod:'singleRow',pointsMethod:'path'}, 
+                        { text: "Polyline", value: "polyline",close:false,linesMethod:'singlerow',pointsMethod:'polyline' }, 
+                        { text: "Doubleline", value: "doubleline",close:false,linesMethod:'doublerow',pointsMethod:'doubleline' }, 
+                        { text: "Rectangle", value: "rectangle",close:true,linesMethod:'singlerow',pointsMethod:'rectangle' }, 
+                        { text: "NGon", value: "ngon",close:true,linesMethod:'singlerow',pointsMethod:'ngon' },
+                        { text: "Path", value: "path",close:true ,linesMethod:'singlerow',pointsMethod:'polyline'},
+                        { text: "Double path", value: "doublepath",close:true ,linesMethod:'doublerow',pointsMethod:'doubleline'},
+                        { text: "Frame", value: "frame",close:true ,linesMethod:'frame',pointsMethod:'frame'}, 
                     ],
                     text: function () {return app.state.createmode.text;},
                     optionsCallback: function (obj) { 
@@ -443,9 +445,9 @@ var display = {
                     id:"pan-mode",component:"Button",iconClass:"mdi mdi-gesture-tap",className:"icon left",container:"#bottom-menu",
                     callback:function(){
                     $("body").append(
-                        '<div class="pan-background"><p>Pan mode is active!!!<br>Drag to pan screen<br>double tap for deactive pan mode</p></div>'
+                        '<div class="pan-background"><p>Pan mode is active!!!<br>Drag to pan screen<br>Tap here for deactive pan mode</p></div>'
                     );
-                        app.eventHandler(".pan-background", "dblclick", $.proxy(app.panremove,app));
+                        app.eventHandler(".pan-background p", "mousedown", $.proxy(app.panremove,app));
                         app.eventHandler(".pan-background", "mousedown", $.proxy(app.panmousedown,app));
                     }
                 },

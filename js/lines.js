@@ -146,7 +146,13 @@
         if (fDip === "infinity" && sDip === "infinity") { return false; }
         else if (fDip == "infinity") { return { x: f.start.x, y: (sDip * (f.start.x - s.start.x)) + s.start.y }; }
         else if (sDip == "infinity") { return { x: s.start.x, y: (fDip * (s.start.x - f.start.x)) + f.start.y }; }
-        else if (Math.abs(fDip - sDip) < 0.0001) {return false;}
+        else if (Math.abs(fDip - sDip) < 0.0001) {
+            var distance = this.getDistance(f,s.start);
+            if(distance < 0.0001){
+                return {x:f.end.x,y:f.end.y};
+            }
+            return false;
+        }
         else {
             var x = (s.start.y - f.start.y + (fDip * f.start.x) - (sDip * s.start.x)) / (fDip - sDip);
             var y = (fDip * (x - f.start.x)) + f.start.y;
@@ -255,6 +261,7 @@
             }
         }
     },
+    
     getPrependicularPoint: function (line, point) {
         var dip = Lines.getDip(line);
         if (dip === 0) {

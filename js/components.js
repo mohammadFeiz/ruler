@@ -35,29 +35,20 @@ var components = {
             if(item.html){this.removeEvents(item.html)}
         }
     },
+    getEvent:function(event){
+        var mobileEvents = { mousedown: "touchstart", mousemove: "touchmove", mouseup: "touchend" };
+        return 'ontouchstart' in document.documentElement ? mobileEvents[event] : event;
+    },
     eventRemover:function(id,event,childs){
-        if(this.isMobile === true){
-            switch(event){
-                case 'mousedown':event = 'touchstart';
-                case 'mousemove':event = 'touchmove';
-                case 'mouseup':event = 'touchend';
-            }
-        }
-        $('body').off(event,'#' + id);
+        $('body').off(this.getEvent(event),'#' + id);
         if(childs === true){
             var item = this.findItem(id);
             this.removeEvents(item.html); 
         }
     },
     eventHandler:function(id,event,action){
-        if(this.isMobile === true){
-            switch(event){
-                case 'mousedown':event = 'touchstart';
-                case 'mousemove':event = 'touchmove';
-                case 'mouseup':event = 'touchend';
-            }
-        }
-        $('body').on(event,'#' + id,action);
+        $('body').off(this.getEvent(event),'#' + id,action);
+        $('body').on(this.getEvent(event),'#' + id,action);
     },
     remove:function(id,removeChildsEvents,items){
         items = items || this.items;

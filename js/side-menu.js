@@ -15,26 +15,31 @@ var sideMenu = {
                     },
                     {
                         id: "new", text: "New", iconClass: "mdi mdi-file-outline",component:"Button",className:'button side-menu-item', 
-                        callback: function () {sideMenu.close(); sideMenu.new();}
+                        callback: function () {create.end(); edit.end(); sideMenu.close(); sideMenu.new();}
                     },
                     { 
                         id: "save", text: "Save", iconClass: "mdi mdi-content-save",component:"Button",className:'button side-menu-item', 
-                        callback: function () {sideMenu.close(); sideMenu.save();}
+                        callback: function () {create.end(); edit.end(); sideMenu.close(); sideMenu.save();}
                     },
                     { 
                         id: "save-as", text: "Save As", iconClass: "mdi mdi-content-save-settings",component:"Button",className:'button side-menu-item', 
-                        callback: function () {sideMenu.close(); sideMenu.saveAs();}
+                        callback: function () {create.end(); edit.end(); sideMenu.close(); sideMenu.saveAs();}
                     },
                     { 
                         id: "open", text: "Open", iconClass: "mdi mdi-folder-open",component:"Button",className:'button side-menu-item',
-                        callback:function(){sideMenu.close(); sideMenu.openFile();}
+                        callback:function(){create.end(); edit.end(); sideMenu.close(); sideMenu.openFile();}
                     },
                     { 
                         id: "export-dxf-file", text: "Export DXF File", iconClass: "mdi mdi-export",component:"Button",className:'button side-menu-item', 
                         callback:function(){sideMenu.removeAllSavedFiles();}
                     },
                     { id: "about", text: "About", iconClass: "mdi mdi-information-variant",component:"Button",className:'button side-menu-item',},
-                    { id: "exit", text: "Exit", iconClass: "mdi mdi-close",component:"Button",className:'button side-menu-item', },
+                    { 
+                        id: "exit", text: "Exit", iconClass: "mdi mdi-close",component:"Button",className:'button side-menu-item', 
+                        callback:function(){
+                            navigator.app.exitApp();
+                        }
+                    },
                 ]      
             }
         ]

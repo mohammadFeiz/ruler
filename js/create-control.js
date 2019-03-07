@@ -7,25 +7,36 @@ var createControl = {
             value: "remove", iconClass: "mdi mdi-delete",
             show:function(){
                 var o = create.object, points = o.getPoints();
-                return create.mode.value === 'polyline' && points.length > 1;  
+                var con1 = ['polyline','doubleline','path'].indexOf(create.mode.value) !== -1; 
+                return con1 && points.length > 1;  
             } 
         },
         { 
             value: "close", text: "Close",
             show:function(){
                 var o = create.object, points = o.getPoints();
-                return create.mode.value === 'polyline' && points.length > 2;  
+                var mode = create.mode.value;
+                if(mode === 'polyline' && points.length > 2){return true;}
+                if(mode === 'doubleline' && points.length > 4){return true;}
+                return false;  
             }
         },
         { 
             value: "join", text: "Join",
             show:function(){
                 var o = create.object, lines = o.getLines();
-                return create.mode.value === 'polyline' && lines.length > 2 && 
-                Lines.getMeet(lines[0], lines[lines.length - 1]) !== false; 
+                var mode = create.mode.value;
+                if(mode === 'polyline' && lines.length > 2 && 
+                    Lines.getMeet(lines[0], lines[lines.length - 1]) !== false){
+                        return true;    
+                }
+                if(mode === 'doubleline' && lines.length > 4&&
+                Lines.getMeet(lines[0], lines[lines.length / 2 - 1]) !== false){
+                    return true;
+                }
+                return false;
             }
         },
-
     ],
     style: {
         item_size: 36,
@@ -55,6 +66,11 @@ var createControl = {
             this.coords = {x:coords.x,y:coords.y};
             components.update(this.renderObject);
         }
+    },
+    setPosition:function(coords){
+        if(!this.coords){return;}
+        coords = app.canvas.canvasToClient(coords);
+        $('#create-control').css({left:coords.x,top:coords.y});
     },
     render: function () {
         var angle = this.style.angle,start_angle=this.style.start_angle;
