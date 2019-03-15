@@ -64,7 +64,8 @@ function AlertPopup(props) {
         var bodyHTML = props.template.map(function(template,i){
             
             return {
-                className:'alert-template-item',attrs:{'data-index':i},
+                id:'alert-template-item' + i,className:'alert-template-item',attrs:{'data-index':i},
+                show:template.show===undefined?true:template.show,
                 html:[
                     {className:'alert-template-title',html:[template.title || '']},
                     {className:'alert-template-control',html:[AlertControl[template.type](template,i)]},
@@ -84,8 +85,8 @@ function AlertPopup(props) {
         html:[
             {className:"back-drop"},
             {className:"alert-header header",html:[close,title]},
-            {className:"alert-body",html:bodyHTML},
-            {className:"alert-footer",html:buttons}
+            {className:"alert-body body",html:bodyHTML},
+            {className:"alert-footer footer",html:buttons}
         ]
     },"body");
 }

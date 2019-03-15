@@ -58,16 +58,64 @@
        line-height: 36px;
     font-size:14.4px;
     box-sizing: border-box;
+    position:relative;
+      box-shadow:inset 0 0 0px 1px #222;
    }
-   .keyboard-key.active {
-    background:rgba(255,255,255,0.1);
+.keyboard-key.active{
+   color:#000;
+   
+}
+.keyboard-key:before{
+   content:'';
+   position:absolute;
+   width:0%;
+   height:0%;
+   left:50%;
+   top:50%;
+   z-index:-1;
+   
+   background:rgba(255,255,255,0.5);
+   transition:0.15s;
+}
+   .keyboard-key.active:before {
+      width:100%;
+      height:100%;
+      left:0%;
+      top:0%;
+      transform:scale(1);
+      transition:0.01s;
    }
    .keyboard-field.active .keyboard-label, .keyboard-field.active .keyboard-numberbox{
     color:#1ad25f;
    }
    #keyboard .numberbox {
+      position: relative;
     border-bottom:1px solid;
     width:54px;
     border-radius:0;
     text-align:center;
    }
+#keyboard .numberbox:before{
+   content:'';
+   position:absolute;
+   width:0px;
+   height:0px;
+   left:-15px;
+   top:4px;
+   border-left:5px solid transparent;
+   border-right:5px solid transparent;
+   border-bottom:5px solid;
+   
+}
+#keyboard .numberbox:after{
+   content:'';
+   position:absolute;
+   width:0px;
+   height:0px;
+   left:-15px;
+   bottom:4px;
+   border-left:5px solid transparent;
+   border-right:5px solid transparent;
+   border-top:5px solid;
+   
+}

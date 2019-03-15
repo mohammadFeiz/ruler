@@ -26,10 +26,9 @@ var Points = {
         }
     },
     deselectAll: function () {
-        var length = Points.selected.length;
+        var length = app.state.points.length;
         for (var i = 0; i < length; i++) {
-            var point = Points.selected[i];
-            point.selected = false;
+            app.state.points[i].selected = false;
         }
         Points.selected = [];
     },
@@ -46,9 +45,11 @@ var Points = {
         }
     },
     add: function (obj) {
+        var layer = layers.getActive();
         obj.id = this.id;
         obj.connectedLines = obj.connectedLines || [];
-        obj.layerId = layers.getActive().id;
+        obj.layerId = layer.id;
+        obj.show = true;
         app.state.points.push(obj);
         this.idGenerator();
         return Points.getLast(1);

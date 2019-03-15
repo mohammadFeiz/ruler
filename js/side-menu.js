@@ -33,7 +33,42 @@ var sideMenu = {
                         id: "export-dxf-file", text: "Export DXF File", iconClass: "mdi mdi-export",component:"Button",className:'button side-menu-item', 
                         callback:function(){sideMenu.removeAllSavedFiles();}
                     },
-                    { id: "about", text: "About", iconClass: "mdi mdi-information-variant",component:"Button",className:'button side-menu-item',},
+                    { id: "about", text: "About", iconClass: "mdi mdi-information-variant",component:"Button",className:'button side-menu-item',
+                        callback:function(){
+                            function writeFile(fileEntry, dataObj) {
+                                // Create a FileWriter object for our FileEntry (log.txt).
+                                fileEntry.createWriter(function (fileWriter) {
+                            
+                                    fileWriter.onwriteend = function() {
+                                        console.log("Successful file write...");
+                                        readFile(fileEntry);
+                                    };
+                            
+                                    fileWriter.onerror = function (e) {
+                                        console.log("Failed file write: " + e.toString());
+                                    };
+                            
+                                    // If data object is not passed in,
+                                    // create a new Blob instead.
+                                    if (!dataObj) {
+                                        dataObj = new Blob(["Content if there's nothing!"], { type: 'text/plain' });
+                                    }
+                            
+                                    fileWriter.write(dataObj);
+                                });
+                            }
+                            
+                            window.resolveLocalFileSystemURL(cordova.file.externalRootDirectory, function (rootDirEntry) {
+                                    rootDirEntry.getDirectory(fileDir, { create: true }, function (dirEntry) {
+                                        var isAppend = true;
+                                        dirEntry.getFile(fileName, { create: true }, function (fileEntry) {
+                                            writeFile(fileEntry, "Content!", isAppend);
+                                            // Success
+                                        });
+                                    });
+                                });
+                        }
+                    },
                     { 
                         id: "exit", text: "Exit", iconClass: "mdi mdi-close",component:"Button",className:'button side-menu-item', 
                         callback:function(){

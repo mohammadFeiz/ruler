@@ -1,0 +1,121 @@
+#axis{
+ width:0;
+ height:0;
+ opacity:0.6;
+ position: fixed;
+}
+#axis-background{
+    position:absolute;
+    left:0;
+    top:0;
+    z-index:10;
+    width:75px;
+    height:75px;
+    font-size:10px;
+    left:calc(-37.5px - 1px);
+    top:calc(-37.5px - 1px);
+    border-radius:100%;
+    border:1px solid #fff;
+    background:rgba(0,0,0,0.5);
+}
+#axis-angle{
+    position: absolute;
+    text-align: center;
+    width:60px;
+    left:7.5px;
+    height:10px;
+    line-height:10px;
+    color:#fff;
+    top:10px;
+}
+#axis-angle .title{
+    position:relative;
+    display: inline-block;
+}
+
+#axis-angle .value{
+    position:relative;
+    display: inline-block;
+}
+
+#axis-x{
+    position: absolute;
+    text-align: center;
+    width:60px;
+    left:7.5px;
+    height:10px;
+    line-height:10px;
+    color:#fff;
+    top:calc(50% + 12px);
+}
+
+    #axis-x .title{
+        position:relative;
+        display: inline-block;
+    }
+
+    #axis-x .value{
+        position:relative;
+        display: inline-block;
+    }
+
+    #axis-y{
+        position: absolute;
+        text-align: center;
+        width:60px;
+        left:7.5px;
+        height:10px;
+        line-height:10px;
+        color:#fff;
+        top:calc(50% + 22px);
+    }
+
+    #axis-y .title{
+        position:relative;
+        display: inline-block;
+    }
+
+    #axis-y .value{
+        position:relative;
+        display: inline-block;
+    }
+
+    #axis-background:before{
+        content:"";
+        position:absolute;
+        width:6px;
+        height:6px;
+        box-shadow:inset 0 0 0 1px red;
+        border-radius:100%;
+        left:calc(50% - 3px);
+        top:calc(50% - 3px);
+    }
+
+    .axis-icon-container{
+        position:absolute;
+        width:calc(75px + 60px + 0px);
+        height:0;
+        top:50%;
+        left:calc(-37.5px - 30px + 0px);
+    }
+
+    #axis .icon{
+    background:rgba(0,0,0,0.5);
+    top:-15px;
+    position:relative;
+    float:right;
+    color:#fff;
+    width:30px;
+    height:30px;
+    text-align:center;
+    border-radius:100%;
+    line-height:30px;
+    font-size:15px;
+    margin:0;
+    }
+
+    #axis .axis-icon-container.active .icon{
+    color:chartreuse;
+    box-shadow:0 0 4px 1px chartreuse;
+    background:none
+    }

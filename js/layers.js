@@ -178,9 +178,38 @@ var layers = {
     },
     getHiddens: function () { return this.model.map(function (item) { if (!item.show) { return item; } }); },
     setVisibility: function (id) {
-        if (id === "all") { this.showAll = !this.showAll; for (var i = 0; i < this.model.length; i++) { this.model[i].show = this.showAll; } }
-        else { var object = layers.getObjectByID(id); object.show = !object.show; }
-        this.render(); app.redraw();
+        if (id === "all") { 
+            var show = this.showAll = !this.showAll; 
+            for (var i = 0; i < this.model.length; i++) { 
+                this.model[i].show = show; 
+            }
+            for(var i = 0; i < app.state.lines.length; i++){
+                var line = app.state.lines[i];
+                line.show = show;
+            } 
+            for(var i = 0; i < app.state.points.length; i++){
+                var point = app.state.points[i];
+                point.show = show;
+            } 
+        }
+        else { 
+            var object = layers.getObjectByID(id); 
+            var show = object.show = !object.show;    
+            for(var i = 0; i < app.state.lines.length; i++){
+                var line = app.state.lines[i];
+                if(line.layerId === object.id){
+                    line.show = show;
+                }
+            }
+            for(var i = 0; i < app.state.points.length; i++){
+                var point = app.state.points[i];
+                if(point.layerId === object.id){
+                    point.show = show;
+                }
+            }     
+        }
+        this.render(); 
+        app.redraw();
     },
     mergeVisibles: function () {
         var list = this.getVisibles();
@@ -281,6 +310,12 @@ var layers = {
                             var active = layers.getActive();
                             active.color = color;
                             layers.render();
+                            for(var i = 0; i < app.state.lines.length; i++){
+                                var line = app .state.lines[i];
+                                if(line.layerId === active.id){
+                                    line.color = color;
+                                }
+                            }
                             app.redraw();
                             Alert.close();
                             undo.save();

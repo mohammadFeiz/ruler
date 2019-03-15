@@ -48,8 +48,11 @@
         return this.splineIDS;
     },
     add: function (obj) {
+        var layer = layers.getActive();
         obj.id = this.id;
-        obj.layerId = layers.getActive().id;
+        obj.layerId = layer.id;
+        obj.color = layer.color;
+        obj.show = true;
         app.state.lines.push(obj);
         this.idGenerator();
         return Lines.getLast(1);
@@ -76,7 +79,6 @@
             if (line.id === obj.id) {return;}
         }
         obj.selected = true;
-        obj.showDimention = true;
         obj.lineDash = [2, 3];
         Lines.selected.push(obj);
     },
@@ -93,13 +95,12 @@
         var obj = this.getObjectByID(id);
         if (!obj) { return false; }
         obj.selected = false;
-        obj.showDimention = false;
         obj.lineDash = undefined;
     },
     deselectAll: function () {
-        var length = this.selected.length;
+        var length = app.state.lines.length;
         for (var i = 0; i < length; i++) {
-            var line = Lines.selected[i];
+            var line = app.state.lines[i];
             line.selected = false;
             line.lineDash = undefined;
         }
@@ -127,16 +128,11 @@
         var x1 = obj.start.x,y1 = obj.start.y,x2 = obj.end.x,y2 = obj.end.y;
         var radian = (Math.atan((y2 - y1) / (x1 - x2)) / Math.PI * 180);
         if (x2 < x1) {
-            if (y1 - y2 != 0) { radian = 180 + radian; }
-            else {radian = 180;}
+            if (y1 - y2 != 0) { radian = 180 + radian; }else {radian = 180;}
         } else if (x1 < x2) {
-            if (y2 < y1) { }
-            else if (y1 < y2) { radian = 360 + radian; }
-            else {radian = 0;}
+            if (y2 < y1) { }else if (y1 < y2) { radian = 360 + radian; }else {radian = 0;}
         } else {
-            if (y2 < y1) { radian = 90; }
-            else if (y1 < y2) { radian = 270; }
-            else {radian = 0;}
+            if (y2 < y1) { radian = 90; } else if (y1 < y2) { radian = 270; }else {radian = 0;}
         }
         return radian;
     },  
@@ -397,5 +393,10 @@
         if (meet.y < b.start.y && meet.y < b.end.y) { return false; }
         if (meet.y > b.start.y && meet.y > b.end.y) { return false; }
         return true;
+    },
+    getLineBySMR:function(start,measure,radian){
+        var deltaX = Math.cos(radian * Math.PI / 180) * measure;
+        var deltaY = Math.sin(radian * Math.PI / -180) * measure;
+        return {start:start,end:{x:start.x+deltaX,y:start.y + deltaY}};
     }
 }

@@ -74,23 +74,25 @@ function Canvas(config) {
         setScreenTo: function (obj) {
             var self = this,s=this.state;
             if (this.screenMoving) { return; }
+            var ac = 10;
+            var acc = 256 / ac;
             var currentX = s.screenPosition.x, currentY = s.screenPosition.y;
             var x = obj.x === undefined ? currentX : obj.x;
             var y = obj.y === undefined ? currentY : obj.y;
             if (!obj.animate) { this.setScreen({ x: x, y: y, callback: obj.callback }); }
             else {
                 this.screenMoving = true;
-                var interVal, counter = 1, moveX = (x - currentX) / 50, moveY = (y - currentY) / 50;
+                var interVal, counter = 1, moveX = (x - currentX) / ac, moveY = (y - currentY) / ac;
                 interVal = setInterval(function () {
                     self.setScreen({ x: currentX + (counter*moveX), y: currentY + (counter*moveY),callback:obj.callback });
-                    if (counter === 50) {
+                    if (counter === ac) {
                         clearInterval(interVal);
                         self.setScreen({ x: x, y: y, callback: obj.callback });
                         self.screenMoving = false;
                         return;
                     }
                     counter++;
-                }, 1);
+                }, acc);
             }
         },
         setScreen: function (obj) {
@@ -144,7 +146,7 @@ function Canvas(config) {
                     x:center.x,y:center.y,
                     text:this.get.line.length(obj).toFixed(1),
                     angle:this.getTextAngle(obj),
-                    textBaseLine:"bottom",
+                    textBaseLine:obj.textBaseLine || "bottom",
                     color:obj.color,
                     textAlign:"center",
                     fontSize:10 / zoom,

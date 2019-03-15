@@ -94,7 +94,7 @@ var components = {
             var item = components.findItem(id);
             if(!item.keyboard){return;}
             keyboard.open({
-                fields:[{prop:"value",title:"value",value:value,dataTarget:item.dataTarget}],
+                fields:[{prop:"value",title:"value",value:value,dataTarget:item.dataTarget,min:item.min}],
                 title:"Inter Number",   
                 close:true,
                 negative:item.negative===undefined?true:item.negative,
@@ -177,13 +177,16 @@ var components = {
         return str;
     },
     Slider: function (obj) {
-        if(this.getValue(obj.show) === false){return "";}   
+        obj.show = obj.show === undefined?true:obj.show;
+        if(!this.getValue(obj.show,obj)){
+            return '<div id="'+obj.id+'" style="display:none;"></div>';
+        }
         obj.style = obj.style || { button_width: 24, button_height: 24, line_width: 4 };
         return new slider(obj).getHTML();
     },
     update: function (id, obj) {
         var item = typeof id === 'object' ? id : components.findItem(id);
-        if(!item || !item.id) {alert('components error: for update a component id is required');return;}
+        if(!item || !item.id) {alert('components error: for update a component id is required');debugger;return;}
         obj = obj || {};
         for (var prop in obj) { item[prop] = obj[prop]; }
         $("#" + item.id).replaceWith(components.getHTML(item));

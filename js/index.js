@@ -1,7 +1,8 @@
-//document.addEventListener('deviceready', function(){
-    
-    app.init();
-    undo.save();
-    createStyle();
-//}, false);
+function initial(){
+   // document.addEventListener('deviceready', function(){
+        app.init();
+        undo.save();
+    //}, false);
+}
+initial();
 

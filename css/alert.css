@@ -5,7 +5,6 @@
     left: calc(50% - 170px);
     z-index: 1000;
     color: #fff;
-    background:rgba(30,30,40,1);
     box-shadow:4px 4px 8px 2px rgba(20,20,20,0.9)
 }
 
@@ -39,9 +38,11 @@
 
 .alert-footer .button {
     float: right;
-    width: calc(33% - 22px);
-    background:rgba(30,30,40,1);;
     
+    width: calc(33% - 28px);
+    margin:0 6px;
+    background:#2d2f39;
+    color:#fff;
 }
 
 .alert-switch-container {
@@ -94,7 +95,6 @@
     line-height: 36px;
 }
 #alert .r-slider-button {
-    background: #2196f3;
     border-radius: 100%;
     text-align: center;
     background-image: url(../images/slider.jpg);

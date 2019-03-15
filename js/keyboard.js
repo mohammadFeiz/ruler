@@ -67,10 +67,6 @@ var keyboard = {
         var footer = {id:"keyboard-footer",html:fields.concat(ok)}
         components.render({id:"keyboard",html:[backDrop,header,body,footer]},"body");
     },
-    getClient: function (e, axis) {
-        axis = axis.toUpperCase();
-        return e.clientX ? e["client" + axis] : e.changedTouches[0]["client" + axis];
-    },
     close: function () {
         var s = this.state;
         s.activeIndex = 0;
@@ -83,13 +79,13 @@ var keyboard = {
         element.addClass("active");
         this.eventHandler("window", "mousemove", $.proxy(this.fieldMouseMove,this));
         this.eventHandler("window", "mouseup", $.proxy(this.fieldMouseUp,this));
-        this.state.startOffset = this.getClient(e, "Y");
+        this.state.startOffset = this.getClient(e).y;
         this.state.activeIndex = element.attr("data-index");
         this.state.selectedFieldValue = parseFloat(element.find(".keyboard-numberbox").html());
         this.state.firstInter = true;
     },
     fieldMouseMove: function (e) {
-        var offset = this.state.startOffset - this.getClient(e,"Y");
+        var offset = this.state.startOffset - this.getClient(e).y;
         if (Math.abs(offset) < 3) { return; }
         var field = $(".keyboard-field .keyboard-numberbox").eq(this.state.activeIndex);
         offset = Math.floor(offset / 12);
@@ -98,9 +94,18 @@ var keyboard = {
     fieldMouseUp: function () {
         this.eventRemover("window","mousemove",this.fieldMouseMove);
         this.eventRemover("window","mouseup",this.fieldMouseUp);
+        for(var i = 0; i < this.state.fields.length; i++){
+            var field = this.state.fields[i];
+            var fieldDOM = $(".keyboard-field .keyboard-numberbox").eq(i);
+            if(field.min !== undefined && parseFloat(fieldDOM.html()) < field.min){
+                fieldDOM.html(field.min);
+            }
+        }
     },
     getKey: function (e) {
+        app.eventHandler('window','mouseup',$.proxy(this.keyUp,this));
         var element = $(e.currentTarget);
+        element.addClass('active');
         var key = element.attr("data-key");
         var activeBox = $(".keyboard-field").eq(this.state.activeIndex).find(".keyboard-numberbox");
         if (key === "none") { return; }
@@ -136,16 +141,18 @@ var keyboard = {
         }
     },
     keyUp: function () {
-        $(".keyboard-number-key").removeClass("active");
+        app.eventRemover('window','mouseup',this.keyUp);
+        $(".keyboard-key").removeClass("active");
     },
     ok: function () {
         var parameters = {};
         var length = this.state.fields.length;
         for (var i = 0; i < length; i++) {
             var field = this.state.fields[i];
-            var value = parseFloat($(".keyboard-numberbox").eq(i).html());
-            if(field.max !== undefined && value > field.max){value = field.max}
-            if(field.min !== undefined && value < field.min){value = field.min}
+            var fieldDOM = $(".keyboard-numberbox").eq(i);
+            var value = parseFloat(fieldDOM.html());
+            if(field.max !== undefined && value > field.max){fieldDOM.html(field.max); return;}
+            if(field.min !== undefined && value < field.min){fieldDOM.html(field.min); return;}
             if (value === "" || value === "-") { value = 0; }
             parameters[field.prop] = value;
             $(field.dataTarget).html(value); 
@@ -153,16 +160,29 @@ var keyboard = {
         this.state.callback(parameters);
         if (this.state.close) { this.close(); }
     },
-    eventHandler: function (selector, e, action) {
-        var mobileEvents = { down: "touchstart", move: "tocuhmove", up: "tocuhend" };
+    getMousePosition:function(e){
+        var isMobile = 'ontouchstart' in document.documentElement?true:false;
+        var obj = { 
+            x: isMobile ? e.changedTouches[0].clientX : e.clientX, 
+            y: isMobile ? e.changedTouches[0].clientY : e.clientY 
+        };
+        return obj; 
+    },
+    getClient: function (e) {    
+        return this.getMousePosition(e);
+    },
+    getEvent:function(event){
+        var mobileEvents = { mousedown: "touchstart", mousemove: "touchmove", mouseup: "touchend" };
+        return 'ontouchstart' in document.documentElement ? mobileEvents[event] : event;
+    },
+    eventHandler: function (selector, event, action) {
         var element = typeof selector === "string" ? (selector === "window" ? $(window) : $(selector)) : selector;
-        var event = this.state.isMobile ? mobileEvents[e] : e;
+        event = this.getEvent(event);
         element.unbind(event, action).bind(event, action);
     },
-    eventRemover: function (selector, e, action) {
-        var mobileEvents = { down: "touchstart", move: "tocuhmove", up: "tocuhend" };
+    eventRemover: function (selector, event, action) {
         var element = typeof selector === "string" ? (selector === "window" ? $(window) : $(selector)) : selector;
-        var event = this.state.isMobile ? mobileEvents[e] : e;
+        event = this.getEvent(event);
         element.unbind(event, action);
     },
 }

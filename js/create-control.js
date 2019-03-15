@@ -48,6 +48,9 @@ var createControl = {
         components.remove('create-control');
         this.coords = false;
     },
+    keyUp:function(){
+        $('#create-control .button').removeClass('active');
+    },
     getButtonStyle:function(obj){
         var index = obj.index;
         var s = this.style;
@@ -89,7 +92,12 @@ var createControl = {
                     index:i,id:'create-control-'+item.value,className:'create-control-item',
                     attrs:{style:'transform:rotate(' + (i * -1 * angle - start_angle) + 'deg);'},
                     show:item.show,
-                    callback:function(e){create[$(e.currentTarget).attr("id")](e);},
+                    callback:function(e){
+                        var button = $(e.currentTarget);
+                        var btn = button.find('.button');
+                        app.eventHandler('window','mouseup',createControl.keyUp);
+                        btn.addClass('active');
+                        create[button.attr("id")](e);},
                     html:[{
                         component:'Button',text:item.text,iconClass:item.iconClass,className:'button',
                         iconClass:item.iconClass,index:i,
