@@ -376,7 +376,7 @@ var create = {
         var lastPoint = this.object.getLastPoint();
         var zoom = app.canvas.getZoom();
         app.canvas.drawArc({ x: lastPoint.x, y: lastPoint.y, radius: 3/zoom, fill: "orange" });
-        app.canvas.drawArc({ x: lastPoint.x, y: lastPoint.y, radius: 6/zoom, stroke: "orange" });
+        app.canvas.drawArc({ x: lastPoint.x, y: lastPoint.y, radius: this.autoWeldArea, stroke: "orange",lineWidth:0.5 });
     },
     createController: function (mode) {
         var lastPoint = this.object.getLastPoint()
@@ -438,7 +438,7 @@ var create = {
                 var innerWidth = (outerWidth - totalframeWidth) / xCount;
                 var innerHeight = (outerHeight - totalframeHeight) / yCount;
                 points = [];
-                points = points.concat(this.getRectanglePoints(start,end));
+                if(outerFrame){points = points.concat(this.getRectanglePoints(start,end));}
                 for(var i = 0; i < xCount; i++){
                     var innerStartX = minX + outerFrame + (i * innerWidth) + (i * innerFrame);
                     var innerEndX = innerStartX + innerWidth;
@@ -576,60 +576,122 @@ var create = {
         points: null,
         side: null,
         bond: false,
-        magnetArea: 5,
+        double:true,
+        refine:true,
+        thickness:20,
+        distance: 5,
         step: 10,
+        fixLine:function(){
+            this.line.start.x = parseFloat(this.line.start.x.toFixed(4));
+            this.line.end.x = parseFloat(this.line.end.x.toFixed(4));
+            this.line.start.y = parseFloat(this.line.start.y.toFixed(4));
+            this.line.end.y = parseFloat(this.line.end.y.toFixed(4));
+        },
         mousedown: function () {
             var coords = app.canvas.getMousePosition();
-            this.line = app.getLine({coords: coords,is: { layerId: layers.getActive().id }});
-            if (!this.line) { return; }
-            this.points = Lines.getPoints(this.line);
+            var l = this.line = app.getLine({coords: coords,is: { layerId: layers.getActive().id }});
+            if (!l) { return; }
+            this.fixLine();
+            var delta = Lines.getDelta(l,this.double?this.distance + (this.thickness / 2):this.distance);
+            this.maxX = app.getMax(l.start.x, l.end.x) - delta.x;
+            this.maxY = app.getMax(l.start.y, l.end.y) - delta.y;
+            this.minX = app.getMin(l.start.x, l.end.x) + delta.x;
+            this.minY = app.getMin(l.start.y, l.end.y) + delta.y;
             app.redraw();
             app.eventHandler("window", "mousemove", $.proxy(this.mousemove, this));
             app.eventHandler("window", "mouseup", $.proxy(this.mouseup, this));
         },
         mousemove: function () {
             var coords = app.canvas.getMousePosition();
-            this.plumb = Lines.getPrependicularLine(this.line, coords);
-            var point = this.plumb.start;
-            var distance = {
-                start: Lines.getLength({ start: point, end: this.points.start }),
-                end: Lines.getLength({ start: point, end: this.points.end })
-            }
-            if (distance.start <= distance.end) { this.side = "start"; } else { this.side = "end"; }
-            if (distance[this.side] < this.magnetArea) {
-                var deltaX = this.points[this.side].x - point.x, deltaY = this.points[this.side].y - point.y;
-                this.bond = true;
-            }
-            else { var deltaX = 0, deltaY = 0; this.bond = false; }
-
-
-            this.plumb = {
-                start: { x: this.plumb.start.x + deltaX, y: this.plumb.start.y + deltaY },
-                end: { x: this.plumb.end.x + deltaX, y: this.plumb.end.y + deltaY }
-            };
-            this.plumb = Lines.getStepedLine({ line: this.plumb, side: "end", step: this.step });
+            var l = this.line,p = this.plumb = Lines.getPrependicularLine(l, coords);
+            var deltaX = p.end.x - p.start.x,deltaY = p.end.y - p.start.y;
+            p.start.x = p.start.x < this.minX?this.minX:p.start.x;
+            p.start.y = p.start.y < this.minY?this.minY:p.start.y;
+            p.start.x = p.start.x > this.maxX?this.maxX:p.start.x;
+            p.start.y = p.start.y > this.maxY?this.maxY:p.start.y;
+            p.end.x = p.start.x + deltaX;
+            p.end.y = p.start.y + deltaY;
+            p = Lines.getStepedLine({ line: p, side: "end", step: this.step });
             app.redraw();
-            app.drawLine({ start: this.plumb.start, end: this.plumb.end, color: "yellow", showDimension: true, lineDash: [4, 4] });
-            app.drawLine({ start: this.plumb.start, end: this.line.end, color: "yellow", showDimension: true, lineDash: [4, 4] });
-            app.drawLine({ start: this.plumb.start, end: this.line.start, color: "yellow", showDimension: true, lineDash: [4, 4] });
+            
+            if(this.double){
+                var minor = this.minor = Lines.getParallelLine(p,this.thickness/2);
+                var major = this.major = Lines.getParallelLine(p,this.thickness/-2);
+                app.drawLine({ start: minor.start, end: minor.end, color: "yellow", showDimension: true, lineDash: [4, 4] });
+                app.drawLine({ start: major.start, end: major.end, color: "yellow", showDimension: true, lineDash: [4, 4] });
+                var minorStart = Lines.getLength({start:minor.start,end:l.start});
+                var majorStart = Lines.getLength({start:major.start,end:l.start});
+                if(minorStart < majorStart){
+                    this.minorSide = 'start'; this.majorSide = 'end';
+                    app.drawLine({ start: minor.start, end: l.start, color: "yellow", showDimension: true, lineDash: [4, 4] });
+                    app.drawLine({ start: major.start, end: l.end, color: "yellow", showDimension: true, lineDash: [4, 4] });
+                }
+                else{
+                    this.minorSide = 'end'; this.majorSide = 'start';
+                    app.drawLine({ start: major.start, end: l.start, color: "yellow", showDimension: true, lineDash: [4, 4] });
+                    app.drawLine({ start: minor.start, end: l.end, color: "yellow", showDimension: true, lineDash: [4, 4] });
+                }
+            }
+            else{
+                app.drawLine({ start: p.start, end: p.end, color: "yellow", showDimension: true, lineDash: [4, 4] });
+                app.drawLine({ start: p.start, end: l.end, color: "yellow", showDimension: true, lineDash: [4, 4] });
+                app.drawLine({ start: p.start, end: l.start, color: "yellow", showDimension: true, lineDash: [4, 4] });
+            }
+            
         },
         mouseup: function () {
             app.eventRemover("window", "mousemove", this.mousemove);
             app.eventRemover("window", "mouseup", this.mouseup);
             Lines.deselectAll();
             if (Lines.getLength(this.plumb) > 5) {
-                var point1 = Points.add({
-                    x: this.plumb.start.x,y: this.plumb.start.y,
-                    connectedLines: [{id: Lines.getNextID(1),side: "start"}],
-                });
-                var point2 = Points.add({
-                    x: this.plumb.end.x,y: this.plumb.end.y,
-                    connectedLines: [{id: Lines.getNextID(1),side: "end"}],
-                });
-                var line = Lines.add({
-                    start: {x: this.plumb.start.x,y: this.plumb.start.y,id: point1.id},
-                    end: {x: this.plumb.end.x,y: this.plumb.end.y,id: point2.id}
-                });
+                if(this.double){
+                    var minorpoint1 = Points.add({
+                        x: this.minor.start.x,y: this.minor.start.y,
+                        connectedLines: [{id: Lines.getNextID(1),side: "start"}],
+                    });
+                    var minorpoint2 = Points.add({
+                        x: this.minor.end.x,y: this.minor.end.y,
+                        connectedLines: [{id: Lines.getNextID(1),side: "end"}],
+                    });
+                    var minorline = Lines.add({
+                        start: {x: this.minor.start.x,y: this.minor.start.y,id: minorpoint1.id},
+                        end: {x: this.minor.end.x,y: this.minor.end.y,id: minorpoint2.id}
+                    });
+                    var majorpoint1 = Points.add({
+                        x: this.major.start.x,y: this.major.start.y,
+                        connectedLines: [{id: Lines.getNextID(1),side: "start"}],
+                    });
+                    var majorpoint2 = Points.add({
+                        x: this.major.end.x,y: this.major.end.y,
+                        connectedLines: [{id: Lines.getNextID(1),side: "end"}],
+                    });
+                    var majorline = Lines.add({
+                        start: {x: this.major.start.x,y: this.major.start.y,id: majorpoint1.id},
+                        end: {x: this.major.end.x,y: this.major.end.y,id: majorpoint2.id}
+                    });
+                    if(this.refine){
+                        var sidePoints = Lines.remove(this.line);
+                        var l1 = Points.connect(minorpoint1,sidePoints[this.minorSide]);
+                        var l2 =Points.connect(majorpoint1,sidePoints[this.majorSide]);
+                        if(Lines.getLength(l1) < 0.0001){Lines.remove(l1,true);}
+                        if(Lines.getLength(l2) < 0.0001){Lines.remove(l2,true);}
+                    }
+                }
+                else{
+                    var point1 = Points.add({
+                        x: this.plumb.start.x,y: this.plumb.start.y,
+                        connectedLines: [{id: Lines.getNextID(1),side: "start"}],
+                    });
+                    var point2 = Points.add({
+                        x: this.plumb.end.x,y: this.plumb.end.y,
+                        connectedLines: [{id: Lines.getNextID(1),side: "end"}],
+                    });
+                    var line = Lines.add({
+                        start: {x: this.plumb.start.x,y: this.plumb.start.y,id: point1.id},
+                        end: {x: this.plumb.end.x,y: this.plumb.end.y,id: point2.id}
+                    });
+                }
+
                 undo.save();
             }
             app.redraw();
@@ -717,18 +779,26 @@ var create = {
     setting: function () {
         var mode = app.state.createmode;
         var template = []
-        template.push({
-            type:"slider",title: "Ortho Angle",
-            value: create.ortho,start: 0,step: 15,end: 90,
-            callback: function (value) {create.ortho = value;}
-        });
+        
+        if(['polyline','doubleline','path','ngon'].indexOf(mode.value) !== -1){
+            template.push({
+                type:"slider",title: "Ortho Angle",
+                value: create.ortho,start: 0,step: 15,end: 90,
+                callback: function (value) {create.ortho = value;}
+            });
+        }
         if(['polyline','doubleline','path','doublepath','frame','ngon','rectangle'].indexOf(mode.value) !== -1){
             template.push({
                 type: "slider", title: "Snap Area", value: app.canvas.getSnap(),
                 callback: function (value) {
                     app.canvas.setSnap(value);
+                    var b = value * app.canvas.getZoom();
+                    $("canvas").css({
+                        "background-size": "" + 100 + "px " + 100 + "px, " + 100 + "px " + 100 + "px, " + b + "px " +
+                        b + "px, " + b + "px " + b + "px"
+                    });
                 },
-                min:1,start: 0, step: 10, end: 100,
+                start: 0, step: 10, end: 100,
             });
         }
         if(mode.value === 'extendLine'){
@@ -747,21 +817,37 @@ var create = {
         }
         if(mode.value === 'plumbLine'){
             template.push({
-                type:"slider",title: "Magnet Area",
-                value: create.plumbLine.magnetArea,start: 0,step: 1,min: 1,end: 20,
-                callback: function (value) {
-                    console.log(value);
-                    create.plumbLine.magnetArea = value;
+                type: "switch", title: "Double", value: create.plumbLine.double,
+                callback: function (value) { 
+                    create.plumbLine.double = value;
+                    
+                    } 
+                },
+                {
+                    type:"numberbox",title: "Thickness",
+                    value: create.plumbLine.thickness,min: 5,max: 1000,
+                    callback: function (obj) {
+                        create.plumbLine.thickness = obj.value;
+                        
+                    }
+                },
+                {
+                    type:"numberbox",title: "Distance",
+                    value: create.plumbLine.distance,min: 0,
+                    callback: function (obj) {
+                        create.plumbLine.distance = obj.value;
+                        
+                    }
+                },
+                {
+                    type:"slider",title: "Step",
+                    value: create.plumbLine.step,start: 0,step: 1,min: 1,end: 100,
+                    callback: function (value) {
+                        create.plumbLine.step = value;
+                        
+                    }
                 }
-            },
-            {
-                type:"slider",title: "Step",
-                value: create.plumbLine.step,start: 0,step: 1,min: 1,end: 100,
-                callback: function (value) {
-                    if(isNaN(value)){debugger;}
-                    create.plumbLine.step = value;
-                }
-            });
+            );
         }
         if(mode.value === 'offsetLine'){
             template.push({
@@ -769,13 +855,17 @@ var create = {
                 callback:function (value) {create.offsetLine.step = value;}
             });
         }
-        template.push({
-            type: "slider", title: "Auto Weld", value: create.autoWeldArea,
-            callback: function (value) {
-                create.autoWeldArea = value;
-            },
-            start: 1, step: 1, end: 30,
-        });
+        if(['plumbLine','offsetLine','extendLine'].indexOf(mode.value) === -1){
+            template.push({
+                type: "slider", title: "Auto Weld", value: create.autoWeldArea,
+                callback: function (value) {
+                    create.autoWeldArea = value;
+                    create.preview();
+                },
+                start: 1, step: 1, end: 30,
+            });
+        }
+        
         if (mode.value === "ngon") {
             template.push({
                 type: "slider", title: "Sides", value: create.ngonSides,
@@ -813,7 +903,7 @@ var create = {
             });
         }
         Alert.open({
-            buttons: [{ text: "ok", callback: Alert.close }],
+            buttons: [{ text: "ok", callback: function(){Alert.close(); components.update('sub-menu'); }}],
             template: template,
             title: app.state.createmode.text + " Setting.",
         });

@@ -65,11 +65,13 @@
         var endPoint = sidePoints.end;
         Points.removeConnectedLine(startPoint, line.id);
         Points.removeConnectedLine(endPoint, line.id);
+        app.state.lines.splice(index, 1);
         if(modifySidePoints === true){
             if (startPoint.connectedLines.length === 0) { Points.remove(startPoint); }
             if (endPoint.connectedLines.length === 0) { Points.remove(endPoint); }
         }
-        app.state.lines.splice(index, 1);
+        else {return sidePoints;}
+        
     },
     select: function (obj) {
         if(typeof obj === "string"){obj = this.getObjectByID(obj);}

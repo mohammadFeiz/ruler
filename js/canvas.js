@@ -18,11 +18,11 @@ function Canvas(config) {
             if (s.gridLineColor) {
                 var a = 100 * s.zoom;
                 a = a + 'px ' + a + 'px,' + a + 'px ' + a + 'px';
-                var b = 10 * s.zoom;
+                var b = this.state.snap * s.zoom;
                 b = b + 'px ' + b + 'px,' + b + 'px ' + b + 'px';
                 container.css({
                     backgroundPosition: s.width / 2 / s.zoom + "px " + s.height / 2 / s.zoom + "px",
-                    backgroundImage: 'linear-gradient(rgba(' + s.gridLineColor + ',0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(' + s.gridLineColor + ',0.5) 1px, transparent 1px), linear-gradient(rgba(' + s.gridLineColor + ',0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(' + s.gridLineColor + ',0.3) 1px, transparent 1px)',
+                    backgroundImage: 'linear-gradient(rgba(' + s.gridLineColor + ',0.5) 0px, transparent 0px), linear-gradient(90deg, rgba(' + s.gridLineColor + ',0.5) 0px, transparent 0px), linear-gradient(rgba(' + s.gridLineColor + ',0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(' + s.gridLineColor + ',0.3) 1px, transparent 1px)',
                     backgroundSize: a + ',' + b
                 });
             }
@@ -55,7 +55,9 @@ function Canvas(config) {
         getMousePosition: function () { return { x: (this.x - this.state.translate.x) / this.state.zoom, y: (this.y - this.state.translate.y) / this.state.zoom }; },
         getSnapedCoords: function (coords) {
             coords = coords || this.getMousePosition();
-            return { x: Math.round(coords.x / this.state.snap) * this.state.snap, y: Math.round(coords.y / this.state.snap) * this.state.snap };
+            var snap = this.state.snap;
+            if(!snap){return coords;}
+            return { x: Math.round(coords.x / snap) * snap, y: Math.round(coords.y / snap) * snap };
         },
         canvasToClient: function (coords) { var s = this.state; return { x: (coords.x * s.zoom) + s.translate.x, y: (coords.y * s.zoom) + s.translate.y }; },
         clientToCanvas: function (coords) {

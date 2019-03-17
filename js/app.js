@@ -7,10 +7,11 @@
         appmode: "create",
         createmode:{ text: "Polyline", value: "polyline",close:false,linesMethod:'singlerow',pointsMethod:'polyline',ortho:true, },
         container: "#container",
-        background: "#2c2f37",
+        background: "#21242a",
         gridLineColor: "70,70,70",
         fileName:'Not save',
         topMenuTitle : false,
+        subMenuTitle : false,
         measuremode:false,
     },
     style: {
@@ -45,8 +46,8 @@
     },
     getMousePosition:function(e){
         var obj = { 
-            x: this.state.isMobile ? e.changedTouches[0].clientX : e.clientX, 
-            y: this.state.isMobile ? e.changedTouches[0].clientY : e.clientY 
+            x: Math.round(this.state.isMobile ? e.changedTouches[0].clientX : e.clientX), 
+            y: Math.round(this.state.isMobile ? e.changedTouches[0].clientY : e.clientY) 
         };
         return obj; 
     },
@@ -110,7 +111,7 @@
     getPoint: function (obj) {
         obj = obj || {};
         var c = this.canvas, coords = obj.coords || c.getMousePosition(), is = obj.is || {}, isnt = obj.isnt || {}, area = obj.area || 18 / c.getZoom(), points = this.state.points;
-        for (var i = 1; i < area; i += 2) {
+        for (var i = 0; i < area; i += 2) {
             for (var j = points.length - 1; j >= 0 ; j--) {
                 var point = points[j];
                 if (Lines.getLength({start:point,end:coords}) > i) { continue; }
@@ -173,7 +174,7 @@
         app.canvas.setZoom(zoom);
         
         var a = 100 * zoom,
-            b = 10 * zoom;
+            b = app.canvas.getSnap() * zoom;
         $("canvas").css({
             "background-size": "" + a + "px " + a + "px, " + a + "px " + a + "px, " + b + "px " +
                 b + "px, " + b + "px " + b + "px"
@@ -315,7 +316,7 @@ var display = {
                 {
                     id: "settings", component: "Button", iconClass: "mdi mdi-settings", className: "icon left", container: "#top-menu",
                     callback: function () { window[app.state.appmode].setting(); },
-                    show:function(){return app.state.measuremode === false && edit.align1 === false && edit.chamferMode === false;}
+                    show:function(){return app.state.measuremode === false && edit.align1 === false;}
                 },        
             ]
         },
@@ -419,7 +420,7 @@ var display = {
                     
                 },
                 {
-                    id: "extend-line", component: "Button", iconClass: "", className: "button left", text: "Extend Line", container: "#sub-menu",
+                    id: "extend-line", component: "Button", iconClass: "", className: "button left", text: "Resize Line", container: "#sub-menu",
                     show: function () { 
                         return( 
                             app.state.appmode === 'edit' && 
@@ -430,7 +431,7 @@ var display = {
                     },
                     affectTo:['top-menu','sub-menu','bottom-menu'],
                     callback:function(){
-                        app.state.topMenuTitle = "Tap a line and drag to extend";
+                        app.state.topMenuTitle = "Tap a side of a line and drag to resize";
                         edit.extendLineMode = true;
                     } 
                     
@@ -476,7 +477,7 @@ var display = {
                         app.state.topMenuTitle = "Measure Mode";
                         create.end(); edit.end();
                     },
-                    show:function(){return app.state.topMenuTitle === false;},
+                    show:function(){return app.state.measuremode === false;},
                     affectTo:['top-menu','sub-menu','bottom-menu']
                 },
                 {
@@ -506,7 +507,7 @@ var display = {
                 },
                 {
                     id:"undo",component:"Button",iconClass:"mdi mdi-undo",className:"icon right",container:"#bottom-menu",
-                    show:function(){return app.state.topMenuTitle === false;},
+                    show:function(){return app.state.measuremode === false;},
                     callback:function(){undo.load();}
                 },
                 {

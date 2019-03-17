@@ -318,7 +318,7 @@ var Points = {
                 }]
             });
         }
-        Lines.add({
+        var line = Lines.add({
             start: {
                 x: f.x,
                 y: f.y,
@@ -330,6 +330,7 @@ var Points = {
                 id: lineEndID
             }
         });
+        return line;
     },
     getCenterOfList: function (list) {
         var length = list.length;

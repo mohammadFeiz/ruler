@@ -381,7 +381,7 @@
         else {
             if (["axis-move", "axis-move-horizontal", "axis-move-vertical"].indexOf(axis.mode) !== -1) {
 
-                var offset = app.canvas.getSnapedCoords({ x: (client.x - so.x) / app.canvas.getZoom(), y: (client.y - so.y) / app.canvas.getZoom() });
+                var offset = { x: (client.x - so.x) / app.canvas.getZoom(), y: (client.y - so.y) / app.canvas.getZoom() };
 
                 offset = { x: (axis.mode === "axis-move-vertical") ? 0 : offset.x, y: (axis.mode === "axis-move-horizontal") ? 0 : offset.y };
                 this.move(offset);
@@ -612,9 +612,9 @@
         Alert.open({
             title: "Align Point",
             buttons: [
-                { text: "Align X,Y", callback: function(){this.alignPoint('XY'); Alert.close();} },
-                { text: "Align Y", callback: function(){this.alignPoint('Y'); Alert.close();} },
-                { text: "Align X", callback: function(){this.alignPoint('X'); Alert.close();} },
+                { text: "Align X,Y", callback: function(){edit.alignPoint('XY'); Alert.close();} },
+                { text: "Align Y", callback: function(){edit.alignPoint('Y'); Alert.close();} },
+                { text: "Align X", callback: function(){edit.alignPoint('X'); Alert.close();} },
             ],
             template: "Select Align Type.",
         });
@@ -644,12 +644,22 @@
             ];
         }
         else if(this.extendLineMode){
-            title = 'Extend Line Setting';
+            title = 'Resize Line Setting';
             template = [
                 {
                     type:"numberbox",title: "Step",negative:false,min:0,
                     value: edit.extendLine.step,
                     callback: function (obj) {edit.extendLine.step = obj.value;},
+                }
+            ];
+        }
+        else if(this.chamferMode){
+            title = 'Chamfer Point Setting';
+            template = [
+                {
+                    type:"numberbox",title: "Step",negative:false,min:0,
+                    value: edit.chamfer.step,
+                    callback: function (obj) {edit.chamfer.step = obj.value;},
                 }
             ];
         }
@@ -706,6 +716,7 @@
         offset: 0,
         points: [],
         breaked: false,
+        step:10,
         clickMode: null,
         mousedown: function () {
             var coords = app.canvas.getMousePosition();
@@ -818,7 +829,9 @@
         doChamfer: function () {
             var coords = app.canvas.getMousePosition()
             var offset = Math.abs(this.startOffset - coords.x);
+            offset = Math.round(offset / this.step) * this.step;
             this.offset = offset;
+            
             this.undoChanges();
             var length = this.model.length;
             for (var i = 0; i < length; i++) {
@@ -841,10 +854,17 @@
         startPoint: null,
         endPoint: null,
         min: 5,
+        fixLine:function(){
+            this.line.start.x = parseFloat(this.line.start.x.toFixed(4));
+            this.line.end.x = parseFloat(this.line.end.x.toFixed(4));
+            this.line.start.y = parseFloat(this.line.start.y.toFixed(4));
+            this.line.end.y = parseFloat(this.line.end.y.toFixed(4));
+        },
         mousedown: function () {
             var coords = app.canvas.getMousePosition();
             this.line = app.getLine({coords: coords,is: { layerId: layers.getActive().id }});
             if (!this.line) { return; }
+            this.fixLine();
             var length = Lines.getLength(this.line) / 2;
             if (this.min > Math.floor(length)) { this.min = Math.floor(length); }
             var delta = Lines.getDelta(this.line, this.min);
@@ -881,7 +901,7 @@
             var addedPoint = Points.add({ x: this.point.x, y: this.point.y });
             Points.connect(this.startPoint, addedPoint);
             Points.connect(addedPoint, this.endPoint);
-            //undo.save();
+            undo.save();
             app.redraw();
         },
     },

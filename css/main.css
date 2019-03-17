@@ -13,7 +13,7 @@ body{
 }
 
 .back-drop{position:fixed;z-index:1;width:100%;height:100%;left:0;top:0;
-    background:rgba(10,10,20,0.7);
+    background:rgba(10,10,20,0.4);
 }
 
 canvas {
@@ -22,9 +22,7 @@ canvas {
     top: 0px;
     width: 100%;
     height: 100%;
-    background-color: #2c2f37;
-    background-image: linear-gradient(rgba(70,70,70,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(70,70,70,0.5) 1px, transparent 1px), linear-gradient(rgba(60,60,60,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(60,60,60,0.5) 1px, transparent 1px);
-    background-size: 100px 100px, 100px 100px, 10px 10px, 10px 10px;
+    
 }
 
 .left{

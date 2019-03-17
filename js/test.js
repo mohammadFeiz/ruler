@@ -16,11 +16,14 @@ function alltest(){
 var test = {
     points:function(){
         var pointIds = [];
+        var selected = [];
         for(var i = 0; i < app.state.points.length; i++){
             var point = app.state.points[i];
             //check duplicate point ids
             if(pointIds.indexOf(point.id) !== -1){errorLog.push('duplicate app.state.points['+i+'].id');}
             else {pointIds.push(point.id)}
+            /*------------------------point.selected-------------------------------------*/
+            if(point.selected === true){selected.push(point);}
             /*------------------------point.layerId-------------------------------------*/
             // point.layerId is valid?
             if(!point.layerId){ 
@@ -65,14 +68,18 @@ var test = {
                 }           
             }
         }
+        if(Points.selected.length !== selected.length){errorLog.push('Points.selected.length is not equal with points that have selected:true ');}
     },
     lines:function(){
         var lineIds = [];
+        var selected = [];
         for(var i = 0; i < app.state.lines.length; i++){
             var line = app.state.lines[i];
             //check duplicate line ids
             if(lineIds.indexOf(line.id) !== -1){errorLog.push('duplicate app.state.lines['+i+'].id');}
             else {lineIds.push(line.id)}
+            /*------------------------line.selected-------------------------------------*/
+            if(line.selected === true){selected.push(line);}
             /*------------------------line.layerId-------------------------------------*/
             // line.layerId is valid?
             if(!line.layerId){ 
@@ -111,6 +118,7 @@ var test = {
                 errorLog.push('app.state.lines['+i+'].end => end point and line are not match in coords');
             }
         }
+        if(Lines.selected.length !== selected.length){errorLog.push('Liness.selected.length is not equal with lines that have selected:true ');}
     },
     layers:function(){
         var activeLayers = [];
